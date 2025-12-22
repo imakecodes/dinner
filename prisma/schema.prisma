@@ -1,1 +1,46 @@
-���Ȭʋ�>������~)^
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model HouseholdMember {
+  id           String  @id @default(cuid())
+  name         String
+  restrictions Json    @default("[]")
+  likes        Json    @default("[]")
+  dislikes     Json    @default("[]")
+  isGuest      Boolean @default(false)
+}
+
+model PantryItem {
+  name String @id
+}
+
+model Recipe {
+  id                      String   @id @default(cuid())
+  createdAt               DateTime @default(now())
+  recipe_title            String
+  analysis_log            String   @db.Text
+  match_reasoning         String   @db.Text
+  ingredients_from_pantry Json
+  shopping_list           Json
+  step_by_step            Json
+  safety_badge            Boolean
+  meal_type               String
+  difficulty              String
+  prep_time               String
+  dishImage               String?  @db.Text
+  isFavorite              Boolean  @default(false)
+}
+
+model TagSuggestion {
+  id       String @id @default(cuid())
+  category String
+  tag      String
+
+  @@unique([category, tag])
+}

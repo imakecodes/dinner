@@ -3,11 +3,12 @@ import { prisma } from '../../../../lib/prisma';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { name: string } }
+  { params }: { params: Promise<{ name: string }> }
 ) {
   try {
+    const { name } = await params;
     await prisma.pantryItem.delete({
-      where: { name: decodeURIComponent(params.name) }
+      where: { name: decodeURIComponent(name) }
     });
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -18,12 +19,13 @@ export async function DELETE(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { name: string } }
+  { params }: { params: Promise<{ name: string }> }
 ) {
   try {
+    const { name } = await params;
     const { name: newName } = await request.json();
     const updated = await prisma.pantryItem.update({
-      where: { name: decodeURIComponent(params.name) },
+      where: { name: decodeURIComponent(name) },
       data: { name: newName }
     });
     return NextResponse.json(updated);

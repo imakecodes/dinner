@@ -11,8 +11,8 @@ export const generateRecipe = async (
   language: 'en' | 'pt' = 'en'
 ): Promise<GeneratedRecipe> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  const systemInstruction = language === 'pt' 
+
+  const systemInstruction = language === 'pt'
     ? `Você é o Chef Executivo do "Dinner?".
 OBJETIVOS:
 1. Respeite o tipo de refeição: ${session_context.requested_type}.
@@ -69,7 +69,7 @@ export const generateDishImage = async (
   ratio: AspectRatio
 ): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+
   const prompt = `Gourmet food photography of ${recipeName}, masterfully plated, elegant lighting, bokeh background. High contrast, professional culinary magazine style.`;
 
   const response = await ai.models.generateContent({
@@ -83,7 +83,7 @@ export const generateDishImage = async (
     }
   });
 
-  const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+  const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
   if (!part?.inlineData?.data) throw new Error("Image generation failed");
 
   return `data:image/png;base64,${part.inlineData.data}`;

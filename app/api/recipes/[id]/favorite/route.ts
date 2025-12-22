@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const recipe = await prisma.recipe.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
     if (!recipe) return NextResponse.json({ message: 'Recipe not found' }, { status: 404 });
 
     const updated = await prisma.recipe.update({
-      where: { id: params.id },
+      where: { id },
       data: { isFavorite: !recipe.isFavorite }
     });
     return NextResponse.json(updated);
