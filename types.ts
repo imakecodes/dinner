@@ -1,5 +1,5 @@
 
-export type MealType = 'appetizer' | 'main' | 'dessert';
+export type MealType = 'appetizer' | 'main' | 'dessert' | 'snack';
 
 export interface HouseholdMember {
   id: string;
@@ -7,6 +7,7 @@ export interface HouseholdMember {
   restrictions: string[];
   likes: string[];
   dislikes: string[];
+  isGuest?: boolean; // Diferencia convidados de membros fixos
 }
 
 export interface SessionContext {
@@ -26,9 +27,6 @@ export interface GeneratedRecipe {
   meal_type: MealType;
 }
 
-/**
- * Represents a saved recipe in the database.
- */
 export interface RecipeRecord extends GeneratedRecipe {
   id: string;
   isFavorite: boolean;
@@ -49,3 +47,5 @@ export enum AspectRatio {
   A9_16 = '9:16',
   A16_9 = '16:9'
 }
+
+export type ViewState = 'home' | 'household' | 'pantry' | 'history';

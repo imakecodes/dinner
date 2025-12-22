@@ -1,28 +1,41 @@
 
 import React, { useState, useEffect } from 'react';
-import { HouseholdMember, SessionContext, GeneratedRecipe, MealType, RecipeRecord } from './types';
+import { HouseholdMember, SessionContext, GeneratedRecipe, MealType, RecipeRecord, ViewState } from './types';
 import { generateRecipe } from './services/geminiService';
 import Header from './components/Header';
-import HouseholdSection from './components/HouseholdSection';
-import PantrySection from './components/PantrySection';
+import Sidebar from './components/Sidebar';
 import RecipeCard from './components/RecipeCard';
-import HistorySection from './components/HistorySection';
-import Footer from './components/Footer';
 import { Language, translations } from './locales/translations';
 import { storageService } from './services/storageService';
 
+// Paginas/Componentes para as Views
+import HouseholdPage from './pages/HouseholdPage';
+import PantryPage from './pages/PantryPage';
+import HistoryPage from './pages/HistoryPage';
+import HomePage from './pages/HomePage';
+
 const App: React.FC = () => {
-  // --- Language State ---
-  const [lang, setLang] = useState<Language>('en');
+  const [lang, setLang] = useState<Language>('pt');
   const t = translations[lang];
 
-  // --- Core Application State ---
-  const [household, setHousehold] = useState<HouseholdMember[]>([
-    { id: 'father', name: 'Carlos', restrictions: ['Diabetes Type 2'], likes: ['Beef', 'BBQ'], dislikes: ['Cooked vegetables'] },
-    { id: 'daughter', name: 'Bia', restrictions: ['Vegetarian', 'Peanut Allergy'], likes: ['Pasta', 'Mushrooms'], dislikes: ['Cilantro'] }
-  ]);
-  const [pantry, setPantry] = useState<string[]>(['Traditional Pasta', 'Tomato Sauce', 'Sugar', 'Zucchini', 'Eggs', 'Parmesan Cheese', 'Roasted Peanuts']);
-  const [activeDiners, setActiveDiners] = useState<string[]>(['father', 'daughter']);
+  // --- Global State ---
+  const [currentView, setCurrentView] = useState<ViewState>('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  const [household, setHousehold] = useState<HouseholdMember[]>(() => {
+    const saved = localStorage.getItem('dinner_household');
+    return saved ? JSON.parse(saved) : [
+      { id: 'h1', name: 'Carlos', restrictions: ['Diabetes'], likes: ['Carne'], dislikes: ['Legumes cozidos'] },
+      { id: 'h2', name: 'Bia', restrictions: ['Vegetariana'], likes: ['Pasta'], dislikes: ['Coentro'] }
+    ];
+  });
+
+  const [pantry, setPantry] = useState<string[]>(() => {
+    const saved = localStorage.getItem('dinner_pantry');
+    return saved ? JSON.parse(saved) : ['Ovos', 'Arroz', 'Feijão', 'Azeite'];
+  });
+
+  const [activeDiners, setActiveDiners] = useState<string[]>(['h1', 'h2']);
   const [mealType, setMealType] = useState<MealType>('main');
   
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
@@ -31,21 +44,19 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<RecipeRecord[]>([]);
 
-  // Load history on mount
+  // Persistência básica via useEffect (em um app real seria storageService)
+  useEffect(() => {
+    localStorage.setItem('dinner_household', JSON.stringify(household));
+  }, [household]);
+
+  useEffect(() => {
+    localStorage.setItem('dinner_pantry', JSON.stringify(pantry));
+  }, [pantry]);
+
   useEffect(() => {
     setHistory(storageService.getAll());
-  }, []);
+  }, [currentView]);
 
-  /**
-   * Refreshes history list from persistent storage.
-   */
-  const refreshHistory = () => {
-    setHistory(storageService.getAll());
-  };
-
-  /**
-   * Triggers the AI generation process.
-   */
   const handleGenerateRecipe = async () => {
     if (activeDiners.length === 0) {
       setError(t.select_diners_error);
@@ -62,99 +73,72 @@ const App: React.FC = () => {
         pantry_ingredients: pantry,
         requested_type: mealType
       };
-      // Request recipe from Gemini API
       const result = await generateRecipe(household, context, lang);
       setRecipe(result);
     } catch (err: any) {
       setError(t.generate_error);
-      console.error("Recipe generation failed:", err);
+      console.error(err);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  return (
-    <div className="min-h-screen pb-20 selection:bg-indigo-100 selection:text-indigo-900">
-      <Header lang={lang} setLang={setLang} />
-      
-      <main className="max-w-4xl mx-auto px-4 mt-8 space-y-8">
-        {/* User and Restrictions Management */}
-        <HouseholdSection 
-          household={household} 
-          setHousehold={setHousehold} 
-          activeDiners={activeDiners} 
-          setActiveDiners={setActiveDiners} 
-          lang={lang}
-        />
-        
-        {/* Ingredient Inventory */}
-        <PantrySection 
-          pantry={pantry} 
-          setPantry={setPantry} 
-          lang={lang}
-        />
-
-        {/* Meal Category Selection */}
-        <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-          <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">
-            {t.meal_type_label}
-          </h3>
-          <div className="flex flex-wrap gap-4">
-            {(['appetizer', 'main', 'dessert'] as MealType[]).map(type => (
-              <button
-                key={type}
-                onClick={() => setMealType(type)}
-                className={`px-8 py-4 rounded-2xl font-black text-sm uppercase transition-all flex items-center gap-3 border-2 ${
-                  mealType === type 
-                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
-                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                }`}
-              >
-                <i className={`fas ${
-                  type === 'appetizer' ? 'fa-cheese' : type === 'main' ? 'fa-utensils' : 'fa-ice-cream'
-                }`}></i>
-                {t[type === 'main' ? 'main_course' : type as keyof typeof t] || type}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Main Action Call */}
-        <div className="flex flex-col items-center gap-4 py-4">
-          <button 
-            disabled={isGenerating || activeDiners.length === 0}
-            onClick={handleGenerateRecipe}
-            className="w-full md:w-auto px-16 py-6 rounded-3xl text-xl font-black transition-all flex items-center justify-center gap-4 btn-primary shadow-2xl group"
-          >
-            {isGenerating ? (
-              <><i className="fas fa-brain fa-spin"></i> {t.generating_btn}</>
-            ) : (
-              <><i className="fas fa-hat-chef group-hover:rotate-12 transition-transform"></i> {t.generate_btn}</>
-            )}
-          </button>
-          {error && (
-            <div className="bg-red-50 px-6 py-3 rounded-2xl border border-red-200 text-red-600 font-bold text-xs tracking-wider animate-bounce uppercase">
-              {error}
-            </div>
-          )}
-        </div>
-
-        {/* Generated Result Display */}
-        {recipe && (
-          <RecipeCard 
-            recipe={recipe} 
-            dishImage={dishImage} 
-            setDishImage={setDishImage} 
+  const renderView = () => {
+    switch (currentView) {
+      case 'household':
+        return <HouseholdPage household={household} setHousehold={setHousehold} lang={lang} />;
+      case 'pantry':
+        return <PantryPage pantry={pantry} setPantry={setPantry} lang={lang} />;
+      case 'history':
+        return <HistoryPage history={history} onUpdate={() => setHistory(storageService.getAll())} lang={lang} />;
+      default:
+        return (
+          <HomePage 
+            household={household}
+            setHousehold={setHousehold}
+            pantry={pantry}
+            activeDiners={activeDiners}
+            setActiveDiners={setActiveDiners}
+            mealType={mealType}
+            setMealType={setMealType}
+            isGenerating={isGenerating}
+            onGenerate={handleGenerateRecipe}
+            error={error}
+            recipe={recipe}
+            dishImage={dishImage}
+            setDishImage={setDishImage}
             lang={lang}
-            onSaved={refreshHistory}
+            onSaved={() => setHistory(storageService.getAll())}
           />
-        )}
+        );
+    }
+  };
 
-        {/* Historical/Saved Recipes Browsing */}
-        <HistorySection history={history} onUpdate={refreshHistory} lang={lang} />
+  return (
+    <div className="min-h-screen bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900">
+      <Header 
+        lang={lang} 
+        setLang={setLang} 
+        onMenuClick={() => setIsSidebarOpen(true)} 
+        onHomeClick={() => { setCurrentView('home'); setRecipe(null); }}
+      />
+      
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        onNavigate={(view) => { setCurrentView(view); setIsSidebarOpen(false); }}
+        lang={lang}
+      />
+
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        {renderView()}
       </main>
 
-      <Footer lang={lang} />
+      <footer className="py-12 border-t border-slate-200 text-center opacity-50">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+          Dinner? &copy; 2025 Smart Culinary Assistant
+        </p>
+      </footer>
     </div>
   );
 };
