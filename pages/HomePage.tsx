@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { HouseholdMember, MealType, GeneratedRecipe } from '../types';
 import RecipeCard from '../components/RecipeCard';
 import { Language, translations } from '../locales/translations';
+import TagInput from '../components/TagInput';
 
 interface Props {
   household: HouseholdMember[];
@@ -31,13 +32,12 @@ const HomePage: React.FC<Props> = ({
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
   const [guestSearch, setGuestSearch] = useState('');
   
-  // Estado para o formulário detalhado do convidado
   const [isCreatingGuest, setIsCreatingGuest] = useState(false);
-  const [guestForm, setGuestForm] = useState({
+  const [guestForm, setGuestForm] = useState<Omit<HouseholdMember, 'id' | 'isGuest'>>({
     name: '',
-    restrictions: '',
-    likes: '',
-    dislikes: ''
+    restrictions: [],
+    likes: [],
+    dislikes: []
   });
 
   const toggleDiner = (id: string) => {
@@ -56,16 +56,13 @@ const HomePage: React.FC<Props> = ({
     if (!guestForm.name) return;
     const newGuest: HouseholdMember = {
       id: `g-${Date.now()}`,
-      name: guestForm.name,
-      restrictions: guestForm.restrictions.split(',').map(s => s.trim()).filter(s => s),
-      likes: guestForm.likes.split(',').map(s => s.trim()).filter(s => s),
-      dislikes: guestForm.dislikes.split(',').map(s => s.trim()).filter(s => s),
+      ...guestForm,
       isGuest: true
     };
     setHousehold(prev => [...prev, newGuest]);
     setActiveDiners(prev => [...prev, newGuest.id]);
     setGuestSearch('');
-    setGuestForm({ name: '', restrictions: '', likes: '', dislikes: '' });
+    setGuestForm({ name: '', restrictions: [], likes: [], dislikes: [] });
     setIsCreatingGuest(false);
   };
 
@@ -109,7 +106,6 @@ const HomePage: React.FC<Props> = ({
             ))}
           </div>
 
-          {/* Guests Section */}
           <div className="border-t border-slate-100 pt-6">
             <button 
               onClick={() => setIsGuestsOpen(!isGuestsOpen)}
@@ -143,42 +139,48 @@ const HomePage: React.FC<Props> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="bg-slate-50 p-6 rounded-[1.5rem] border border-indigo-100 space-y-4 animate-in zoom-in-95 duration-200">
+                  <div className="bg-slate-50 p-6 rounded-[2rem] border border-indigo-100 space-y-6 animate-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="text-xs font-black text-indigo-900 uppercase tracking-widest">Novo Convidado</h4>
                       <button onClick={() => setIsCreatingGuest(false)} className="text-slate-400 hover:text-slate-600">
                         <i className="fas fa-times"></i>
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input 
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
-                        placeholder="Nome"
-                        value={guestForm.name}
-                        onChange={e => setGuestForm({...guestForm, name: e.target.value})}
-                      />
-                      <input 
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
-                        placeholder="Restrições (Glúten, Nozes...)"
-                        value={guestForm.restrictions}
-                        onChange={e => setGuestForm({...guestForm, restrictions: e.target.value})}
-                      />
-                      <input 
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
-                        placeholder="Likes (Peixe, Massas...)"
-                        value={guestForm.likes}
-                        onChange={e => setGuestForm({...guestForm, likes: e.target.value})}
-                      />
-                      <input 
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm"
-                        placeholder="Dislikes (Coentro...)"
-                        value={guestForm.dislikes}
-                        onChange={e => setGuestForm({...guestForm, dislikes: e.target.value})}
-                      />
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome</label>
+                        <input 
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-bold"
+                          placeholder="Nome"
+                          value={guestForm.name}
+                          onChange={e => setGuestForm({...guestForm, name: e.target.value})}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TagInput 
+                          category="restrictions"
+                          tags={guestForm.restrictions}
+                          onChange={tags => setGuestForm({...guestForm, restrictions: tags})}
+                          label="Restrições"
+                          placeholder="Glúten..."
+                          accentColor="focus-within:ring-red-400"
+                        />
+                        <TagInput 
+                          category="likes"
+                          tags={guestForm.likes}
+                          onChange={tags => setGuestForm({...guestForm, likes: tags})}
+                          label="Gosta"
+                          placeholder="Carne..."
+                          accentColor="focus-within:ring-emerald-400"
+                        />
+                      </div>
                     </div>
+
                     <button 
                       onClick={handleSaveGuest}
-                      className="w-full bg-indigo-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg"
+                      className="w-full bg-indigo-600 text-white py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                     >
                       Salvar e Selecionar
                     </button>

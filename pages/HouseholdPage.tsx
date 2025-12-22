@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { HouseholdMember } from '../types';
 import { Language, translations } from '../locales/translations';
+import TagInput from '../components/TagInput';
 
 interface Props {
   household: HouseholdMember[];
@@ -13,32 +14,33 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
   const t = translations[lang];
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', restrictions: '', likes: '', dislikes: '' });
+  const [activeTab, setActiveTab] = useState<'resident' | 'guest'>('resident');
+  
+  const [form, setForm] = useState<Omit<HouseholdMember, 'id' | 'isGuest'>>({
+    name: '',
+    restrictions: [],
+    likes: [],
+    dislikes: []
+  });
 
   const members = household.filter(m => !m.isGuest);
+  const guests = household.filter(m => m.isGuest);
 
   const handleSubmit = () => {
     if (!form.name) return;
     
-    const data = {
-      name: form.name,
-      restrictions: form.restrictions.split(',').map(s => s.trim()).filter(s => s),
-      likes: form.likes.split(',').map(s => s.trim()).filter(s => s),
-      dislikes: form.dislikes.split(',').map(s => s.trim()).filter(s => s),
-    };
-
     if (editingId) {
-      setHousehold(prev => prev.map(m => m.id === editingId ? { ...m, ...data } : m));
+      setHousehold(prev => prev.map(m => m.id === editingId ? { ...m, ...form } : m));
     } else {
       const newMember: HouseholdMember = {
-        id: `h-${Date.now()}`,
-        ...data,
-        isGuest: false
+        id: `${activeTab === 'resident' ? 'h' : 'g'}-${Date.now()}`,
+        ...form,
+        isGuest: activeTab === 'guest'
       };
       setHousehold(prev => [...prev, newMember]);
     }
 
-    setForm({ name: '', restrictions: '', likes: '', dislikes: '' });
+    setForm({ name: '', restrictions: [], likes: [], dislikes: [] });
     setIsAdding(false);
     setEditingId(null);
   };
@@ -46,11 +48,12 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
   const startEdit = (member: HouseholdMember) => {
     setForm({
       name: member.name,
-      restrictions: member.restrictions.join(', '),
-      likes: member.likes.join(', '),
-      dislikes: member.dislikes.join(', ')
+      restrictions: member.restrictions,
+      likes: member.likes,
+      dislikes: member.dislikes
     });
     setEditingId(member.id);
+    setActiveTab(member.isGuest ? 'guest' : 'resident');
     setIsAdding(true);
   };
 
@@ -63,127 +66,179 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tighter">{t.household_title}</h2>
-          <p className="text-slate-500 font-medium">Gerencie quem mora com você e suas necessidades.</p>
+          <p className="text-slate-500 font-medium">Cadastre residentes ou convidados frequentes.</p>
         </div>
         {!isAdding && (
           <button 
-            onClick={() => setIsAdding(true)}
+            onClick={() => { setIsAdding(true); setActiveTab('resident'); }}
             className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2"
           >
             <i className="fas fa-plus"></i>
-            Novo Membro
+            Adicionar Novo
           </button>
         )}
       </div>
 
       {isAdding && (
-        <div className="bg-white p-8 rounded-[2rem] border-2 border-indigo-100 shadow-xl shadow-indigo-50/50 space-y-6 animate-in zoom-in-95 duration-300">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-black text-slate-900">{editingId ? 'Editar Perfil' : 'Novo Perfil de Residente'}</h3>
-            <button onClick={() => { setIsAdding(false); setEditingId(null); }} className="text-slate-400 hover:text-slate-600 p-2">
+        <div className="bg-white p-8 rounded-[2.5rem] border-2 border-indigo-100 shadow-2xl shadow-indigo-50/50 space-y-8 animate-in zoom-in-95 duration-300">
+          <div className="flex justify-between items-center">
+            <div className="flex bg-slate-100 p-1 rounded-2xl">
+              <button 
+                onClick={() => setActiveTab('resident')}
+                className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'resident' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
+              >
+                RESIDENTE
+              </button>
+              <button 
+                onClick={() => setActiveTab('guest')}
+                className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'guest' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400'}`}
+              >
+                CONVIDADO
+              </button>
+            </div>
+            <button onClick={() => { setIsAdding(false); setEditingId(null); }} className="text-slate-300 hover:text-slate-600 p-2">
               <i className="fas fa-times"></i>
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
               <input 
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
-                placeholder="Ex: Carlos"
+                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-lg"
+                placeholder="Ex: Carlos Silva"
                 value={form.name}
                 onChange={e => setForm({...form, name: e.target.value})}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Restrições / Alergias</label>
-              <input 
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-red-400 transition-all font-medium"
-                placeholder="Glúten, Lactose, Diabetes..."
-                value={form.restrictions}
-                onChange={e => setForm({...form, restrictions: e.target.value})}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TagInput 
+                category="restrictions"
+                tags={form.restrictions}
+                onChange={tags => setForm({...form, restrictions: tags})}
+                label="Restrições / Alergias"
+                placeholder="Glúten, Nozes..."
+                accentColor="focus-within:ring-red-400"
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Do que gosta</label>
-              <input 
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-400 transition-all font-medium"
-                placeholder="Massas, Cogumelos, Churrasco..."
-                value={form.likes}
-                onChange={e => setForm({...form, likes: e.target.value})}
+              <TagInput 
+                category="likes"
+                tags={form.likes}
+                onChange={tags => setForm({...form, likes: tags})}
+                label="Preferências (Likes)"
+                placeholder="Peixe, Massa..."
+                accentColor="focus-within:ring-emerald-400"
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Do que NÃO gosta</label>
-              <input 
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-slate-400 transition-all font-medium"
-                placeholder="Coentro, Berinjela, Cebola..."
-                value={form.dislikes}
-                onChange={e => setForm({...form, dislikes: e.target.value})}
-              />
+              <div className="md:col-span-2">
+                <TagInput 
+                  category="dislikes"
+                  tags={form.dislikes}
+                  onChange={tags => setForm({...form, dislikes: tags})}
+                  label="Não Gosta (Dislikes)"
+                  placeholder="Coentro, Cebola..."
+                  accentColor="focus-within:ring-slate-400"
+                />
+              </div>
             </div>
           </div>
 
           <div className="pt-4">
             <button 
               onClick={handleSubmit}
-              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
+              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95"
             >
-              {editingId ? 'Salvar Alterações' : 'Cadastrar na Casa'}
+              {editingId ? 'Atualizar Perfil' : `Salvar ${activeTab === 'resident' ? 'Residente' : 'Convidado'}`}
             </button>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {members.map(member => (
-          <div key={member.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-black">
-                  {member.name[0].toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-lg">{member.name}</h3>
-                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Residente</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => startEdit(member)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                  <i className="fas fa-edit"></i>
-                </button>
-                <button onClick={() => removeMember(member.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
-                  <i className="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {member.restrictions.map((r, i) => (
-                  <span key={i} className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100 uppercase">
-                    {r}
-                  </span>
-                ))}
-                {member.restrictions.length === 0 && <span className="text-slate-400 text-[10px] font-bold italic">Sem restrições</span>}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Likes</p>
-                  <p className="text-xs font-semibold text-slate-700">{member.likes.join(', ') || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dislikes</p>
-                  <p className="text-xs font-semibold text-slate-400 italic">{member.dislikes.join(', ') || 'N/A'}</p>
-                </div>
-              </div>
+      {/* Lists */}
+      <div className="space-y-12">
+        {members.length > 0 && (
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <i className="fas fa-house-user text-indigo-500"></i> Residentes da Casa
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {members.map(member => (
+                <MemberCard key={member.id} member={member} onEdit={() => startEdit(member)} onRemove={() => removeMember(member.id)} />
+              ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {guests.length > 0 && (
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <i className="fas fa-user-friends text-amber-500"></i> Convidados Frequentes
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {guests.map(member => (
+                <MemberCard key={member.id} member={member} isGuest onEdit={() => startEdit(member)} onRemove={() => removeMember(member.id)} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+const MemberCard = ({ member, isGuest, onEdit, onRemove }: { member: HouseholdMember, isGuest?: boolean, onEdit: () => void, onRemove: () => void }) => (
+  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-all group">
+    <div className="flex justify-between items-start mb-6">
+      <div className="flex items-center gap-4">
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black ${isGuest ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'}`}>
+          {member.name[0].toUpperCase()}
+        </div>
+        <div>
+          <h3 className="font-black text-slate-900 text-lg">{member.name}</h3>
+          <p className={`text-[10px] font-bold uppercase tracking-widest ${isGuest ? 'text-amber-500' : 'text-indigo-500'}`}>
+            {isGuest ? 'Convidado' : 'Residente'}
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <button onClick={onEdit} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+          <i className="fas fa-edit"></i>
+        </button>
+        <button onClick={onRemove} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+          <i className="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {member.restrictions.map((r, i) => (
+          <span key={i} className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100 uppercase">
+            {r}
+          </span>
+        ))}
+        {member.restrictions.length === 0 && <span className="text-slate-300 text-[10px] font-bold italic">Sem restrições</span>}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Likes</p>
+          <div className="flex flex-wrap gap-1">
+            {member.likes.length > 0 ? member.likes.map((l, i) => (
+              <span key={i} className="text-[10px] font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md">{l}</span>
+            )) : <span className="text-slate-300 text-[10px]">Nenhum</span>}
+          </div>
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dislikes</p>
+          <div className="flex flex-wrap gap-1">
+            {member.dislikes.length > 0 ? member.dislikes.map((d, i) => (
+              <span key={i} className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md italic">{d}</span>
+            )) : <span className="text-slate-300 text-[10px]">Nenhum</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export default HouseholdPage;
