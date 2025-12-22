@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 
 export async function GET() {
   try {
     const recipes = await prisma.recipe.findMany({
       orderBy: { createdAt: 'desc' }
     });
-    return NextResponse.json(recipes);
+    return NextResponse.json(recipes || []);
   } catch (error) {
-    return NextResponse.json({ message: 'Error fetching recipes' }, { status: 500 });
+    console.error('GET /api/recipes error:', error);
+    return NextResponse.json({ message: 'Error fetching saved recipes', error: String(error) }, { status: 500 });
   }
 }
 
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(recipe);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: 'Error saving recipe' }, { status: 500 });
+    console.error('POST /api/recipes error:', error);
+    return NextResponse.json({ message: 'Error saving recipe to database', error: String(error) }, { status: 500 });
   }
 }

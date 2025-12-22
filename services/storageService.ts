@@ -2,25 +2,46 @@ import { RecipeRecord, HouseholdMember } from '../types';
 
 /**
  * SERVICE: StorageService
- * Transitioned from Local IndexedDB (Dexie) to Backend API (MySQL).
- * This client-side service now communicates with the application's API layer.
+ * Communicates with Next.js API routes which interface with MySQL via Prisma.
  */
 
 const API_BASE = '/api';
 
 async function fetchApi(path: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'API request failed' }));
-    throw new Error(error.message || 'API request failed');
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json', // Explicitly ask for JSON
+        ...options.headers,
+      },
+    });
+
+    const contentType = response.headers.get('content-type');
+    
+    if (!response.ok) {
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API Error: ${response.status}`);
+      } else {
+        const textError = await response.text();
+        console.error('Non-JSON error response:', textError);
+        throw new Error(`Server returned ${response.status}: ${response.statusText}. Check server logs.`);
+      }
+    }
+
+    if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Expected JSON but received:', text);
+        throw new Error('Server returned non-JSON response. Ensure API routes are correctly configured.');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Fetch error on ${path}:`, error);
+    throw error;
   }
-  return response.json();
 }
 
 export const storageService = {
@@ -29,7 +50,7 @@ export const storageService = {
     return fetchApi('/recipes');
   },
 
-  saveRecipe: async (recipe: RecipeRecord): Promise<void> => {
+  saveRecipe: async (recipe: any): Promise<void> => {
     return fetchApi('/recipes', {
       method: 'POST',
       body: JSON.stringify(recipe),

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,13 +11,16 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(tags.map(t => t.tag));
   } catch (error) {
-    return NextResponse.json({ message: 'Error fetching tags' }, { status: 500 });
+    console.error('GET /api/tags error:', error);
+    return NextResponse.json({ message: 'Error fetching tag suggestions', error: String(error) }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const { category, tag } = await request.json();
+    if (!category || !tag) return NextResponse.json({ message: 'Category and tag are required' }, { status: 400 });
+
     const suggestion = await prisma.tagSuggestion.upsert({
       where: { category_tag: { category, tag } },
       update: {},
@@ -25,6 +28,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(suggestion);
   } catch (error) {
-    return NextResponse.json({ message: 'Error saving tag' }, { status: 500 });
+    console.error('POST /api/tags error:', error);
+    return NextResponse.json({ message: 'Error saving tag suggestion', error: String(error) }, { status: 500 });
   }
 }

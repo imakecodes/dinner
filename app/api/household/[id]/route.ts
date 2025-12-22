@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 
 export async function DELETE(
   request: Request,
@@ -11,6 +11,7 @@ export async function DELETE(
     });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ message: 'Error deleting member' }, { status: 500 });
+    console.error('DELETE /api/household/[id] error:', error);
+    return NextResponse.json({ message: 'Error deleting member', error: String(error) }, { status: 500 });
   }
 }

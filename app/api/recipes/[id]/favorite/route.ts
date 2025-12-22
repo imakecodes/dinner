@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 
 export async function PATCH(
   request: Request,
@@ -9,7 +9,7 @@ export async function PATCH(
     const recipe = await prisma.recipe.findUnique({
       where: { id: params.id }
     });
-    if (!recipe) return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    if (!recipe) return NextResponse.json({ message: 'Recipe not found' }, { status: 404 });
 
     const updated = await prisma.recipe.update({
       where: { id: params.id },
@@ -17,6 +17,7 @@ export async function PATCH(
     });
     return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json({ message: 'Error toggling favorite' }, { status: 500 });
+    console.error('PATCH /api/recipes/[id]/favorite error:', error);
+    return NextResponse.json({ message: 'Error toggling favorite status', error: String(error) }, { status: 500 });
   }
 }
