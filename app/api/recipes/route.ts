@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json(recipes || []);
   } catch (error) {
     console.error('GET /api/recipes error:', error);
-    return NextResponse.json({ message: 'Error fetching saved recipes', error: String(error) }, { status: 500 });
+    return NextResponse.json({ message: 'Erro ao buscar receitas salvas', error: String(error) }, { status: 500 });
   }
 }
 
@@ -35,6 +35,6 @@ export async function POST(request: Request) {
     return NextResponse.json(recipe);
   } catch (error) {
     console.error('POST /api/recipes error:', error);
-    return NextResponse.json({ message: 'Error saving recipe to database', error: String(error) }, { status: 500 });
+    return NextResponse.json({ message: 'Erro ao salvar receita no banco', error: String(error) }, { status: 500 });
   }
 }
