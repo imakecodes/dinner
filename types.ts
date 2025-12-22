@@ -1,4 +1,6 @@
 
+export type MealType = 'appetizer' | 'main' | 'dessert';
+
 export interface HouseholdMember {
   id: string;
   name: string;
@@ -8,8 +10,9 @@ export interface HouseholdMember {
 }
 
 export interface SessionContext {
-  who_is_eating: string[]; // IDs of the people
+  who_is_eating: string[];
   pantry_ingredients: string[];
+  requested_type: MealType;
 }
 
 export interface GeneratedRecipe {
@@ -20,6 +23,17 @@ export interface GeneratedRecipe {
   shopping_list: string[];
   step_by_step: string[];
   safety_badge: boolean;
+  meal_type: MealType;
+}
+
+/**
+ * Represents a saved recipe in the database.
+ */
+export interface RecipeRecord extends GeneratedRecipe {
+  id: string;
+  isFavorite: boolean;
+  createdAt: number;
+  dishImage?: string | null;
 }
 
 export enum ImageSize {

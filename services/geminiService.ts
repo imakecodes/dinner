@@ -3,37 +3,30 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { HouseholdMember, SessionContext, GeneratedRecipe, ImageSize, AspectRatio } from "../types";
 
 /**
- * Generates a safe and creative recipe based on household profiles and available ingredients.
- * The system instruction is tailored to the target language to ensure localized output.
+ * Generates a safe and creative recipe based on household profiles, pantry, and meal type.
  */
 export const generateRecipe = async (
   household_db: HouseholdMember[],
   session_context: SessionContext,
   language: 'en' | 'pt' = 'en'
 ): Promise<GeneratedRecipe> => {
-  // Initialize AI client using the provided environment variable.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const systemInstruction = language === 'pt' 
-    ? `Você é o motor de inteligência culinária do "Dinner?". Sua função é atuar como um Chef Executivo e Auditor de Segurança Alimentar.
-SEUS OBJETIVOS:
-1. Combater a falta de criatividade usando APENAS o que o usuário tem ou sugerindo compras mínimas.
-2. Garantir SEGURANÇA ABSOLUTA: Violação Zero de restrições alimentares.
-PROCESSO:
-- Analise restrições dos participantes em who_is_eating.
-- Filtre pantry_ingredients proibidos.
-- Gere receita criativa e segura em PORTUGUÊS.
-Responda APENAS com JSON.`
-    : `You are the culinary intelligence engine for "Dinner?". Your role is to act as an Executive Chef and Food Safety Auditor.
-BUSINESS OBJECTIVES:
-1. Combat lack of creativity using ONLY what the user has (priority) or suggesting minimal purchases.
-2. Ensure ABSOLUTE SAFETY: Zero violation of dietary restrictions (e.g., Gluten, Diabetes).
-REASONING PROCESS:
-- Identify active participants (via who_is_eating). Aggregate ALL their restrictions into a unified "Forbidden List".
-- Filter pantry_ingredients against the list. If an ingredient is unsafe, ignore it.
-- Create a creative recipe prioritizing safe remaining ingredients.
-- Localize the entire output into ENGLISH.
-Respond ONLY with a valid JSON object.`;
+    ? `Você é o Chef Executivo do "Dinner?".
+OBJETIVOS:
+1. Respeite estritamente o tipo de refeição solicitado: ${session_context.requested_type}.
+2. Se for impossível criar uma receita de qualidade do tipo solicitado com os ingredientes disponíveis, use o analysis_log para explicar o porquê detalhadamente e sugira a alternativa segura mais próxima possível.
+3. Garanta SEGURANÇA TOTAL contra restrições alimentares.
+SAÍDA:
+Gere a resposta em PORTUGUÊS no formato JSON.`
+    : `You are the Executive Chef for "Dinner?".
+OBJECTIVES:
+1. Strictly follow the requested meal type: ${session_context.requested_type}.
+2. If it is impossible to create a quality recipe of the requested type with the available ingredients, use analysis_log to explain exactly why and provide the closest safe alternative.
+3. Ensure 100% SAFETY against food restrictions.
+OUTPUT:
+Localize the output to ENGLISH and respond ONLY with JSON.`;
 
   const prompt = JSON.stringify({ household_db, session_context });
 
@@ -53,37 +46,29 @@ Respond ONLY with a valid JSON object.`;
           shopping_list: { type: Type.ARRAY, items: { type: Type.STRING } },
           step_by_step: { type: Type.ARRAY, items: { type: Type.STRING } },
           safety_badge: { type: Type.BOOLEAN },
+          meal_type: { type: Type.STRING }
         },
-        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge"]
+        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type"]
       }
     }
   });
 
-  if (!response.text) throw new Error("Failed to generate recipe");
+  if (!response.text) throw new Error("AI generation failed");
   return JSON.parse(response.text) as GeneratedRecipe;
 };
 
-/**
- * Generates a professional food photograph based on the recipe name.
- */
 export const generateDishImage = async (
   recipeName: string,
   size: ImageSize,
   ratio: AspectRatio
 ): Promise<string> => {
-  // Create a fresh instance to ensure we use the latest injected API Key.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `A professional, high-quality food photography shot of ${recipeName}. 
-The dish is plated beautifully in a modern kitchen setting. 
-Vibrant colors, appetizing look, studio lighting. 
-No text in image.`;
+  const prompt = `Gourmet food photography of ${recipeName}, masterfully plated, elegant lighting, bokeh background. High contrast, professional culinary magazine style.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-image-preview',
-    contents: {
-      parts: [{ text: prompt }]
-    },
+    contents: { parts: [{ text: prompt }] },
     config: {
       imageConfig: {
         aspectRatio: ratio as any,
@@ -92,11 +77,8 @@ No text in image.`;
     }
   });
 
-  // Extract the image part from the response candidates.
   const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
-  if (!part?.inlineData?.data) {
-    throw new Error("Failed to generate dish image.");
-  }
+  if (!part?.inlineData?.data) throw new Error("Image generation failed");
 
   return `data:image/png;base64,${part.inlineData.data}`;
 };

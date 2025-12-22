@@ -34,7 +34,17 @@ export const translations = {
     likes_label: "LIKES",
     dislikes_label: "HATES",
     footer_tagline: "Smart & Safe Culinary Intelligence",
-    language_toggle: "Language"
+    language_toggle: "Language",
+    meal_type_label: "Meal Type",
+    appetizer: "Appetizer",
+    main_course: "Main Course",
+    dessert: "Dessert",
+    history_title: "Saved Recipes",
+    no_history: "No recipes saved yet.",
+    favorite_btn: "Favorite",
+    unfavorite_btn: "Unfavorite",
+    save_recipe: "Save Recipe",
+    delete_recipe: "Delete"
   },
   pt: {
     app_name: "Dinner?",
@@ -70,9 +80,18 @@ export const translations = {
     likes_label: "GOSTA",
     dislikes_label: "ODEIA",
     footer_tagline: "Culinária Inteligente & Segura",
-    language_toggle: "Idioma"
+    language_toggle: "Idioma",
+    meal_type_label: "Tipo de Refeição",
+    appetizer: "Entrada",
+    main_course: "Prato Principal",
+    dessert: "Sobremesa",
+    history_title: "Receitas Salvas",
+    no_history: "Nenhuma receita salva ainda.",
+    favorite_btn: "Favoritar",
+    unfavorite_btn: "Remover Favorito",
+    save_recipe: "Salvar Receita",
+    delete_recipe: "Excluir"
   }
 };
 
 export type Language = 'en' | 'pt';
-export type TranslationKey = keyof typeof translations.en;

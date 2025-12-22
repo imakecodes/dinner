@@ -70,9 +70,11 @@ const App: React.FC = () => {
     setDishImage(null);
 
     try {
+      // Added missing 'requested_type' to satisfy SessionContext interface
       const context: SessionContext = {
         who_is_eating: activeDiners,
-        pantry_ingredients: pantry
+        pantry_ingredients: pantry,
+        requested_type: 'main'
       };
       const result = await generateRecipe(household, context);
       setRecipe(result);
