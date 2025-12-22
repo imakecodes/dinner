@@ -9,7 +9,7 @@ export const storageService = {
   },
 
   saveRecipe: async (recipe: RecipeRecord): Promise<void> => {
-    await db.recipes.add(recipe);
+    await db.recipes.put(recipe); // put faz insert ou update se ID existir
   },
 
   deleteRecipe: async (id: string): Promise<void> => {
@@ -23,12 +23,12 @@ export const storageService = {
     }
   },
 
-  // --- Household ---
+  // --- Household (Residentes e Convidados) ---
   getHousehold: async (): Promise<HouseholdMember[]> => {
     const members = await db.household.toArray();
     if (members.length === 0) {
-      // Seed inicial se vazio
-      const initial = [
+      // Seed inicial apenas se o banco for novo
+      const initial: HouseholdMember[] = [
         { id: 'h1', name: 'Carlos', restrictions: ['Diabetes'], likes: ['Carne'], dislikes: ['Legumes cozidos'], isGuest: false },
         { id: 'h2', name: 'Bia', restrictions: ['Vegetariana'], likes: ['Pasta'], dislikes: ['Coentro'], isGuest: false }
       ];
@@ -40,28 +40,28 @@ export const storageService = {
 
   saveMember: async (member: HouseholdMember): Promise<void> => {
     await db.household.put(member);
+    
+    // Salva automaticamente novos termos nas sugestões para o autocomplete aprender
+    for (const tag of [...member.restrictions]) await storageService.saveTag('restrictions', tag);
+    for (const tag of [...member.likes]) await storageService.saveTag('likes', tag);
+    for (const tag of [...member.dislikes]) await storageService.saveTag('dislikes', tag);
   },
 
   deleteMember: async (id: string): Promise<void> => {
     await db.household.delete(id);
   },
 
-  // --- Pantry ---
+  // --- Pantry (Despensa com suporte a busca e edição) ---
   getPantry: async (): Promise<string[]> => {
     const items = await db.pantry.toArray();
-    return items.map(i => i.name);
-  },
-
-  updatePantry: async (names: string[]): Promise<void> => {
-    await db.pantry.clear();
-    await db.pantry.bulkAdd(names.map(name => ({ name })));
+    return items.map(i => i.name).sort();
   },
 
   addPantryItem: async (name: string): Promise<void> => {
     try {
       await db.pantry.add({ name });
     } catch (e) {
-      // Ignora erro de duplicata por causa do índice &name
+      // Duplicata ignorada pelo índice &name
     }
   },
 
@@ -75,17 +75,20 @@ export const storageService = {
     if (item?.id) await db.pantry.update(item.id, { name: newName });
   },
 
-  // --- Suggestions ---
+  // --- Suggestions (Dicionário de Tags / Autocomplete) ---
   getTags: async (category: 'restrictions' | 'likes' | 'dislikes'): Promise<string[]> => {
     const tags = await db.suggestions.where('category').equals(category).toArray();
     return tags.map(t => t.tag);
   },
 
   saveTag: async (category: 'restrictions' | 'likes' | 'dislikes', tag: string): Promise<void> => {
+    const trimmed = tag.trim();
+    if (!trimmed) return;
     try {
-      await db.suggestions.add({ category, tag });
+      // Tenta adicionar a combinação única de categoria+tag
+      await db.suggestions.add({ category, tag: trimmed });
     } catch (e) {
-      // Duplicata ignorada
+      // Já existe
     }
   }
 };

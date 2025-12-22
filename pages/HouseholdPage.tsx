@@ -28,24 +28,24 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
   const guests = household.filter(m => m.isGuest);
 
   const handleSubmit = async () => {
-    if (!form.name) return;
+    if (!form.name.trim()) return;
     
     let updatedMember: HouseholdMember;
 
     if (editingId) {
       const existing = household.find(m => m.id === editingId);
-      updatedMember = { ...existing!, ...form };
+      updatedMember = { ...existing!, ...form, name: form.name.trim() };
     } else {
       updatedMember = {
         id: `${activeTab === 'resident' ? 'h' : 'g'}-${Date.now()}`,
         ...form,
+        name: form.name.trim(),
         isGuest: activeTab === 'guest'
       };
     }
 
     await storageService.saveMember(updatedMember);
     
-    // Atualiza estado local
     if (editingId) {
       setHousehold(prev => prev.map(m => m.id === editingId ? updatedMember : m));
     } else {
@@ -79,7 +79,7 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tighter">{t.household_title}</h2>
-          <p className="text-slate-500 font-medium">Gerencie residentes ou convidados com banco de dados seguro.</p>
+          <p className="text-slate-500 font-medium">Gerencie o banco de dados de moradores e visitantes frequentes.</p>
         </div>
         {!isAdding && (
           <button 
@@ -155,22 +155,29 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
             </div>
           </div>
 
-          <div className="pt-4">
+          <div className="pt-4 flex gap-4">
             <button 
               onClick={handleSubmit}
-              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95"
+              className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95"
             >
-              {editingId ? 'Atualizar Perfil' : `Salvar ${activeTab === 'resident' ? 'Residente' : 'Convidado'}`}
+              {editingId ? 'Salvar Alterações' : `Confirmar ${activeTab === 'resident' ? 'Residente' : 'Convidado'}`}
+            </button>
+            <button 
+              onClick={() => { setIsAdding(false); setEditingId(null); }}
+              className="px-8 bg-slate-100 text-slate-500 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all"
+            >
+              Cancelar
             </button>
           </div>
         </div>
       )}
 
+      {/* Exibição dos Membros */}
       <div className="space-y-12">
         {members.length > 0 && (
           <div>
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <i className="fas fa-house-user text-indigo-500"></i> Residentes da Casa
+              <i className="fas fa-house-user text-indigo-500"></i> Residentes Cadastrados
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {members.map(member => (
@@ -183,7 +190,7 @@ const HouseholdPage: React.FC<Props> = ({ household, setHousehold, lang }) => {
         {guests.length > 0 && (
           <div>
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <i className="fas fa-user-friends text-amber-500"></i> Convidados Frequentes
+              <i className="fas fa-user-friends text-amber-500"></i> Convidados no Banco de Dados
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {guests.map(member => (
@@ -207,15 +214,15 @@ const MemberCard = ({ member, isGuest, onEdit, onRemove }: { member: HouseholdMe
         <div>
           <h3 className="font-black text-slate-900 text-lg">{member.name}</h3>
           <p className={`text-[10px] font-bold uppercase tracking-widest ${isGuest ? 'text-amber-500' : 'text-indigo-500'}`}>
-            {isGuest ? 'Convidado' : 'Residente'}
+            {isGuest ? 'Convidado Frequente' : 'Membro da Casa'}
           </p>
         </div>
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-        <button onClick={onEdit} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+        <button onClick={onEdit} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors" title="Editar">
           <i className="fas fa-edit"></i>
         </button>
-        <button onClick={onRemove} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+        <button onClick={onRemove} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Excluir">
           <i className="fas fa-trash-alt"></i>
         </button>
       </div>
@@ -228,24 +235,24 @@ const MemberCard = ({ member, isGuest, onEdit, onRemove }: { member: HouseholdMe
             {r}
           </span>
         ))}
-        {member.restrictions.length === 0 && <span className="text-slate-300 text-[10px] font-bold italic">Sem restrições</span>}
+        {member.restrictions.length === 0 && <span className="text-slate-300 text-[10px] font-bold italic">Livre de restrições</span>}
       </div>
       
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Likes</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preferências</p>
           <div className="flex flex-wrap gap-1">
             {member.likes.length > 0 ? member.likes.map((l, i) => (
               <span key={i} className="text-[10px] font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md">{l}</span>
-            )) : <span className="text-slate-300 text-[10px]">Nenhum</span>}
+            )) : <span className="text-slate-300 text-[10px]">Não informado</span>}
           </div>
         </div>
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dislikes</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Evita</p>
           <div className="flex flex-wrap gap-1">
             {member.dislikes.length > 0 ? member.dislikes.map((d, i) => (
               <span key={i} className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md italic">{d}</span>
-            )) : <span className="text-slate-300 text-[10px]">Nenhum</span>}
+            )) : <span className="text-slate-300 text-[10px]">Não informado</span>}
           </div>
         </div>
       </div>
