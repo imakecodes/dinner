@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HouseholdMember, SessionContext, GeneratedRecipe, MealType, RecipeRecord, ViewState } from './types';
+import { HouseholdMember, SessionContext, GeneratedRecipe, MealType, RecipeRecord, ViewState, Difficulty, PrepTimePreference } from './types';
 import { generateRecipe } from './services/geminiService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -11,6 +11,7 @@ import HouseholdPage from './pages/HouseholdPage';
 import PantryPage from './pages/PantryPage';
 import HistoryPage from './pages/HistoryPage';
 import HomePage from './pages/HomePage';
+import RecipeCard from './components/RecipeCard';
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('pt');
@@ -26,13 +27,16 @@ const App: React.FC = () => {
 
   const [activeDiners, setActiveDiners] = useState<string[]>([]);
   const [mealType, setMealType] = useState<MealType>('main');
+  const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
+  const [prepTime, setPrepTime] = useState<PrepTimePreference>('quick');
   
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
+  const [selectedRecipeRecord, setSelectedRecipeRecord] = useState<RecipeRecord | null>(null);
   const [dishImage, setDishImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregamento Inicial do Banco de Dados
+  // Initial Load
   useEffect(() => {
     const initData = async () => {
       const [h, p, r] = await Promise.all([
@@ -63,12 +67,15 @@ const App: React.FC = () => {
     setError(null);
     setRecipe(null);
     setDishImage(null);
+    setSelectedRecipeRecord(null);
 
     try {
       const context: SessionContext = {
         who_is_eating: activeDiners,
         pantry_ingredients: pantry,
-        requested_type: mealType
+        requested_type: mealType,
+        difficulty_preference: difficulty,
+        prep_time_preference: prepTime
       };
       const result = await generateRecipe(household, context, lang);
       setRecipe(result);
@@ -78,6 +85,13 @@ const App: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleViewRecipe = (rec: RecipeRecord) => {
+    setSelectedRecipeRecord(rec);
+    setCurrentView('home'); // Go to home to display the recipe card
+    setRecipe(null); // Clear active generation if any
+    setDishImage(rec.dishImage || null);
   };
 
   if (isLoading) {
@@ -98,7 +112,7 @@ const App: React.FC = () => {
       case 'pantry':
         return <PantryPage pantry={pantry} setPantry={setPantry} lang={lang} />;
       case 'history':
-        return <HistoryPage history={history} onUpdate={refreshHistory} lang={lang} />;
+        return <HistoryPage history={history} onUpdate={refreshHistory} lang={lang} onViewRecipe={handleViewRecipe} />;
       default:
         return (
           <HomePage 
@@ -109,14 +123,19 @@ const App: React.FC = () => {
             setActiveDiners={setActiveDiners}
             mealType={mealType}
             setMealType={setMealType}
+            difficulty={difficulty}
+            setDifficulty={setDifficulty}
+            prepTime={prepTime}
+            setPrepTime={setPrepTime}
             isGenerating={isGenerating}
             onGenerate={handleGenerateRecipe}
             error={error}
-            recipe={recipe}
+            recipe={recipe || selectedRecipeRecord}
             dishImage={dishImage}
             setDishImage={setDishImage}
             lang={lang}
             onSaved={refreshHistory}
+            onCloseRecipe={() => { setRecipe(null); setSelectedRecipeRecord(null); setDishImage(null); }}
           />
         );
     }
@@ -128,7 +147,7 @@ const App: React.FC = () => {
         lang={lang} 
         setLang={setLang} 
         onMenuClick={() => setIsSidebarOpen(true)} 
-        onHomeClick={() => { setCurrentView('home'); setRecipe(null); }}
+        onHomeClick={() => { setCurrentView('home'); setRecipe(null); setSelectedRecipeRecord(null); }}
       />
       
       <Sidebar 

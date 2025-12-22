@@ -52,7 +52,15 @@ export const translations = {
     telegram: "Telegram",
     email: "Email",
     copied: "Copied!",
-    shopping_list_title: "Shopping List for"
+    shopping_list_title: "Shopping List for",
+    difficulty_label: "Difficulty",
+    prep_time_label: "Prep Time",
+    easy: "Easy",
+    intermediate: "Medium",
+    advanced: "Advanced",
+    quick: "Quick (< 30 min)",
+    plenty: "I have time",
+    view_details: "View Recipe"
   },
   pt: {
     app_name: "Dinner?",
@@ -106,7 +114,15 @@ export const translations = {
     telegram: "Telegram",
     email: "Email",
     copied: "Copiado!",
-    shopping_list_title: "Lista de Compras para"
+    shopping_list_title: "Lista de Compras para",
+    difficulty_label: "Dificuldade",
+    prep_time_label: "Tempo",
+    easy: "Fácil",
+    intermediate: "Médio",
+    advanced: "Avançado",
+    quick: "Rápido (< 30 min)",
+    plenty: "Tenho tempo",
+    view_details: "Ver Receita"
   }
 };
 

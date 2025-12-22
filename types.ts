@@ -1,5 +1,7 @@
 
 export type MealType = 'appetizer' | 'main' | 'dessert' | 'snack';
+export type Difficulty = 'easy' | 'intermediate' | 'advanced';
+export type PrepTimePreference = 'quick' | 'plenty';
 
 export interface HouseholdMember {
   id: string;
@@ -7,13 +9,15 @@ export interface HouseholdMember {
   restrictions: string[];
   likes: string[];
   dislikes: string[];
-  isGuest?: boolean; // Diferencia convidados de membros fixos
+  isGuest?: boolean;
 }
 
 export interface SessionContext {
   who_is_eating: string[];
   pantry_ingredients: string[];
   requested_type: MealType;
+  difficulty_preference: Difficulty;
+  prep_time_preference: PrepTimePreference;
 }
 
 export interface GeneratedRecipe {
@@ -25,6 +29,8 @@ export interface GeneratedRecipe {
   step_by_step: string[];
   safety_badge: boolean;
   meal_type: MealType;
+  difficulty: Difficulty;
+  prep_time: string;
 }
 
 export interface RecipeRecord extends GeneratedRecipe {

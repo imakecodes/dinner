@@ -1,8 +1,8 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { HouseholdMember, SessionContext, GeneratedRecipe, MealType, RecipeRecord } from '../types';
+// Fix: Added Difficulty and PrepTimePreference to imports from types
+import { HouseholdMember, SessionContext, GeneratedRecipe, MealType, RecipeRecord, Difficulty, PrepTimePreference } from '../types';
 import { generateRecipe } from '../services/geminiService';
 import Header from '../components/Header';
 import HouseholdSection from '../components/HouseholdSection';
@@ -25,6 +25,9 @@ export default function Home() {
   const [pantry, setPantry] = useState<string[]>(['Traditional Pasta', 'Tomato Sauce', 'Sugar', 'Zucchini', 'Eggs', 'Parmesan Cheese', 'Roasted Peanuts']);
   const [activeDiners, setActiveDiners] = useState<string[]>(['pai', 'filha']);
   const [mealType, setMealType] = useState<MealType>('main');
+  // Fix: Added missing difficulty and prepTime state to satisfy SessionContext requirements
+  const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
+  const [prepTime, setPrepTime] = useState<PrepTimePreference>('quick');
   
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
   const [dishImage, setDishImage] = useState<string | null>(null);
@@ -58,10 +61,13 @@ export default function Home() {
     setDishImage(null);
 
     try {
+      // Fix: Added missing difficulty_preference and prep_time_preference to satisfy SessionContext interface
       const context: SessionContext = {
         who_is_eating: activeDiners,
         pantry_ingredients: pantry,
-        requested_type: mealType
+        requested_type: mealType,
+        difficulty_preference: difficulty,
+        prep_time_preference: prepTime
       };
       const result = await generateRecipe(household, context, lang);
       setRecipe(result);

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { HouseholdMember, MealType, GeneratedRecipe } from '../types';
+import { HouseholdMember, MealType, GeneratedRecipe, Difficulty, PrepTimePreference } from '../types';
 import RecipeCard from '../components/RecipeCard';
 import { Language, translations } from '../locales/translations';
 import TagInput from '../components/TagInput';
@@ -13,6 +13,10 @@ interface Props {
   setActiveDiners: React.Dispatch<React.SetStateAction<string[]>>;
   mealType: MealType;
   setMealType: (type: MealType) => void;
+  difficulty: Difficulty;
+  setDifficulty: (diff: Difficulty) => void;
+  prepTime: PrepTimePreference;
+  setPrepTime: (time: PrepTimePreference) => void;
   isGenerating: boolean;
   onGenerate: () => void;
   error: string | null;
@@ -21,12 +25,14 @@ interface Props {
   setDishImage: React.Dispatch<React.SetStateAction<string | null>>;
   lang: Language;
   onSaved: () => void;
+  onCloseRecipe: () => void;
 }
 
 const HomePage: React.FC<Props> = ({ 
   household, setHousehold, activeDiners, setActiveDiners, 
-  mealType, setMealType, isGenerating, onGenerate, error, 
-  recipe, dishImage, setDishImage, lang, onSaved 
+  mealType, setMealType, difficulty, setDifficulty,
+  prepTime, setPrepTime, isGenerating, onGenerate, error, 
+  recipe, dishImage, setDishImage, lang, onSaved, onCloseRecipe 
 }) => {
   const t = translations[lang];
   const [isGuestsOpen, setIsGuestsOpen] = useState(false);
@@ -74,11 +80,11 @@ const HomePage: React.FC<Props> = ({
       <section className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Quem vai comer?</h2>
-            <p className="text-sm text-slate-500">Selecione os participantes para personalizar a segurança.</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">{lang === 'pt' ? 'Quem vai comer?' : 'Who is eating?'}</h2>
+            <p className="text-sm text-slate-500">{lang === 'pt' ? 'Selecione os participantes para personalizar a segurança.' : 'Select participants to customize safety.'}</p>
           </div>
           <div className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-2xl text-xs font-black">
-            {activeDiners.length} Selecionados
+            {activeDiners.length} {lang === 'pt' ? 'Selecionados' : 'Selected'}
           </div>
         </div>
         
@@ -112,7 +118,7 @@ const HomePage: React.FC<Props> = ({
               className="flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-sm transition-colors mb-4"
             >
               <i className={`fas fa-chevron-${isGuestsOpen ? 'up' : 'down'} text-[10px]`}></i>
-              {t.snack} / Convidados ({guests.length})
+              {t.snack} / {lang === 'pt' ? 'Convidados' : 'Guests'} ({guests.length})
             </button>
 
             {isGuestsOpen && (
@@ -123,7 +129,7 @@ const HomePage: React.FC<Props> = ({
                       <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                       <input 
                         type="text" 
-                        placeholder="Buscar ou digitar nome do convidado..."
+                        placeholder={lang === 'pt' ? "Buscar ou digitar nome do convidado..." : "Search or type guest name..."}
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                         value={guestSearch}
                         onChange={e => setGuestSearch(e.target.value)}
@@ -134,14 +140,14 @@ const HomePage: React.FC<Props> = ({
                         onClick={handleOpenGuestForm}
                         className="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-xs font-bold shadow-lg shadow-indigo-100 whitespace-nowrap"
                       >
-                        + Adicionar Preferências
+                        + {lang === 'pt' ? 'Adicionar Preferências' : 'Add Preferences'}
                       </button>
                     )}
                   </div>
                 ) : (
                   <div className="bg-slate-50 p-6 rounded-[2rem] border border-indigo-100 space-y-6 animate-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-xs font-black text-indigo-900 uppercase tracking-widest">Novo Convidado</h4>
+                      <h4 className="text-xs font-black text-indigo-900 uppercase tracking-widest">{lang === 'pt' ? 'Novo Convidado' : 'New Guest'}</h4>
                       <button onClick={() => setIsCreatingGuest(false)} className="text-slate-400 hover:text-slate-600">
                         <i className="fas fa-times"></i>
                       </button>
@@ -149,10 +155,10 @@ const HomePage: React.FC<Props> = ({
                     
                     <div className="space-y-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{lang === 'pt' ? 'Nome' : 'Name'}</label>
                         <input 
                           className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-bold"
-                          placeholder="Nome"
+                          placeholder={lang === 'pt' ? 'Nome' : 'Name'}
                           value={guestForm.name}
                           onChange={e => setGuestForm({...guestForm, name: e.target.value})}
                         />
@@ -163,7 +169,7 @@ const HomePage: React.FC<Props> = ({
                           category="restrictions"
                           tags={guestForm.restrictions}
                           onChange={tags => setGuestForm({...guestForm, restrictions: tags})}
-                          label="Restrições"
+                          label={t.allergies_label}
                           placeholder="Glúten..."
                           accentColor="focus-within:ring-red-400"
                         />
@@ -171,7 +177,7 @@ const HomePage: React.FC<Props> = ({
                           category="likes"
                           tags={guestForm.likes}
                           onChange={tags => setGuestForm({...guestForm, likes: tags})}
-                          label="Gosta"
+                          label={t.likes_label}
                           placeholder="Carne..."
                           accentColor="focus-within:ring-emerald-400"
                         />
@@ -182,7 +188,7 @@ const HomePage: React.FC<Props> = ({
                       onClick={handleSaveGuest}
                       className="w-full bg-indigo-600 text-white py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                     >
-                      Salvar e Selecionar
+                      {lang === 'pt' ? 'Salvar e Selecionar' : 'Save and Select'}
                     </button>
                   </div>
                 )}
@@ -206,7 +212,7 @@ const HomePage: React.FC<Props> = ({
                       <div className="flex flex-col items-start overflow-hidden">
                         <span className="text-xs font-bold text-slate-600 truncate w-full">{guest.name}</span>
                         {guest.restrictions.length > 0 && (
-                          <span className="text-[8px] text-red-500 font-black uppercase truncate w-full">⚠️ Restrições</span>
+                          <span className="text-[8px] text-red-500 font-black uppercase truncate w-full">⚠️ {lang === 'pt' ? 'Restrições' : 'Restrictions'}</span>
                         )}
                       </div>
                     </button>
@@ -218,63 +224,114 @@ const HomePage: React.FC<Props> = ({
         </div>
       </section>
 
-      {/* Meal Type Selection */}
-      <section className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">
-          {t.meal_type_label}
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {(['appetizer', 'snack', 'main', 'dessert'] as MealType[]).map(type => (
-            <button
-              key={type}
-              onClick={() => setMealType(type)}
-              className={`px-4 py-5 rounded-2xl font-black text-xs uppercase transition-all flex flex-col items-center gap-3 border-2 ${
-                mealType === type 
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
-                  : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <i className={`fas text-lg ${
-                type === 'appetizer' ? 'fa-cheese' : 
-                type === 'main' ? 'fa-utensils' : 
-                type === 'dessert' ? 'fa-ice-cream' : 
-                'fa-cookie'
-              }`}></i>
-              {t[type === 'main' ? 'main_course' : type as keyof typeof t] || type}
-            </button>
-          ))}
+      {/* Preferences Section: Meal Type, Difficulty, Prep Time */}
+      <section className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-8">
+        <div>
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">
+            {t.meal_type_label}
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {(['appetizer', 'snack', 'main', 'dessert'] as MealType[]).map(type => (
+              <button
+                key={type}
+                onClick={() => setMealType(type)}
+                className={`px-4 py-5 rounded-2xl font-black text-xs uppercase transition-all flex flex-col items-center gap-3 border-2 ${
+                  mealType === type 
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
+                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <i className={`fas text-lg ${
+                  type === 'appetizer' ? 'fa-cheese' : 
+                  type === 'main' ? 'fa-utensils' : 
+                  type === 'dessert' ? 'fa-ice-cream' : 
+                  'fa-cookie'
+                }`}></i>
+                {t[type === 'main' ? 'main_course' : type as keyof typeof t] || type}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+              {t.difficulty_label}
+            </h3>
+            <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+              {(['easy', 'intermediate', 'advanced'] as Difficulty[]).map(d => (
+                <button
+                  key={d}
+                  onClick={() => setDifficulty(d)}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    difficulty === d ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-500'
+                  }`}
+                >
+                  {t[d]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+              {t.prep_time_label}
+            </h3>
+            <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+              {(['quick', 'plenty'] as PrepTimePreference[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPrepTime(p)}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    prepTime === p ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-500'
+                  }`}
+                >
+                  {t[p]}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Action Button */}
-      <div className="flex flex-col items-center gap-4 py-4">
-        <button 
-          disabled={isGenerating || activeDiners.length === 0}
-          onClick={onGenerate}
-          className="w-full md:w-auto px-16 py-7 rounded-[2rem] text-xl font-black transition-all flex items-center justify-center gap-4 btn-primary shadow-2xl group active:scale-95"
-        >
-          {isGenerating ? (
-            <><i className="fas fa-brain fa-spin"></i> {t.generating_btn}</>
-          ) : (
-            <><i className="fas fa-hat-chef group-hover:rotate-12 transition-transform"></i> {t.generate_btn}</>
+      {!recipe && (
+        <div className="flex flex-col items-center gap-4 py-4">
+          <button 
+            disabled={isGenerating || activeDiners.length === 0}
+            onClick={onGenerate}
+            className="w-full md:w-auto px-16 py-7 rounded-[2rem] text-xl font-black transition-all flex items-center justify-center gap-4 btn-primary shadow-2xl group active:scale-95"
+          >
+            {isGenerating ? (
+              <><i className="fas fa-brain fa-spin"></i> {t.generating_btn}</>
+            ) : (
+              <><i className="fas fa-hat-chef group-hover:rotate-12 transition-transform"></i> {t.generate_btn}</>
+            )}
+          </button>
+          {error && (
+            <div className="bg-red-50 px-6 py-3 rounded-2xl border border-red-200 text-red-600 font-bold text-xs tracking-wider animate-bounce uppercase">
+              {error}
+            </div>
           )}
-        </button>
-        {error && (
-          <div className="bg-red-50 px-6 py-3 rounded-2xl border border-red-200 text-red-600 font-bold text-xs tracking-wider animate-bounce uppercase">
-            {error}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Recipe Result */}
       {recipe && (
-        <RecipeCard 
-          recipe={recipe} 
-          dishImage={dishImage} 
-          setDishImage={setDishImage} 
-          lang={lang}
-          onSaved={onSaved}
-        />
+        <div className="relative">
+          <button 
+            onClick={onCloseRecipe}
+            className="absolute -top-4 -right-4 w-12 h-12 bg-white rounded-full shadow-xl border border-slate-100 z-50 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all hover:scale-110"
+          >
+            <i className="fas fa-times text-lg"></i>
+          </button>
+          <RecipeCard 
+            recipe={recipe} 
+            dishImage={dishImage} 
+            setDishImage={setDishImage} 
+            lang={lang}
+            onSaved={onSaved}
+          />
+        </div>
       )}
     </div>
   );

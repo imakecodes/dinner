@@ -8,17 +8,17 @@ interface Props {
   history: RecipeRecord[];
   onUpdate: () => void;
   lang: Language;
+  onViewRecipe: (recipe: RecipeRecord) => void;
 }
 
-const HistoryPage: React.FC<Props> = ({ history, onUpdate, lang }) => {
+const HistoryPage: React.FC<Props> = ({ history, onUpdate, lang, onViewRecipe }) => {
   const t = translations[lang];
 
-  const toggleFavorite = (id: string) => {
-    storageService.toggleFavorite(id);
+  const toggleFavorite = async (id: string) => {
+    await storageService.toggleFavorite(id);
     onUpdate();
   };
 
-  // Fix: Corrected storageService.delete() to storageService.deleteRecipe() and made handler async.
   const removeRecipe = async (id: string) => {
     await storageService.deleteRecipe(id);
     onUpdate();
@@ -28,7 +28,7 @@ const HistoryPage: React.FC<Props> = ({ history, onUpdate, lang }) => {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h2 className="text-3xl font-black text-slate-900 tracking-tighter">{t.history_title}</h2>
-        <p className="text-slate-500 font-medium">Suas descobertas gastronômicas favoritas.</p>
+        <p className="text-slate-500 font-medium">{lang === 'pt' ? 'Suas descobertas gastronômicas favoritas.' : 'Your favorite culinary discoveries.'}</p>
       </div>
 
       {history.length === 0 ? (
@@ -39,8 +39,14 @@ const HistoryPage: React.FC<Props> = ({ history, onUpdate, lang }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {history.map(recipe => (
-            <div key={recipe.id} className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 group flex flex-col">
-              <div className="relative h-64 overflow-hidden">
+            <div 
+              key={recipe.id} 
+              className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 group flex flex-col"
+            >
+              <div 
+                className="relative h-64 overflow-hidden cursor-pointer"
+                onClick={() => onViewRecipe(recipe)}
+              >
                 {recipe.dishImage ? (
                   <img src={recipe.dishImage} alt={recipe.recipe_title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 ) : (
@@ -53,14 +59,17 @@ const HistoryPage: React.FC<Props> = ({ history, onUpdate, lang }) => {
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="flex gap-2 mb-2">
                     <span className="bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                      {recipe.meal_type}
+                      {t[recipe.meal_type] || recipe.meal_type}
+                    </span>
+                    <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/20">
+                      {t[recipe.difficulty] || recipe.difficulty}
                     </span>
                   </div>
                   <h3 className="text-xl font-black text-white tracking-tight">{recipe.recipe_title}</h3>
                 </div>
 
                 <button 
-                  onClick={() => toggleFavorite(recipe.id)}
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe.id); }}
                   className={`absolute top-6 right-6 w-12 h-12 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-xl transition-all ${recipe.isFavorite ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/40'}`}
                 >
                   <i className={`fas fa-heart ${recipe.isFavorite ? '' : 'far'}`}></i>
@@ -68,14 +77,25 @@ const HistoryPage: React.FC<Props> = ({ history, onUpdate, lang }) => {
               </div>
 
               <div className="p-8 flex-1 flex flex-col">
-                <p className="text-slate-500 text-sm line-clamp-3 font-medium mb-8 leading-relaxed">
+                <p 
+                  className="text-slate-500 text-sm line-clamp-3 font-medium mb-8 leading-relaxed cursor-pointer"
+                  onClick={() => onViewRecipe(recipe)}
+                >
                   {recipe.match_reasoning}
                 </p>
 
                 <div className="mt-auto flex justify-between items-center pt-6 border-t border-slate-50">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    {new Date(recipe.createdAt).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      {new Date(recipe.createdAt).toLocaleDateString()}
+                    </span>
+                    <button 
+                      onClick={() => onViewRecipe(recipe)}
+                      className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
+                    >
+                      {t.view_details}
+                    </button>
+                  </div>
                   <button 
                     onClick={() => removeRecipe(recipe.id)}
                     className="text-slate-400 hover:text-red-500 transition-colors"

@@ -15,16 +15,20 @@ export const generateRecipe = async (
   const systemInstruction = language === 'pt' 
     ? `Você é o Chef Executivo do "Dinner?".
 OBJETIVOS:
-1. Respeite estritamente o tipo de refeição solicitado: ${session_context.requested_type}.
-2. Se for impossível criar uma receita de qualidade do tipo solicitado com os ingredientes disponíveis, use o analysis_log para explicar o porquê detalhadamente e sugira a alternativa segura mais próxima possível.
-3. Garanta SEGURANÇA TOTAL contra restrições alimentares.
+1. Respeite o tipo de refeição: ${session_context.requested_type}.
+2. Dificuldade solicitada: ${session_context.difficulty_preference}.
+3. Preferência de tempo: ${session_context.prep_time_preference === 'quick' ? 'Rápido (menos de 30min)' : 'Pode levar tempo'}.
+4. Se for impossível criar uma receita de qualidade do tipo solicitado com os ingredientes disponíveis, use o analysis_log para explicar o porquê detalhadamente.
+5. Garanta SEGURANÇA TOTAL contra restrições alimentares.
 SAÍDA:
 Gere a resposta em PORTUGUÊS no formato JSON.`
     : `You are the Executive Chef for "Dinner?".
 OBJECTIVES:
-1. Strictly follow the requested meal type: ${session_context.requested_type}.
-2. If it is impossible to create a quality recipe of the requested type with the available ingredients, use analysis_log to explain exactly why and provide the closest safe alternative.
-3. Ensure 100% SAFETY against food restrictions.
+1. Follow the requested meal type: ${session_context.requested_type}.
+2. Requested difficulty: ${session_context.difficulty_preference}.
+3. Prep time preference: ${session_context.prep_time_preference === 'quick' ? 'Quick (under 30min)' : 'Can take time'}.
+4. If it is impossible to create a quality recipe of the requested type with the available ingredients, use analysis_log to explain exactly why.
+5. Ensure 100% SAFETY against food restrictions.
 OUTPUT:
 Localize the output to ENGLISH and respond ONLY with JSON.`;
 
@@ -46,9 +50,11 @@ Localize the output to ENGLISH and respond ONLY with JSON.`;
           shopping_list: { type: Type.ARRAY, items: { type: Type.STRING } },
           step_by_step: { type: Type.ARRAY, items: { type: Type.STRING } },
           safety_badge: { type: Type.BOOLEAN },
-          meal_type: { type: Type.STRING }
+          meal_type: { type: Type.STRING },
+          difficulty: { type: Type.STRING },
+          prep_time: { type: Type.STRING }
         },
-        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type"]
+        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time"]
       }
     }
   });

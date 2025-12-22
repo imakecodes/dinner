@@ -8,17 +8,17 @@ interface Props {
   history: RecipeRecord[];
   onUpdate: () => void;
   lang: Language;
+  onViewRecipe?: (recipe: RecipeRecord) => void;
 }
 
-const HistorySection: React.FC<Props> = ({ history, onUpdate, lang }) => {
+const HistorySection: React.FC<Props> = ({ history, onUpdate, lang, onViewRecipe }) => {
   const t = translations[lang];
 
-  const toggleFavorite = (id: string) => {
-    storageService.toggleFavorite(id);
+  const toggleFavorite = async (id: string) => {
+    await storageService.toggleFavorite(id);
     onUpdate();
   };
 
-  // Fix: Corrected storageService.delete() to storageService.deleteRecipe() and made handler async.
   const removeRecipe = async (id: string) => {
     await storageService.deleteRecipe(id);
     onUpdate();
@@ -35,23 +35,36 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, lang }) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {history.map(recipe => (
-          <div key={recipe.id} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col group hover:shadow-xl transition-all duration-300">
-            {recipe.dishImage && (
-              <div className="aspect-video rounded-2xl overflow-hidden mb-4 relative">
+          <div 
+            key={recipe.id} 
+            className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col group hover:shadow-xl transition-all duration-300"
+          >
+            <div 
+              className="relative aspect-video rounded-2xl overflow-hidden mb-4 cursor-pointer"
+              onClick={() => onViewRecipe?.(recipe)}
+            >
+              {recipe.dishImage ? (
                 <img src={recipe.dishImage} alt="" className="w-full h-full object-cover" />
-                <button 
-                  onClick={() => toggleFavorite(recipe.id)}
-                  className={`absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all ${recipe.isFavorite ? 'bg-red-500 text-white' : 'bg-white/80 text-slate-400 hover:text-red-500'}`}
-                >
-                  <i className={`fas fa-heart ${recipe.isFavorite ? '' : 'far'}`}></i>
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                  <i className="fas fa-utensils text-slate-800 text-2xl"></i>
+                </div>
+              )}
+              <button 
+                onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe.id); }}
+                className={`absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all ${recipe.isFavorite ? 'bg-red-500 text-white' : 'bg-white/80 text-slate-400 hover:text-red-500'}`}
+              >
+                <i className={`fas fa-heart ${recipe.isFavorite ? '' : 'far'}`}></i>
+              </button>
+            </div>
             
-            <div className="flex-1">
+            <div 
+              className="flex-1 cursor-pointer"
+              onClick={() => onViewRecipe?.(recipe)}
+            >
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase">
-                  {recipe.meal_type}
+                  {t[recipe.meal_type] || recipe.meal_type}
                 </span>
                 <span className="text-slate-400 text-[10px] font-bold">
                   {new Date(recipe.createdAt).toLocaleDateString()}
@@ -72,15 +85,12 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, lang }) => {
               >
                 {t.delete_recipe}
               </button>
-              {!recipe.dishImage && (
-                <button 
-                  onClick={() => toggleFavorite(recipe.id)}
-                  className={`text-xs font-black ${recipe.isFavorite ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}
-                >
-                  <i className={`fas fa-heart mr-1 ${recipe.isFavorite ? '' : 'far'}`}></i>
-                  {recipe.isFavorite ? t.unfavorite_btn : t.favorite_btn}
-                </button>
-              )}
+              <button 
+                onClick={() => onViewRecipe?.(recipe)}
+                className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
+              >
+                {t.view_details}
+              </button>
             </div>
           </div>
         ))}
