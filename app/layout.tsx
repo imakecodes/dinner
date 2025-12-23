@@ -1,4 +1,6 @@
 
+import { AppProvider } from "@/components/Providers";
+import LayoutWrapper from "@/components/LayoutWrapper";
 // Fix: Added React import to satisfy TypeScript namespace requirements for React.ReactNode
 import React from "react";
 import type { Metadata } from "next";
@@ -20,7 +22,11 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
       <body className="bg-slate-50 text-slate-900 antialiased">
-        {children}
+        <AppProvider>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </AppProvider>
       </body>
     </html>
   );
