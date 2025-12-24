@@ -83,7 +83,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
           <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
               <div className="inline-flex px-3 py-1 bg-white/10 backdrop-blur-md text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
-                Today's Suggestion
+                Today&apos;s Suggestion
               </div>
               <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20 text-white ${recipe.difficulty === 'easy' ? 'bg-green-500/80' :
                 recipe.difficulty === 'intermediate' ? 'bg-yellow-500/80' :
@@ -135,7 +135,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
             <h4 className="font-black text-slate-400 text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
               <i className="fas fa-terminal"></i> Auditor Log (Dev Only)
             </h4>
-            <p className="text-slate-600 text-sm italic font-medium">"{recipe.analysis_log}"</p>
+            <p className="text-slate-600 text-sm italic font-medium">&quot;{recipe.analysis_log}&quot;</p>
           </div>
         )}
 
@@ -300,7 +300,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
             <div>
-              <h3 className="text-xl font-black text-slate-900">Add "{itemToAdd}" to List?</h3>
+              <h3 className="text-xl font-black text-slate-900">Add &quot;{itemToAdd}&quot; to List?</h3>
               <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-wide">Select how to track this item</p>
             </div>
 
@@ -323,7 +323,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600"><i className="fas fa-ban"></i></div>
                 <div className="text-left">
                   <div className="text-sm">Just Track</div>
-                  <div className="text-[10px] opacity-70">Don't replenish automatically</div>
+                  <div className="text-[10px] opacity-70">Don&apos;t replenish automatically</div>
                 </div>
               </button>
             </div>

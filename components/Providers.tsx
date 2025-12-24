@@ -65,7 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
         }
         loadData();
-    }, [pathname]);
+    }, [pathname, router]);
 
     return (
         <AppContext.Provider value={{

@@ -49,9 +49,10 @@ export async function POST(request: NextRequest) {
 
     const processTags = (tags: string[]) => {
       if (!Array.isArray(tags)) return undefined;
-      // Simplistic approach: Create new tags for every member. 
-      // Ideally we would manage unique tags but schema doesn't enforce unique names on Restriction/Like/Dislike models yet.
+      // Simplistic approach: Delete existing tags for this member and create new ones.
+      // This matches the current non-shared tag architecture.
       return {
+        deleteMany: {},
         create: tags.map(t => ({ name: t }))
       };
     };
