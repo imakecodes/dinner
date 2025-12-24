@@ -11,14 +11,23 @@ interface Props {
 
 const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe }) => {
 
+  const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
+
   const toggleFavorite = async (id: string) => {
     await storageService.toggleFavorite(id);
     onUpdate();
   };
 
-  const removeRecipe = async (id: string) => {
-    await storageService.deleteRecipe(id);
-    onUpdate();
+  const requestDelete = (id: string) => {
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (itemToDelete) {
+      await storageService.deleteRecipe(itemToDelete);
+      setItemToDelete(null);
+      onUpdate();
+    }
   };
 
   if (history.length === 0) return null;
@@ -86,7 +95,7 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe }) =>
             {/* Actions Footer */}
             <div className="mt-8 flex justify-between items-center pt-5 border-t border-slate-100 px-2">
               <button
-                onClick={() => removeRecipe(recipe.id)}
+                onClick={() => requestDelete(recipe.id)}
                 className="text-slate-400 hover:text-red-500 text-xs font-bold transition-colors flex items-center gap-2 px-2 py-1 hover:bg-red-50 rounded-lg"
               >
                 <i className="fas fa-trash"></i> Delete
@@ -102,6 +111,38 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe }) =>
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 border border-slate-100">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                <i className="fas fa-exclamation-triangle text-2xl"></i>
+              </div>
+              <h3 className="text-xl font-black text-slate-900">Delete Recipe?</h3>
+              <p className="text-slate-500 text-sm font-medium mt-2">
+                This action cannot be undone. Are you sure you want to delete this recipe?
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setItemToDelete(null)}
+                className="py-3 px-4 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="py-3 px-4 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-200"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
