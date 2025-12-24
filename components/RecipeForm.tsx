@@ -18,7 +18,12 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
         prep_time: initialData?.prep_time || '',
         ingredients_from_pantry: (initialData?.ingredients_from_pantry as any[]) || [],
         shopping_list: (initialData?.shopping_list as any[]) || [],
-        step_by_step: (initialData?.step_by_step as any[]) || [{ step: 1, text: '' }],
+        step_by_step: initialData?.step_by_step
+            ? initialData.step_by_step.map((s: any, i: number) => {
+                if (typeof s === 'string') return { step: i + 1, text: s };
+                return s || { step: i + 1, text: '' }; // Handle potential nulls
+            })
+            : [{ step: 1, text: '' }],
     });
 
     const [newIngredient, setNewIngredient] = useState({ name: '', quantity: '', unit: '' });
