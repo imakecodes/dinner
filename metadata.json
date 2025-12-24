@@ -1,6 +1,6 @@
 {
   "name": "Dinner?",
-  "description": "Seu Chef Executivo e Auditor de Segurança Alimentar. Inteligência culinária para receitas seguras, criativas e sem desperdício.",
+  "description": "Your Executive Chef and Food Safety Auditor. Culinary intelligence for safe, creative, and waste-free recipes.",
   "requestFramePermissions": [
     "camera"
   ]

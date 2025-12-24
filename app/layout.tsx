@@ -7,8 +7,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dinner? | Inteligência Culinária",
-  description: "Seu Chef Executivo e Auditor de Segurança Alimentar.",
+  title: "Dinner? | Culinary Intelligence",
+  description: "Your Executive Chef and Food Safety Auditor.",
 };
 
 export default function RootLayout({
