@@ -1,7 +1,7 @@
 
 import { AppProvider } from "@/components/Providers";
 import LayoutWrapper from "@/components/LayoutWrapper";
-// Fix: Added React import to satisfy TypeScript namespace requirements for React.ReactNode
+
 import React from "react";
 import type { Metadata } from "next";
 import "./globals.css";

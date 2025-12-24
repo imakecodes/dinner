@@ -21,3 +21,8 @@ This project utilizes a multi-layered reasoning approach powered by Gemini 3 Pro
 **Reasoning Process:**
 - **Contextual Prompting:** Converts the generated recipe title into a high-fidelity photographic prompt.
 - **Aesthetic Control:** Uses Gemini's image generation capabilities to produce professional, magazine-quality culinary photography that matches the dish's description.
+
+## 4. Development Protocols
+**Role:** Code Maintainance & Quality Assurance.
+**Instructions for Agents:**
+- **Linting:** Always run `pnpm run lint` and `pnpm run lint:fix` after making changes to the codebase to ensure code quality and consistency.
