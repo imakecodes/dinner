@@ -106,9 +106,10 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
 
                 {/* Basic Info */}
                 <div className="space-y-4">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Recipe Details</label>
+                <label htmlFor="recipe_title" className="block text-xs font-black text-slate-400 uppercase tracking-widest">Recipe Title</label>
 
                     <input
+                        id="recipe_title"
                         type="text"
                         placeholder="Recipe Title (e.g. Mom's Lasagna)"
                         value={formData.recipe_title}
@@ -255,7 +256,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                     placeholder={`Step ${i + 1} instructions...`}
                                     className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none h-20"
                                 />
-                                <button type="button" onClick={() => removeStep(i)} className="self-center text-red-400 hover:text-red-600 px-2">
+                                <button type="button" onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`} className="self-center text-red-400 hover:text-red-600 px-2">
                                     <i className="fas fa-trash"></i>
                                 </button>
                             </div>

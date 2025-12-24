@@ -75,7 +75,17 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
       <div className="relative bg-slate-900 flex flex-col p-4 md:p-14 h-auto min-h-[400px] justify-center">
 
         {/* Persistent Dark Gradient for Readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/60 opacity-90 pointer-events-none z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/60 opacity-90 pointer-events-none z-1"></div>
+
+        {/* Background Image */}
+        {recipe.image_base64 && (
+             <img 
+                src={recipe.image_base64} 
+                alt={recipe.recipe_title} 
+                data-testid="recipe-bg-image"
+                className="absolute inset-0 w-full h-full object-cover z-0" 
+             />
+        )}
 
         <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col gap-10">
 

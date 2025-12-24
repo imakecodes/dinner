@@ -71,21 +71,18 @@ describe('HistorySection', () => {
     });
 
     it('toggles favorite when heart icon clicked', async () => {
-        render(<HistorySection history={mockRecipes} onUpdate={mockUpdate} onViewRecipe={mockView} />);
+        const { container } = render(<HistorySection history={mockRecipes} onUpdate={mockUpdate} onViewRecipe={mockView} />);
         
-        // Find the heart button for Recipe 1 (not favorite)
-        // Accessing via class might be brittle, try identifying by role or test id ideally. 
-        // For now, let's find buttons inside the cards.
-        const items = screen.getAllByRole('button'); // This might grab too many.
-        // Let's filter by the icon class if possible or just use indices knowing the structure.
-        // Actually, Recipe 1 is first. It has View Recipe, Delete, and Favorite buttons. 
-        // Favorite is absolutely positioned on image.
+        // Find all heart buttons
+        const heartIcons = container.querySelectorAll('.fa-heart');
+        expect(heartIcons.length).toBeGreaterThan(0);
         
-        // Simpler approach: Mock the service and trigger click on all heart buttons is risky.
-        // Let's assume the first heart is for the first recipe.
-        // We can look for the button containing the heart icon.
-        
-        // Use container query
+        const firstBtn = heartIcons[0].closest('button');
+        if (firstBtn) {
+            fireEvent.click(firstBtn);
+            // It calls the service directly inside RecipeCard, so we expect storageService call
+            await waitFor(() => expect(storageService.toggleFavorite).toHaveBeenCalledWith('1'));
+        }
     });
 
     it('shows delete confirmation when delete clicked', () => {
