@@ -6,10 +6,10 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || (!payload.kitchenId && !payload.houseId)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const kitchenId = payload.kitchenId as string || payload.houseId as string;
+    const kitchenId = (payload.kitchenId || payload.houseId) as string;
 
     const items = await prisma.pantryItem.findMany({
       where: { kitchenId },
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || (!payload.kitchenId && !payload.houseId)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
     const kitchenId = (payload.kitchenId || payload.houseId) as string;
@@ -69,12 +69,10 @@ export async function POST(request: NextRequest) {
           create: {
             name: created.name,
             kitchenId,
-            checked: false,
-            pantryItemId: created.id
+            checked: false
           },
           update: {
-            checked: false,
-            pantryItemId: created.id
+            checked: false
           }
         });
         await tx.pantryItem.update({

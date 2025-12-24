@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import RecipeForm from '../../../components/RecipeForm';
-import { storageService } from '../../../services/storageService';
-import { RecipeRecord } from '../../../types';
+import RecipeForm from '@/components/RecipeForm';
+import { storageService } from '@/services/storageService';
+import { RecipeRecord } from '@/types';
 
 export default function EditRecipePage() {
     const router = useRouter();
@@ -50,7 +50,7 @@ export default function EditRecipePage() {
         <div className="min-h-screen bg-slate-50 selection:bg-rose-100 pb-20">
             <header className="bg-white border-b border-slate-200 mb-8">
                 <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
-                    <Link href={`/history/${id}`} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <Link href={`/recipes/${id}`} className="text-slate-400 hover:text-slate-600 transition-colors">
                         <i className="fas fa-arrow-left text-xl"></i>
                     </Link>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">

@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useApp } from '../../../components/Providers';
-import { storageService } from '../../../services/storageService';
-import { RecipeRecord } from '../../../types';
-import RecipeCard from '../../../components/RecipeCard';
+import { useApp } from '@/components/Providers';
+import { storageService } from '@/services/storageService';
+import { RecipeRecord } from '@/types';
+import RecipeCard from '@/components/RecipeCard';
 
 export default function RecipeDetailsPage() {
     const { id } = useParams();

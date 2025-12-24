@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { name } = await request.json();
+        const { name, quantity, unit } = await request.json();
         if (!name) return NextResponse.json({ message: 'Name is required' }, { status: 400 });
 
         const token = request.cookies.get('auth_token')?.value;
@@ -36,17 +36,27 @@ export async function POST(request: NextRequest) {
         if (!payload || !payload.houseId) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
-        const houseId = payload.houseId as string;
+        const kitchenId = payload.kitchenId as string || payload.houseId as string;
 
         const item = await prisma.shoppingItem.upsert({
             where: {
-                name_houseId: {
+                name_kitchenId: {
                     name,
-                    houseId
+                    kitchenId
                 }
             },
-            update: { checked: false }, // If re-adding, uncheck it
-            create: { name, houseId, checked: false }
+            update: {
+                checked: false,
+                quantity: quantity || null,
+                unit: unit || null
+            }, // If re-adding, uncheck it and update qty/unit
+            create: {
+                name,
+                kitchenId,
+                checked: false,
+                quantity: quantity || null,
+                unit: unit || null
+            }
         });
         return NextResponse.json(item);
     } catch (error) {

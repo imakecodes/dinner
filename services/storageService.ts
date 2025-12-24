@@ -117,6 +117,17 @@ export const storageService = {
     });
   },
 
+  updateShoppingItem: async (id: string, updates: { checked?: boolean; quantity?: string }): Promise<void> => {
+    await apiRequest(`/shopping-list/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  deleteShoppingItem: async (id: string): Promise<void> => {
+    await apiRequest(`/shopping-list/${id}`, { method: 'DELETE' });
+  },
+
   // --- Suggestions ---
   getTags: async (category: string): Promise<string[]> => {
     const data = await apiRequest(`/tags?category=${category}`);

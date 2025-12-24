@@ -9,17 +9,17 @@ export async function DELETE(
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || (!payload.kitchenId && !payload.houseId)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const houseId = payload.houseId as string;
+    const kitchenId = (payload.kitchenId || payload.houseId) as string;
 
     const { name } = await params;
     await prisma.pantryItem.delete({
       where: {
-        name_houseId: {
+        name_kitchenId: {
           name: decodeURIComponent(name),
-          houseId
+          kitchenId
         }
       }
     });
@@ -37,10 +37,10 @@ export async function PUT(
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || (!payload.kitchenId && !payload.houseId)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const houseId = payload.houseId as string;
+    const kitchenId = (payload.kitchenId || payload.houseId) as string;
 
     const { name } = await params;
     const { name: newName, inStock } = await request.json();
@@ -54,9 +54,9 @@ export async function PUT(
     const updated = await prisma.$transaction(async (tx) => {
       const item = await tx.pantryItem.update({
         where: {
-          name_houseId: {
+          name_kitchenId: {
             name: decodeURIComponent(name),
-            houseId
+            kitchenId
           }
         },
         data: updateData
@@ -65,33 +65,17 @@ export async function PUT(
       // Loop replenishment logic
       if (item.replenishmentRule === 'ALWAYS' && item.inStock === false) {
         const shoppingItem = await tx.shoppingItem.upsert({
-          where: { name_houseId: { name: item.name, houseId } },
+          where: { name_kitchenId: { name: item.name, kitchenId } },
           create: {
             name: item.name,
-            houseId,
-            checked: false,
-            pantryItemId: item.id
+            kitchenId,
+            checked: false
           },
           update: {
-            checked: false, // Re-activate if it was checked
-            pantryItemId: item.id
+            checked: false // Re-activate if it was checked
           }
         });
-        // We could link back? item already has shoppingItemId via unique pantryItemId on ShoppingItem model?
-        // Actually PantryItem defines shoppingItemId as FK? No, look at schema.
-        // PantryItem: shoppingItemId String? @unique, shoppingItem ShoppingItem? ...
-        // ShoppingItem: pantryItemId String? @unique, pantryItem PantryItem?
-        // Wait, usually one side has the FK.
-        // Schema:
-        // PantryItem: shoppingItemId String? @unique ... shoppingItem @relation...
-        // ShoppingItem: pantryItemId ... (back relation if PantryItem holds FK)
 
-        // In my schema I wrote:
-        // PantryItem { shoppingItemId String? @unique ... }
-        // ShoppingItem { pantryItem PantryItem? }
-        // Validation: The relation is 1-1 optional.
-
-        // So I should update PantryItem with shoppingItemId if I created one.
         await tx.pantryItem.update({
           where: { id: item.id },
           data: { shoppingItemId: shoppingItem.id }

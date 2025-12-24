@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import RecipeForm from '../../components/RecipeForm';
-import { storageService } from '../../services/storageService';
+import RecipeForm from '@/components/RecipeForm';
+import { storageService } from '@/services/storageService';
 
 export default function CreateRecipePage() {
     const router = useRouter();

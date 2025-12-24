@@ -120,6 +120,8 @@ model Ingredient {
 model ShoppingItem {
   id        String   @id @default(cuid())
   name      String
+  quantity  String?
+  unit      String?
   checked   Boolean  @default(false)
   
   kitchenId String
@@ -163,7 +165,9 @@ model Recipe {
 
 model RecipeIngredient {
   id           String     @id @default(cuid())
-  amount       String?    // e.g., "2 cups"
+  amount       String?    // Legacy full string e.g., "2 cups"
+  quantity     String?    // e.g., "2"
+  unit         String?    // e.g., "cups"
   inPantry     Boolean    // Was it in pantry when generated?
 
   recipeId     String

@@ -6,10 +6,10 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || (!payload.kitchenId && !payload.houseId)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const kitchenId = payload.kitchenId as string || payload.houseId as string;
+    const kitchenId = (payload.kitchenId || payload.houseId) as string;
     const userId = payload.userId as string;
 
     // Fetch recipes for this kitchen
@@ -41,14 +41,31 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const formattedRecipes = recipes.map(r => ({
-      ...r,
-      // Map relations back to simple strings for UI compatibility
-      ingredients_from_pantry: r.ingredients.filter(i => i.inPantry).map(i => i.ingredient.name),
-      shopping_list: r.shoppingItems.map(s => s.shoppingItem.name),
-      step_by_step: typeof r.step_by_step === 'string' ? JSON.parse(r.step_by_step) : r.step_by_step,
-      isFavorite: r.favoritedBy.length > 0
-    }));
+    const formattedRecipes = recipes.map(r => {
+      const normalizeMapping = (item: any, relation: any) => {
+        let name = item.name;
+        let quantity = relation.quantity || '';
+        let unit = relation.unit || '';
+
+        if (name.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(name);
+            name = parsed.name || name;
+            quantity = quantity || parsed.quantity || '';
+            unit = unit || parsed.unit || '';
+          } catch (e) { }
+        }
+        return { name, quantity, unit };
+      };
+
+      return {
+        ...r,
+        ingredients_from_pantry: r.ingredients.filter(i => i.inPantry).map(i => normalizeMapping(i.ingredient, i)),
+        shopping_list: r.shoppingItems.map(s => normalizeMapping(s.shoppingItem, s)),
+        step_by_step: typeof r.step_by_step === 'string' ? JSON.parse(r.step_by_step) : r.step_by_step,
+        isFavorite: r.favoritedBy.length > 0
+      };
+    });
 
     return NextResponse.json(formattedRecipes);
   } catch (error) {
@@ -62,10 +79,9 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || (!payload.kitchenId && !payload.houseId)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    // Handle transitional payload: prefer kitchenId, fallback to houseId
     const kitchenId = (payload.kitchenId || payload.houseId) as string;
     const userId = payload.userId as string;
 
@@ -78,8 +94,33 @@ export async function POST(request: NextRequest) {
     });
 
     const parse = (val: any) => typeof val === 'string' ? JSON.parse(val) : val;
-    const pantryIngredients = Array.isArray(parse(data.ingredients_from_pantry)) ? parse(data.ingredients_from_pantry) : [];
-    const shoppingList = Array.isArray(parse(data.shopping_list)) ? parse(data.shopping_list) : [];
+    const rawPantryIngredients = Array.isArray(parse(data.ingredients_from_pantry)) ? parse(data.ingredients_from_pantry) : [];
+    const rawShoppingList = Array.isArray(parse(data.shopping_list)) ? parse(data.shopping_list) : [];
+
+    // Normalize both to objects { name, quantity, unit }
+    const normalize = (item: any) => {
+      if (typeof item === 'string') {
+        try {
+          const parsed = JSON.parse(item);
+          if (typeof parsed === 'object' && parsed !== null) {
+            return {
+              name: parsed.name || item,
+              quantity: parsed.quantity || '',
+              unit: parsed.unit || ''
+            };
+          }
+        } catch (e) { }
+        return { name: item, quantity: '', unit: '' };
+      }
+      return {
+        name: item.name,
+        quantity: item.quantity || '',
+        unit: item.unit || ''
+      };
+    };
+
+    const pantryIngredients = rawPantryIngredients.map(normalize);
+    const shoppingList = rawShoppingList.map(normalize);
 
     const recipe = await prisma.recipe.create({
       data: {
@@ -96,23 +137,25 @@ export async function POST(request: NextRequest) {
         kitchenId: kitchenId,
 
         ingredients: {
-          create: pantryIngredients.map((name: string) => ({
+          create: pantryIngredients.map((item: { name: string, quantity: string, unit: string }) => ({
             inPantry: true,
+            quantity: item.quantity,
+            unit: item.unit,
             ingredient: {
               connectOrCreate: {
-                where: { name_kitchenId: { name, kitchenId } },
-                create: { name, kitchenId }
+                where: { name_kitchenId: { name: item.name, kitchenId } },
+                create: { name: item.name, kitchenId }
               }
             }
           }))
         },
 
         shoppingItems: {
-          create: shoppingList.map((name: string) => ({
+          create: shoppingList.map((item: { name: string, quantity: string, unit: string }) => ({
             shoppingItem: {
               connectOrCreate: {
-                where: { name_kitchenId: { name, kitchenId } },
-                create: { name, kitchenId }
+                where: { name_kitchenId: { name: item.name, kitchenId } },
+                create: { name: item.name, quantity: item.quantity, unit: item.unit, kitchenId }
               }
             }
           }))

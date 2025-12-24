@@ -65,8 +65,8 @@ export interface GeneratedRecipe {
   analysis_log: string;
   recipe_title: string;
   match_reasoning: string;
-  ingredients_from_pantry: string[]; // Simple strings for generation
-  shopping_list: string[];           // Simple strings for generation
+  ingredients_from_pantry: { name: string; quantity: string; unit: string }[];
+  shopping_list: { name: string; quantity: string; unit: string }[];
   step_by_step: string[];
   safety_badge: boolean;
   meal_type: MealType;
@@ -79,6 +79,8 @@ export interface RecipeRecord extends GeneratedRecipe {
   id: string;
   isFavorite: boolean; // Computed for the current member/user
   createdAt: number;
+  dishImage?: string;
+  language?: string;
 }
 
 export type ViewState = 'home' | 'household' | 'pantry' | 'history' | 'shopping_list';

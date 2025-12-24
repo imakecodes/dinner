@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { MealType, Difficulty, RecipeRecord } from '../types';
 
 interface RecipeFormProps {
@@ -17,13 +16,13 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
         meal_type: initialData?.meal_type || 'main' as MealType,
         difficulty: initialData?.difficulty || 'intermediate' as Difficulty,
         prep_time: initialData?.prep_time || '',
-        ingredients_from_pantry: (initialData?.ingredients_from_pantry as string[]) || [], // Treat as string array
-        shopping_list: (initialData?.shopping_list as string[]) || [],
+        ingredients_from_pantry: (initialData?.ingredients_from_pantry as any[]) || [],
+        shopping_list: (initialData?.shopping_list as any[]) || [],
         step_by_step: (initialData?.step_by_step as any[]) || [{ step: 1, text: '' }],
     });
 
-    const [newIngredient, setNewIngredient] = useState('');
-    const [newShoppingItem, setNewShoppingItem] = useState('');
+    const [newIngredient, setNewIngredient] = useState({ name: '', quantity: '', unit: '' });
+    const [newShoppingItem, setNewShoppingItem] = useState({ name: '', quantity: '', unit: '' });
 
     // Handlers for basic fields
     const handleChange = (field: string, value: any) => {
@@ -32,12 +31,12 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
 
     // Ingredient Handlers
     const addIngredient = () => {
-        if (!newIngredient.trim()) return;
+        if (!newIngredient.name.trim()) return;
         setFormData(prev => ({
             ...prev,
-            ingredients_from_pantry: [...prev.ingredients_from_pantry, newIngredient.trim()]
+            ingredients_from_pantry: [...prev.ingredients_from_pantry, { ...newIngredient }]
         }));
-        setNewIngredient('');
+        setNewIngredient({ name: '', quantity: '', unit: '' });
     };
 
     const removeIngredient = (idx: number) => {
@@ -49,12 +48,12 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
 
     // Shopping List Handlers
     const addShoppingItem = () => {
-        if (!newShoppingItem.trim()) return;
+        if (!newShoppingItem.name.trim()) return;
         setFormData(prev => ({
             ...prev,
-            shopping_list: [...prev.shopping_list, newShoppingItem.trim()]
+            shopping_list: [...prev.shopping_list, { ...newShoppingItem }]
         }));
-        setNewShoppingItem('');
+        setNewShoppingItem({ name: '', quantity: '', unit: '' });
     };
 
     const removeShoppingItem = (idx: number) => {
@@ -86,7 +85,12 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        // Normalize steps to string[] before submitting to match expectations
+        const finalData = {
+            ...formData,
+            step_by_step: formData.step_by_step.map(s => s.text)
+        };
+        onSubmit(finalData);
     };
 
     return (
@@ -144,23 +148,40 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                 {/* Ingredients */}
                 <div className="space-y-4">
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Ingredients (Pantry/Kitchen)</label>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-12 gap-2">
                         <input
                             type="text"
-                            placeholder="Add ingredient..."
-                            value={newIngredient}
-                            onChange={e => setNewIngredient(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
-                            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                            placeholder="Qty"
+                            value={newIngredient.quantity}
+                            onChange={e => setNewIngredient(prev => ({ ...prev, quantity: e.target.value }))}
+                            className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                         />
-                        <button type="button" onClick={addIngredient} className="bg-emerald-100 text-emerald-600 px-4 rounded-xl font-bold hover:bg-emerald-200">
+                        <input
+                            type="text"
+                            placeholder="Unit"
+                            value={newIngredient.unit}
+                            onChange={e => setNewIngredient(prev => ({ ...prev, unit: e.target.value }))}
+                            className="col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Ingredient Name"
+                            value={newIngredient.name}
+                            onChange={e => setNewIngredient(prev => ({ ...prev, name: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
+                            className="col-span-4 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                        />
+                        <button type="button" onClick={addIngredient} className="col-span-3 bg-emerald-100 text-emerald-600 rounded-xl font-bold hover:bg-emerald-200 flex items-center justify-center gap-2">
                             <i className="fas fa-plus"></i>
+                            <span className="hidden sm:inline">Add</span>
                         </button>
                     </div>
                     <ul className="space-y-2">
-                        {formData.ingredients_from_pantry.map((ing, i) => (
-                            <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl">
-                                <span className="font-medium text-slate-700">{ing}</span>
+                        {formData.ingredients_from_pantry.map((ing: any, i) => (
+                            <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                                <span className="font-medium text-slate-700">
+                                    {typeof ing === 'string' ? ing : `${ing.quantity} ${ing.unit} ${ing.name}`}
+                                </span>
                                 <button type="button" onClick={() => removeIngredient(i)} className="text-red-400 hover:text-red-600">
                                     <i className="fas fa-times"></i>
                                 </button>
@@ -172,23 +193,40 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                 {/* Shopping List */}
                 <div className="space-y-4">
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Shopping List (To Buy)</label>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-12 gap-2">
                         <input
                             type="text"
-                            placeholder="Add item to buy..."
-                            value={newShoppingItem}
-                            onChange={e => setNewShoppingItem(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addShoppingItem())}
-                            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                            placeholder="Qty"
+                            value={newShoppingItem.quantity}
+                            onChange={e => setNewShoppingItem(prev => ({ ...prev, quantity: e.target.value }))}
+                            className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                         />
-                        <button type="button" onClick={addShoppingItem} className="bg-orange-100 text-orange-600 px-4 rounded-xl font-bold hover:bg-orange-200">
+                        <input
+                            type="text"
+                            placeholder="Unit"
+                            value={newShoppingItem.unit}
+                            onChange={e => setNewShoppingItem(prev => ({ ...prev, unit: e.target.value }))}
+                            className="col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Item Name"
+                            value={newShoppingItem.name}
+                            onChange={e => setNewShoppingItem(prev => ({ ...prev, name: e.target.value }))}
+                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addShoppingItem())}
+                            className="col-span-4 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                        />
+                        <button type="button" onClick={addShoppingItem} className="col-span-3 bg-orange-100 text-orange-600 rounded-xl font-bold hover:bg-orange-200 flex items-center justify-center gap-2">
                             <i className="fas fa-plus"></i>
+                            <span className="hidden sm:inline">Add</span>
                         </button>
                     </div>
                     <ul className="space-y-2">
-                        {formData.shopping_list.map((item, i) => (
-                            <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl">
-                                <span className="font-medium text-slate-700">{item}</span>
+                        {formData.shopping_list.map((item: any, i) => (
+                            <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                                <span className="font-medium text-slate-700">
+                                    {typeof item === 'string' ? item : `${item.quantity} ${item.unit} ${item.name}`}
+                                </span>
                                 <button type="button" onClick={() => removeShoppingItem(i)} className="text-red-400 hover:text-red-600">
                                     <i className="fas fa-times"></i>
                                 </button>

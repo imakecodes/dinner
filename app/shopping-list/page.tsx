@@ -39,25 +39,31 @@ export default function ShoppingListPage() {
         }
     };
 
-    const handleToggleCheck = async (item: ShoppingItem | any) => { // Type assertion for fast fix
-        // Ideally we have a toggle endpoint, but for now re-add/upsert handles check status if we send it?
-        // Wait, endpoint logic: POST upsert sets checked=false (re-add). 
-        // We need a proper toggle or delete. 
-        // For now, let's just implement Delete (mark done).
-        // Or actually, let's assume POST allows update? 
-        // The POST implementation: `update: { checked: false },` resets it. 
-        // We don't have a check toggle API yet! 
-        // Let's implement a quick toggle via new endpoint or just DELETE for "Done".
-        // Let's stick to "Delete" for "Checked Off" for this iteration.
+    const handleToggleCheck = async (item: ShoppingItem | any) => {
         try {
-            // Deleting from shopping list 
-            // We don't have a direct delete endpoint public in storageService? 
-            // Actually we don't. 
-            // Let's add removePantryItem equivalent but for shopping list.
-            // I didn't add deleteShopping in storageService...
-            // I will hotfix storageService OR just use direct fetch here for speed.
+            // Optimistic update
+            const newChecked = !item.checked;
+            setItems(prev => prev.map(i => i.id === item.id ? { ...i, checked: newChecked } : i));
+
+            await storageService.updateShoppingItem(item.id, { checked: newChecked });
+
+            // If checked, it moved to pantry, reload lists?
+            // User might want it to disappear or just stay checked.
+            // Current list logic allows showing checked items.
         } catch (err) {
             console.error(err);
+            // Revert on error
+            loadList();
+        }
+    };
+
+    const handleRemove = async (id: string) => {
+        try {
+            setItems(prev => prev.filter(i => i.id !== id));
+            await storageService.deleteShoppingItem(id);
+        } catch (err) {
+            console.error(err);
+            loadList();
         }
     };
 
@@ -123,11 +129,21 @@ export default function ShoppingListPage() {
                             {items.map((item: any) => (
                                 <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors cursor-pointer ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}>
+                                        <div
+                                            onClick={() => handleToggleCheck(item)}
+                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors cursor-pointer ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
+                                        >
                                             {item.checked && <i className="fas fa-check text-xs"></i>}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-slate-900">{item.name}</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <p className={`font-bold transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{item.name}</p>
+                                                {(item.quantity || item.unit) && (
+                                                    <span className={`text-xs font-medium ${item.checked ? 'text-slate-300' : 'text-slate-500'}`}>
+                                                        {item.quantity} {item.unit}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex gap-2 mt-1">
                                                 {item.pantryItem && (
                                                     <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
@@ -142,6 +158,12 @@ export default function ShoppingListPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    <button
+                                        onClick={() => handleRemove(item.id)}
+                                        className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 px-2"
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
                                 </div>
                             ))}
                         </div>

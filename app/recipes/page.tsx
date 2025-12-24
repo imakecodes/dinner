@@ -29,9 +29,18 @@ export default function HistoryPage() {
         // Need to be careful if it's stringified JSON in some contexts, but frontend type says string[].
         // Let's safe check checking if it's array.
         const ingredientsMatch = Array.isArray(recipe.ingredients_from_pantry) &&
-            recipe.ingredients_from_pantry.some((ing: string) => ing.toLowerCase().includes(term));
+            recipe.ingredients_from_pantry.some((ing: any) => {
+                const name = typeof ing === 'string' ? ing : (ing?.name || '');
+                return name.toLowerCase().includes(term);
+            });
 
-        return titleMatch || ingredientsMatch;
+        const shoppingMatch = Array.isArray(recipe.shopping_list) &&
+            recipe.shopping_list.some((ing: any) => {
+                const name = typeof ing === 'string' ? ing : (ing?.name || '');
+                return name.toLowerCase().includes(term);
+            });
+
+        return titleMatch || ingredientsMatch || shoppingMatch;
     });
 
     return (

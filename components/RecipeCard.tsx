@@ -41,7 +41,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
   };
 
   const handleShare = (platform: 'whatsapp' | 'telegram' | 'email' | 'copy') => {
-    const list = recipe.shopping_list.join('\n- ');
+    const list = recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ');
     const text = `*Shopping List for ${recipe.recipe_title}*\n\n- ${list}`;
     const encodedText = encodeURIComponent(text);
 
@@ -93,16 +93,24 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
               </div>
             </div>
 
-            <button
-              onClick={toggleFavorite}
-              className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest ${isFavorite ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
-            >
-              {isFavorite ? (
-                <><i className="fas fa-heart-broken mr-2"></i>Unfavorite</>
-              ) : (
-                <><i className="fas fa-heart mr-2"></i>Favorite</>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/recipes/${recipe.id}/edit`}
+                className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest bg-white text-slate-900 hover:bg-slate-100 border border-slate-200"
+              >
+                <i className="fas fa-edit mr-2"></i> Edit
+              </Link>
+              <button
+                onClick={toggleFavorite}
+                className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest ${isFavorite ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+              >
+                {isFavorite ? (
+                  <><i className="fas fa-heart-broken mr-2"></i>Unfavorite</>
+                ) : (
+                  <><i className="fas fa-heart mr-2"></i>Favorite</>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Main Title & Description */}
@@ -139,14 +147,45 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 From Pantry
               </h4>
               <ul className="space-y-3">
-                {recipe.ingredients_from_pantry.map((ing, idx) => (
-                  <li key={idx} className="flex items-center gap-3 text-slate-700 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-sm font-bold">
-                    <i className="fas fa-check-circle text-emerald-500"></i>
-                    <span>{ing}</span>
-                    {/* Visual cue that it's in pantry */}
-                    <span className="ml-auto text-[10px] uppercase bg-white px-2 py-1 rounded-full text-emerald-600 border border-emerald-200">In Pantry</span>
-                  </li>
-                ))}
+                {recipe.ingredients_from_pantry.map((rawIng, idx) => {
+                  const ing = (() => {
+                    let item = typeof rawIng === 'string' ? (() => {
+                      try {
+                        const parsed = JSON.parse(rawIng);
+                        return typeof parsed === 'object' ? parsed : { name: rawIng };
+                      } catch (e) { return { name: rawIng }; }
+                    })() : rawIng;
+
+                    // Deep parse if name is still JSON
+                    if (item && typeof item.name === 'string' && item.name.startsWith('{')) {
+                      try {
+                        const parsedName = JSON.parse(item.name);
+                        item = {
+                          ...item,
+                          name: parsedName.name || item.name,
+                          quantity: item.quantity || parsedName.quantity || '',
+                          unit: item.unit || parsedName.unit || ''
+                        };
+                      } catch (e) { }
+                    }
+                    return item;
+                  })();
+
+                  return (
+                    <li key={idx} className="flex items-center gap-3 text-slate-700 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-sm font-bold group hover:bg-emerald-100 transition-colors">
+                      <i className="fas fa-check-circle text-emerald-500"></i>
+                      <div className="flex flex-col text-left">
+                        {(ing.quantity || ing.unit) && (
+                          <span className="text-[10px] text-emerald-600/70 uppercase tracking-tighter leading-none mb-0.5">
+                            {ing.quantity} {ing.unit}
+                          </span>
+                        )}
+                        <span className="leading-tight">{ing.name}</span>
+                      </div>
+                      <span className="ml-auto text-[8px] font-black uppercase bg-white px-2 py-1 rounded-full text-emerald-600 border border-emerald-200 shadow-sm opacity-60 group-hover:opacity-100 transition-opacity">Pantry</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
@@ -159,14 +198,6 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                   </h4>
 
                   <div className="flex gap-2 relative">
-                    <Link
-                      href={`/history/${recipe.id}/edit`}
-                      className="w-10 h-10 bg-white border border-slate-200 text-slate-500 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-slate-700 transition-all shadow-sm"
-                      title="Edit Recipe"
-                    >
-                      <i className="fas fa-edit"></i>
-                    </Link>
-
                     <button
                       onClick={() => setShowShareMenu(!showShareMenu)}
                       className="w-10 h-10 bg-white border border-orange-200 text-orange-600 rounded-xl flex items-center justify-center hover:bg-orange-100 transition-all shadow-sm"
@@ -191,22 +222,54 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 </div>
 
                 <ul className="space-y-3">
-                  {recipe.shopping_list.map((ing, idx) => (
-                    <li key={idx} className="flex items-center justify-between text-orange-900 text-sm font-bold bg-white/60 p-3 rounded-xl border border-orange-100/50 hover:bg-white transition-colors">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="w-1.5 h-1.5 shrink-0 bg-orange-400 rounded-full"></span>
-                        <span className="leading-tight">{ing}</span>
-                      </div>
-                      <button
-                        onClick={() => setItemToAdd(ing)}
-                        className="ml-3 shrink-0 flex items-center gap-2 px-3 py-2 bg-white text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-orange-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-                        title="Add to Shopping List"
-                      >
-                        <i className="fas fa-cart-plus text-base"></i>
-                        <span className="hidden sm:inline">Add</span>
-                      </button>
-                    </li>
-                  ))}
+                  {recipe.shopping_list.map((rawIng, idx) => {
+                    const ing = (() => {
+                      let item = typeof rawIng === 'string' ? (() => {
+                        try {
+                          const parsed = JSON.parse(rawIng);
+                          return typeof parsed === 'object' ? parsed : { name: rawIng };
+                        } catch (e) { return { name: rawIng }; }
+                      })() : rawIng;
+
+                      // Deep parse if name is still JSON
+                      if (item && typeof item.name === 'string' && item.name.startsWith('{')) {
+                        try {
+                          const parsedName = JSON.parse(item.name);
+                          item = {
+                            ...item,
+                            name: parsedName.name || item.name,
+                            quantity: item.quantity || parsedName.quantity || '',
+                            unit: item.unit || parsedName.unit || ''
+                          };
+                        } catch (e) { }
+                      }
+                      return item;
+                    })();
+
+                    return (
+                      <li key={idx} className="flex items-center justify-between text-orange-950 text-sm font-bold bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-orange-100 shadow-sm hover:shadow-md hover:bg-white transition-all group/item">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <button
+                            onClick={() => setItemToAdd(ing.name)}
+                            className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-orange-200 hover:scale-110 active:scale-95 transition-all outline-none"
+                            title="Add to Shopping List"
+                          >
+                            <i className="fas fa-cart-shopping text-xs"></i>
+                          </button>
+                          <div className="flex flex-col min-w-0">
+                            {(ing.quantity || ing.unit) && (
+                              <span className="text-[10px] text-orange-600 uppercase tracking-tighter leading-none mb-0.5">
+                                {ing.quantity} {ing.unit}
+                              </span>
+                            )}
+                            <span className="leading-tight truncate pr-2">
+                              {ing.name}
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -219,12 +282,15 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
             </h4>
             <div className="space-y-12 relative">
               <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
-              {recipe.step_by_step.map((step, idx) => (
-                <div key={idx} className="relative pl-14">
-                  <div className="absolute left-0 w-8 h-8 bg-white border-4 border-rose-500 rounded-full flex items-center justify-center font-black text-xs text-rose-600 z-10 shadow-lg">{idx + 1}</div>
-                  <p className="text-slate-700 text-lg leading-relaxed font-medium pt-0.5">{step}</p>
-                </div>
-              ))}
+              {recipe.step_by_step.map((stepData, idx) => {
+                const stepText = typeof stepData === 'string' ? stepData : (stepData as any)?.text || '';
+                return (
+                  <div key={idx} className="relative pl-14">
+                    <div className="absolute left-0 w-8 h-8 bg-white border-4 border-rose-500 rounded-full flex items-center justify-center font-black text-xs text-rose-600 z-10 shadow-lg">{idx + 1}</div>
+                    <p className="text-slate-700 text-lg leading-relaxed font-medium pt-0.5">{stepText}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

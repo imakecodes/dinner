@@ -9,11 +9,9 @@ OBJECTIVES:
 6. Ensure 100% SAFETY against food restrictions.
 ${obs}
 OUTPUT:
-Localize the output to ENGLISH and respond ONLY with JSON.`;
+Localize the output to ENGLISH and respond ONLY with JSON.
+The "ingredients_from_pantry" must be an array of objects: { "name": string, "quantity": string, "unit": string }.
+The "shopping_list" must be an array of objects: { "name": string, "quantity": string, "unit": string }.
+Example: [{ "name": "Baking Powder", "quantity": "1", "unit": "tsp" }]`;
 
-export const GET_TRANSLATION_PROMPT = (targetLanguage: string, recipeJson: string) => `Translate the following recipe JSON to ${targetLanguage === 'pt' ? 'Portuguese (Brazil)' : 'English'}.
-    Maintain the EXACT JSON structure. Only translate the values of: "recipe_title", "analysis_log", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "meal_type", "difficulty", "prep_time".
-    Do NOT translate "safety_badge" boolean.
 
-    Recipe JSON:
-    ${recipeJson}`;
