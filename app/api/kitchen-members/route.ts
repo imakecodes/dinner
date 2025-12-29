@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { sendInvitationEmail } from '@/lib/email-service';
 
 // GET: Fetch members
 export async function GET(request: NextRequest) {
@@ -60,12 +61,20 @@ export async function POST(request: NextRequest) {
     let member;
     let userIdToLink: string | undefined = undefined;
 
-    // Stub for sending email (since we cannot install nodemailer)
-    const sendInviteEmail = (to: string, name: string) => {
-      console.log(`[SMTP MOCK] Sending invite to ${to}: "Hello ${name}, you have been added to the Kitchen!"`);
-      // In a real implementation:
-      // const transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST, ... });
-      // await transporter.sendMail({ from: process.env.SMTP_FROM, to, subject: 'Kitchen Invite', ... });
+    const kitchen = await prisma.kitchen.findUnique({
+      where: { id: kitchenId }
+    });
+
+    // Helper to send email safely
+    const handleSendInvite = async (toEmail: string, isExisting: boolean) => {
+      try {
+        if (kitchen) {
+          const inviterName = (payload.name as string) || 'A Kitchen Member';
+          await sendInvitationEmail(toEmail, inviterName, kitchen.name, kitchen.inviteCode || '', isExisting);
+        }
+      } catch (e) {
+        console.error("Failed to send invite email", e);
+      }
     };
 
     if (data.email) {
@@ -75,14 +84,16 @@ export async function POST(request: NextRequest) {
 
       if (linkedUser) {
         userIdToLink = linkedUser.id;
-        // Logic: specific request "leave leave invite as pending" 
-        // implies we might just link them but they have to accept? 
-        // Or if they are a user, we link them and maybe they see it in their dashboard?
-        // For this hackathon scope, linking them directly is "Pending" enough visually if we show it.
+        // User exists, so we link them. 
+        // Logic: Send email informing them they've been added.
+        // If this is an update, we might not want to spam, but instructions say "when a member is invited" (implies new).
+        if (!data.id) {
+          await handleSendInvite(data.email, true);
+        }
       } else {
-        // User not found, send invite email
-        if (!data.id) { // Only send on create? Or on update too? Let's assume on create/update with new email.
-          sendInviteEmail(data.email, data.name);
+        // User not found, send invite email (Create Account)
+        if (!data.id) {
+          await handleSendInvite(data.email, false);
         }
       }
     }
@@ -135,9 +146,7 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      if (!userIdToLink && data.email) {
-        sendInviteEmail(data.email, data.name);
-      }
+
     }
 
     const formattedMember = {

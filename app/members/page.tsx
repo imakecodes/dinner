@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { storageService } from '@/services/storageService';
 import { KitchenMember } from '@/types';
 import { TagInput } from '@/components/ui/TagInput';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export default function MembersPage() {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -16,6 +17,7 @@ export default function MembersPage() {
     const [isAdding, setIsAdding] = useState(false);
 
     const [editingMember, setEditingMember] = useState<KitchenMember | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Controlled state for Tags
     const [likesTags, setLikesTags] = useState<string[]>([]);
@@ -113,15 +115,21 @@ export default function MembersPage() {
         setRestrictionsTags([]);
     };
 
-    const handleDeleteMember = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent edit click
-        if (!confirm('Are you sure you want to remove this member?')) return;
+    const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setConfirmDeleteId(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!confirmDeleteId) return;
         try {
-            await storageService.deleteMember(id);
-            if (editingMember?.id === id) handleCancelEdit();
+            await storageService.deleteMember(confirmDeleteId);
+            if (editingMember?.id === confirmDeleteId) handleCancelEdit();
             await loadMembers();
         } catch (err) {
             console.error("Failed to delete member", err);
+        } finally {
+            setConfirmDeleteId(null);
         }
     };
 
@@ -307,7 +315,7 @@ export default function MembersPage() {
                                             </div>
                                             {m.isGuest && (
                                                 <button
-                                                    onClick={(e) => handleDeleteMember(m.id, e)}
+                                                    onClick={(e) => handleDeleteClick(m.id, e)}
                                                     className="w-10 h-10 rounded-xl hover:bg-rose-100 text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors"
                                                     title="Remove member"
                                                 >
@@ -367,6 +375,14 @@ export default function MembersPage() {
                     </>
                 )}
             </main>
+
+            <ConfirmDialog
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Remove Member"
+                message="Are you sure you want to remove this member? This action cannot be undone."
+            />
         </div>
     );
 }
