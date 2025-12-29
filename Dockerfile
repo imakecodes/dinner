@@ -3,7 +3,7 @@
 # -------------------------
 # Stage 1: builder
 # -------------------------
-FROM  git.makecodes.dev/docker/node22-alpine:latest AS builder
+FROM  node:22-alpine AS builder
 WORKDIR /app
 
 # Dependências de sistema mínimas (adapte se precisar de compilação nativa)
