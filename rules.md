@@ -7,5 +7,8 @@ This project enforces high code quality standards.
 - **Test files**: Co-located in `__tests__` directories mirroring the source structure.
 - **Running tests**: Use `pnpm run test:coverage` to verify coverage.
 
-## Future Development
-Agents working on this codebase must ensure that any new feature includes comprehensive unit tests to maintain or improve the overall coverage percentage.
+## Database Safety
+- **NO AUTOMATED RESETS**: Never reset the database automatically. If a migration requires a reset (e.g., due to drift), STOP and ask for user permission.
+- **NO AUTO-COMMIT**: Never automatically commit and push changes after a database reset or significant schema change without user verification.
+- **Migration Files**: Always check for missing migration files before deploying to production.
+

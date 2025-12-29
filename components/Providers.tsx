@@ -38,7 +38,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Load initial data from storageService if available (optional enhancement)
     useEffect(() => {
         // Skip fetching on auth pages
-        if (pathname === '/login' || pathname === '/register' || pathname === '/recover') {
+        if (pathname === '/login' || pathname === '/register' || pathname === '/recover' || pathname === '/verify-email') {
             return;
         }
 

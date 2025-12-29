@@ -31,11 +31,6 @@ function VerifyEmailContent() {
 
                 if (res.ok) {
                     setStatus('success');
-                    // Auto-login handled by server cookie
-                    router.refresh();
-                    setTimeout(() => {
-                        router.push('/');
-                    }, 2000);
                 } else {
                     setStatus('error');
                     setMessage(data.error || 'Verification failed.');
@@ -65,8 +60,15 @@ function VerifyEmailContent() {
                     <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <p className="text-lg font-medium">Email verified successfully!</p>
-                    <p className="text-slate-500 mt-2">Redirecting to dashboard...</p>
+                    <p className="text-lg font-bold text-slate-800">Account Verified!</p>
+                    <p className="text-slate-600 mt-2 mb-6">Your email has been confirmed. Please log in to continue.</p>
+
+                    <Link
+                        href="/login"
+                        className="inline-block w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold shadow-md transition-colors"
+                    >
+                        Go to Login
+                    </Link>
                 </div>
             )}
 

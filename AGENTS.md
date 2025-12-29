@@ -64,8 +64,10 @@ The logic is distributed across specialized "Agents" (Simulated in `geminiServic
 - **Schema**: Defined in `prisma/schema.prisma`.
 - **Changes**:
     1. Modify `schema.prisma`.
-    2. Run `pnpm db:push` to sync with the database.
+    2. Run `pnpm db:push` to sync with the database (Development Only).
     3. Run `pnpm db:generate` to update the Prisma Client.
+    4. **Release**: For production changes, YOU MUST generate a migration file using `prisma migrate dev`.
+    5. **CRITICAL**: Never automatically reset the database to fix drift. Ask the user first. Never auto-commit after a reset.
 
 ### Terminology
 - Use **"Kitchen"** instead of "House".

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { signToken } from '@/lib/auth';
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -32,33 +32,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // Generate auth token for auto-login
-        const kitchenId = user.kitchenMemberships[0]?.kitchenId;
-
-        // If strangely no kitchen, we might have an issue, but let's handle gracefully or fail
-        if (!kitchenId) {
-            console.error('Verified user has no kitchen membershiip', user.id);
-        }
-
-        const authToken = await signToken({
-            userId: user.id,
-            email: user.email,
-            name: user.name,
-            kitchenId: kitchenId || '',
-            houseId: kitchenId || ''
-        });
-
-        const response = NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email } }, { status: 200 });
-
-        response.cookies.set('auth_token', authToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 24, // 1 day
-            path: '/',
-        });
-
-        return response;
+        return NextResponse.json({ success: true, message: 'Email verified successfully' }, { status: 200 });
 
     } catch (error) {
         console.error('Verification error:', error);
