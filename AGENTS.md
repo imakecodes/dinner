@@ -9,6 +9,7 @@
 - **Styling**: Tailwind CSS
 - **AI Integration**: Google Gemini 1.5 Pro via `@google/genai`
 - **Testing**: Jest, React Testing Library, `user-event`
+- **Containerization**: Docker (Multi-stage, distroless+shell for production)
 
 ## 3. Domain Model & Architecture
 The application is built around the concept of a **Kitchen** (formerly House).
@@ -29,8 +30,25 @@ The logic is distributed across specialized "Agents" (Simulated in `geminiServic
 - **Executive Chef**: Analyzes pantry + preferences to generate recipe concepts.
 - **Safety Auditor**: enforcing "Hard Stop" rules for allergies/restrictions.
 - **Visual Stylist**: Generates photorealistic images of the final dish.
+- **Operations Manager**: Handles automated tasks like migrations and health checks.
 
-## 5. Development Protocols
+## 5. Deployment & Operations
+### System Health
+- **Endpoint**: `/api/healthz` (Public, No Auth)
+- **Behavior**: Verifies DB connectivity. Returns `200 OK` or `500 Error`.
+- **Usage**: Use for Kubernetes Liveness/Readiness probes.
+
+### Automated Migrations
+- **Docker**: The production image automatically runs `prisma migrate deploy` on startup.
+- **Mechanism**: `scripts/start.sh` executes migrations before starting `server.js`.
+- **Base Image**: Production uses `node:22-slim` to support these startup scripts.
+
+### Email Service
+- **Provider**: SMTP (Resend recommended).
+- **Config**: Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`.
+- **Function**: Handles invites and transactional messages via `lib/email-service.ts`.
+
+## 6. Development Protocols
 ### Code Quality
 - **Linting**: Run `pnpm run lint` and `pnpm run lint:fix` before committing.
 - **Formatting**: Adhere to the existing code style.
@@ -51,4 +69,3 @@ The logic is distributed across specialized "Agents" (Simulated in `geminiServic
 ### Terminology
 - Use **"Kitchen"** instead of "House".
 - Use **"Member"** instead of "User" (unless referring to Auth User).
-
