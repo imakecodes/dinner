@@ -52,7 +52,7 @@ describe('storageService', () => {
         });
 
         await storageService.deleteRecipe('1');
-        
+
         expect(global.fetch).toHaveBeenCalledWith('/api/recipes/1', expect.objectContaining({
             method: 'DELETE'
         }));
@@ -65,7 +65,7 @@ describe('storageService', () => {
         });
 
         await storageService.toggleFavorite('1');
-        
+
         expect(global.fetch).toHaveBeenCalledWith('/api/recipes/1/favorite', expect.objectContaining({
             method: 'PATCH'
         }));
@@ -92,11 +92,12 @@ describe('storageService', () => {
         }));
     });
 
-    it('deleteMember should warn not implemented', async () => {
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    it('deleteMember should DELETE member', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
         await storageService.deleteMember('1');
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('not fully implemented'));
-        consoleSpy.mockRestore();
+        expect(global.fetch).toHaveBeenCalledWith('/api/kitchen-members/1', expect.objectContaining({
+            method: 'DELETE'
+        }));
     });
 
     it('addPantryItem should POST new item', async () => {
@@ -213,7 +214,7 @@ describe('storageService', () => {
         });
 
         await storageService.updateProfile(profileData);
-        
+
         expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', expect.objectContaining({
             method: 'PUT',
             body: JSON.stringify(profileData)
