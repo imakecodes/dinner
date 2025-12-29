@@ -80,3 +80,17 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger Deployment Webhook
+        if: success()
+        run: |
+          curl --location --silent --show-error --fail \
+            --request POST 'https://n8n.ops.makecodes.dev/webhook/qa-dinner' \
+            --header 'Content-Type: application/json' \
+            --user "${{ secrets.DEPLOY_WEBHOOK_USER }}:${{ secrets.DEPLOY_WEBHOOK_PASS }}" \
+            --data-raw '{
+              "image": "ghcr.io/${{ github.repository }}",
+              "version": "${{ github.ref_name }}",
+              "pipeline": "${{ github.run_number }}",
+              "repository": "${{ github.repository }}"
+            }'
