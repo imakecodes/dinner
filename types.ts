@@ -24,6 +24,7 @@ export interface KitchenMember {
   restrictions?: string[];
   likes?: string[];
   dislikes?: string[];
+  role?: 'ADMIN' | 'MEMBER';
 }
 
 // --- Pantry & Shopping ---

@@ -260,9 +260,16 @@ export default function MembersPage() {
                                                 className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500 border-gray-300"
                                                 checked={newMemberIsGuest} // Controlled by state
                                                 onChange={(e) => setNewMemberIsGuest(e.target.checked)} // Update state
+                                                disabled={editingMember?.role === 'ADMIN'}
                                             />
                                             <span className="text-sm font-medium text-slate-700">Guest</span>
                                         </label>
+                                        {/* Helper text for Admin */}
+                                        {editingMember?.role === 'ADMIN' && (
+                                            <span className="text-[10px] uppercase font-black text-amber-500 bg-amber-50 px-2 py-1 rounded ml-2">
+                                                Admin cannot be Guest
+                                            </span>
+                                        )}
                                     </div>
                                     <button
                                         type="submit"
@@ -299,8 +306,8 @@ export default function MembersPage() {
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <h3 className="font-bold text-xl text-slate-900">{m.name}</h3>
-                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border ${m.isGuest ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-indigo-100 text-indigo-600 border-indigo-200'}`}>
-                                                            {m.isGuest ? 'Guest' : 'Member'}
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border ${m.role === 'ADMIN' ? 'bg-amber-100 text-amber-600 border-amber-200' : m.isGuest ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-indigo-100 text-indigo-600 border-indigo-200'}`}>
+                                                            {m.role === 'ADMIN' ? 'Owner' : m.isGuest ? 'Guest' : 'Member'}
                                                         </span>
                                                     </div>
                                                     {m.email && (
@@ -313,7 +320,7 @@ export default function MembersPage() {
                                                     )}
                                                 </div>
                                             </div>
-                                            {m.isGuest && (
+                                            {m.isGuest && m.role !== 'ADMIN' && (
                                                 <button
                                                     onClick={(e) => handleDeleteClick(m.id, e)}
                                                     className="w-10 h-10 rounded-xl hover:bg-rose-100 text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors"

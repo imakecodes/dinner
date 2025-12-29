@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
                     create: {
                         name: user.name || 'Admin',
                         userId: userId,
-                        isGuest: false
+                        isGuest: false,
+                        role: 'ADMIN'
                     }
                 }
             },
