@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
+          cache: 'pnpm'
       - name: Enable corepack and prepare pnpm
         run: |
           corepack enable
@@ -38,6 +39,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
+          cache: 'pnpm'
       - name: Enable corepack and prepare pnpm
         run: |
           corepack enable
@@ -66,3 +68,5 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository }}:main
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
