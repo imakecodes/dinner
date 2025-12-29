@@ -10,6 +10,8 @@ jest.mock('next/link', () => {
     };
     MockLink.displayName = 'MockLink';
     return MockLink;
+    return MockLink;
+    return MockLink;
 });
 
 // Mock Providers
@@ -22,7 +24,8 @@ jest.mock('../../components/Providers', () => ({
 
 jest.mock('../../services/storageService', () => ({
     storageService: {
-        getAllRecipes: jest.fn()
+        getAllRecipes: jest.fn(),
+        getCurrentKitchen: jest.fn()
     }
 }));
 
@@ -33,6 +36,7 @@ describe('HomePage', () => {
 
     beforeEach(() => {
         (storageService.getAllRecipes as jest.Mock).mockResolvedValue(mockRecipes);
+        (storageService.getCurrentKitchen as jest.Mock).mockResolvedValue({ id: 'k1', name: 'Test Kitchen' });
     });
 
     it('renders dashboard stats correctly', async () => {
@@ -66,7 +70,7 @@ describe('HomePage', () => {
         render(<Home />);
         await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
 
-        expect(consoleSpy).toHaveBeenCalledWith("Failed to load history", error);
+        expect(consoleSpy).toHaveBeenCalledWith("Failed to load data", error);
         consoleSpy.mockRestore();
     });
 });

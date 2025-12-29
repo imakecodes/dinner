@@ -24,6 +24,7 @@ describe('GET /api/healthz', () => {
     });
 
     it('returns 500 and error status when database connection fails', async () => {
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
         (prisma.$queryRaw as jest.Mock).mockRejectedValueOnce(new Error('Connection failed'));
 
         const response = await GET();
@@ -35,5 +36,7 @@ describe('GET /api/healthz', () => {
             database: 'disconnected',
             error: 'Error: Connection failed',
         });
+
+        consoleSpy.mockRestore();
     });
 });
