@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { storageService } from '@/services/storageService';
 import { ShoppingItem } from '@/types';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 
 export default function ShoppingListPage() {
+    const { isGuest } = useCurrentMember();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [items, setItems] = useState<ShoppingItem[]>([]);
     const [newItemName, setNewItemName] = useState('');
@@ -105,18 +107,25 @@ export default function ShoppingListPage() {
                     <div className="text-center py-20 text-slate-400 font-bold animate-pulse">Loading List...</div>
                 ) : (
                     <>
-                        <form onSubmit={handleAddItem} className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex gap-2">
-                            <input
-                                type="text"
-                                placeholder="Add item..."
-                                className="flex-1 bg-transparent px-4 font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none"
-                                value={newItemName}
-                                onChange={(e) => setNewItemName(e.target.value)}
-                            />
-                            <button type="submit" disabled={!newItemName.trim()} className="w-10 h-10 bg-rose-600 rounded-xl text-white flex items-center justify-center shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
-                                <i className="fas fa-plus"></i>
-                            </button>
-                        </form>
+                        {!isGuest && (
+                            <form onSubmit={handleAddItem} className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Add item..."
+                                    className="flex-1 bg-transparent px-4 font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                                    value={newItemName}
+                                    onChange={(e) => setNewItemName(e.target.value)}
+                                />
+                                <button type="submit" disabled={!newItemName.trim()} className="w-10 h-10 bg-rose-600 rounded-xl text-white flex items-center justify-center shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
+                                    <i className="fas fa-plus"></i>
+                                </button>
+                            </form>
+                        )}
+                        {isGuest && (
+                            <div className="text-center mb-4 p-4 bg-slate-100 rounded-2xl text-slate-500 text-sm font-bold">
+                                Shopping List is generic for the Kitchen (Read Only)
+                            </div>
+                        )}
 
                         <div className="space-y-4">
                             {items.length === 0 && (
@@ -130,8 +139,8 @@ export default function ShoppingListPage() {
                                 <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group">
                                     <div className="flex items-center gap-4">
                                         <div
-                                            onClick={() => handleToggleCheck(item)}
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors cursor-pointer ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
+                                            onClick={() => !isGuest && handleToggleCheck(item)}
+                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${!isGuest ? 'cursor-pointer' : 'cursor-default'} ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
                                         >
                                             {item.checked && <i className="fas fa-check text-xs"></i>}
                                         </div>
@@ -158,12 +167,14 @@ export default function ShoppingListPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleRemove(item.id)}
-                                        className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 px-2"
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                    </button>
+                                    {!isGuest && (
+                                        <button
+                                            onClick={() => handleRemove(item.id)}
+                                            className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 px-2"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>

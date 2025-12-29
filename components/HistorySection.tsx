@@ -7,9 +7,10 @@ interface Props {
   history: RecipeRecord[];
   onUpdate: () => void;
   onViewRecipe?: (recipe: RecipeRecord) => void;
+  isGuest?: boolean;
 }
 
-const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe }) => {
+const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGuest }) => {
 
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
 
@@ -70,8 +71,8 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe }) =>
               {/* Metadata Badges */}
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${recipe.meal_type === 'main' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                    recipe.meal_type === 'dessert' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                      'bg-slate-50 text-slate-600 border-slate-100'
+                  recipe.meal_type === 'dessert' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                    'bg-slate-50 text-slate-600 border-slate-100'
                   }`}>
                   {recipe.meal_type}
                 </span>
@@ -94,12 +95,15 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe }) =>
 
             {/* Actions Footer */}
             <div className="mt-8 flex justify-between items-center pt-5 border-t border-slate-100 px-2">
-              <button
-                onClick={() => requestDelete(recipe.id)}
-                className="text-slate-400 hover:text-red-500 text-xs font-bold transition-colors flex items-center gap-2 px-2 py-1 hover:bg-red-50 rounded-lg"
-              >
-                <i className="fas fa-trash"></i> Delete
-              </button>
+              {!isGuest && (
+                <button
+                  onClick={() => requestDelete(recipe.id)}
+                  className="text-slate-400 hover:text-red-500 text-xs font-bold transition-colors flex items-center gap-2 px-2 py-1 hover:bg-red-50 rounded-lg"
+                >
+                  <i className="fas fa-trash"></i> Delete
+                </button>
+              )}
+              {isGuest && <div></div>} {/* Spacer if delete hidden */}
 
               <button
                 onClick={() => onViewRecipe?.(recipe)}

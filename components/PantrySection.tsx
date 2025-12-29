@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { PantryItem } from '../types';
 import { storageService } from '../services/storageService';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 
 interface Props {
   pantry: PantryItem[];
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
+  const { isGuest } = useCurrentMember();
   const [newItemName, setNewItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -112,25 +114,27 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
         </div>
 
         {/* Add New Bar */}
-        <div className="flex gap-2">
-          <input
-            placeholder="Ex: Zucchini, Chicken Breast..."
-            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-amber-500"
-            value={newItemName}
-            onKeyPress={e => e.key === 'Enter' && handleAdd()}
-            onChange={e => setNewItemName(e.target.value)}
-          />
-          <button
-            onClick={handleAdd}
-            disabled={!newItemName.trim()}
-            className={`px-6 py-3 rounded-2xl font-bold shadow-lg transition-all active:scale-95 ${!newItemName.trim()
-              ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-              : 'bg-amber-500 text-white shadow-amber-100 hover:bg-amber-600'
-              }`}
-          >
-            Include
-          </button>
-        </div>
+        {!isGuest && (
+          <div className="flex gap-2">
+            <input
+              placeholder="Ex: Zucchini, Chicken Breast..."
+              className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+              value={newItemName}
+              onKeyPress={e => e.key === 'Enter' && handleAdd()}
+              onChange={e => setNewItemName(e.target.value)}
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!newItemName.trim()}
+              className={`px-6 py-3 rounded-2xl font-bold shadow-lg transition-all active:scale-95 ${!newItemName.trim()
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                : 'bg-amber-500 text-white shadow-amber-100 hover:bg-amber-600'
+                }`}
+            >
+              Include
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Search & List */}
@@ -160,7 +164,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
                 <tr>
                   <th className="px-6 py-3">Ingredient</th>
                   <th className="px-6 py-3 text-center">In Stock?</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  {!isGuest && <th className="px-6 py-3 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -179,8 +183,8 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
                         />
                       ) : (
                         <span
-                          className={`font-medium text-slate-700 ${!item.inStock && 'opacity-50 line-through'}`}
-                          onClick={() => startEditing(item)}
+                          className={`font-medium text-slate-700 ${!item.inStock && 'opacity-50 line-through'} ${!isGuest ? 'cursor-pointer hover:text-amber-600' : ''}`}
+                          onClick={() => !isGuest && startEditing(item)}
                         >
                           {item.name}
                         </span>
@@ -190,22 +194,24 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
                     {/* Stock Toggle Column */}
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => handleToggleStock(item)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${item.inStock ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                        onClick={() => !isGuest && handleToggleStock(item)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${item.inStock ? 'bg-emerald-500' : 'bg-slate-200'} ${isGuest ? 'cursor-default opacity-50' : ''}`}
                       >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.inStock ? 'translate-x-6' : 'translate-x-1'}`} />
                       </button>
                     </td>
 
                     {/* Actions Column */}
-                    <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => startEditing(item)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors" title="Edit">
-                        <i className="fas fa-pen"></i>
-                      </button>
-                      <button onClick={() => deleteItem(item)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete">
-                        <i className="fas fa-trash"></i>
-                      </button>
-                    </td>
+                    {!isGuest && (
+                      <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => startEditing(item)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors" title="Edit">
+                          <i className="fas fa-pen"></i>
+                        </button>
+                        <button onClick={() => deleteItem(item)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete">
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -7,9 +7,12 @@ import { useApp } from '../../components/Providers';
 import { storageService } from '../../services/storageService';
 import { RecipeRecord } from '../../types';
 
+import { useCurrentMember } from '@/hooks/useCurrentMember';
+
 export default function HistoryPage() {
     // const { lang } = useApp(); // Removed
     const router = useRouter();
+    const { isGuest } = useCurrentMember();
     const [history, setHistory] = useState<RecipeRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -63,6 +66,7 @@ export default function HistoryPage() {
                     history={filteredHistory}
                     onUpdate={refreshHistory}
                     onViewRecipe={(recipe) => router.push(`/recipes/${recipe.id}`)}
+                    isGuest={isGuest}
                 />
             ) : (
                 <div className="text-center py-20 bg-white rounded-3xl border border-slate-100">
@@ -73,7 +77,7 @@ export default function HistoryPage() {
                     <p className="text-slate-500 max-w-xs mx-auto">
                         {searchTerm ? `No results for "${searchTerm}". Try another keyword!` : "You haven't saved any recipes yet. Generate one to get started!"}
                     </p>
-                    {!searchTerm && (
+                    {!searchTerm && !isGuest && (
                         <button
                             onClick={() => router.push('/')}
                             className="mt-6 px-6 py-2 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors"

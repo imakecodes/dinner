@@ -20,6 +20,10 @@ jest.mock('../../services/storageService', () => ({
     },
 }));
 
+jest.mock('@/hooks/useCurrentMember', () => ({
+    useCurrentMember: jest.fn().mockReturnValue({ isGuest: false, loading: false })
+}));
+
 import { storageService } from '../../services/storageService';
 
 const mockRecipe: RecipeRecord = {
@@ -28,15 +32,14 @@ const mockRecipe: RecipeRecord = {
     meal_type: 'main',
     difficulty: 'easy',
     prep_time: '30 mins',
-    ingredients_from_pantry: ['Flour'],
-    shopping_list: ['Sugar'],
+    ingredients_from_pantry: [{ name: 'Flour', quantity: '1', unit: 'cup' }],
+    shopping_list: [{ name: 'Sugar', quantity: '1', unit: 'cup' }],
     step_by_step: ['Mix ingredients'],
     match_reasoning: 'Good match',
     analysis_log: 'Log',
     createdAt: Date.now(),
     isFavorite: false,
-    kitchenId: 'k1',
-    raw_response: '{}'
+    safety_badge: false
 };
 
 import userEvent from '@testing-library/user-event';

@@ -15,7 +15,9 @@ jest.mock('../../../components/Providers', () => ({
 
 jest.mock('../../../services/storageService', () => ({
     storageService: {
-        getAllRecipes: jest.fn()
+        getAllRecipes: jest.fn(),
+        getCurrentUser: jest.fn().mockResolvedValue({ user: { id: 'u1' } }),
+        getKitchenMembers: jest.fn().mockResolvedValue([{ userId: 'u1', isGuest: false }]),
     }
 }));
 

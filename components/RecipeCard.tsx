@@ -4,6 +4,7 @@ import { GeneratedRecipe, RecipeRecord, Difficulty } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { storageService } from '../services/storageService';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 
 interface Props {
   recipe: RecipeRecord;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
+  const { isGuest } = useCurrentMember();
   const [recipe, setRecipe] = useState<RecipeRecord>(initialRecipe);
   // Initial favorite state comes from the record itself now
   const [isFavorite, setIsFavorite] = useState(initialRecipe.isFavorite);
@@ -107,12 +109,14 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href={`/recipes/${recipe.id}/edit`}
-                className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest bg-white text-slate-900 hover:bg-slate-100 border border-slate-200"
-              >
-                <i className="fas fa-edit mr-2"></i> Edit
-              </Link>
+              {!isGuest && (
+                <Link
+                  href={`/recipes/${recipe.id}/edit`}
+                  className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest bg-white text-slate-900 hover:bg-slate-100 border border-slate-200"
+                >
+                  <i className="fas fa-edit mr-2"></i> Edit
+                </Link>
+              )}
               <button
                 onClick={toggleFavorite}
                 className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest ${isFavorite ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
@@ -262,13 +266,15 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                     return (
                       <li key={idx} className="flex items-center justify-between text-orange-950 text-sm font-bold bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-orange-100 shadow-sm hover:shadow-md hover:bg-white transition-all group/item">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <button
-                            onClick={() => setItemToAdd(ing.name)}
-                            className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-orange-200 hover:scale-110 active:scale-95 transition-all outline-none"
-                            title="Add to Shopping List"
-                          >
-                            <i className="fas fa-cart-shopping text-xs"></i>
-                          </button>
+                          {!isGuest && (
+                            <button
+                              onClick={() => setItemToAdd(ing.name)}
+                              className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-orange-200 hover:scale-110 active:scale-95 transition-all outline-none"
+                              title="Add to Shopping List"
+                            >
+                              <i className="fas fa-cart-shopping text-xs"></i>
+                            </button>
+                          )}
                           <div className="flex flex-col min-w-0">
                             {(ing.quantity || ing.unit) && (
                               <span className="text-[10px] text-orange-600 uppercase tracking-tighter leading-none mb-0.5">
