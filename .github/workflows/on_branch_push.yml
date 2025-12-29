@@ -34,22 +34,22 @@ jobs:
   #       env:
   #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   #         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-  # test_build:
-  #   name: Test NextJS build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.16.0
-  #     - name: Enable corepack and prepare pnpm
-  #       run: |
-  #         corepack enable
-  #         corepack prepare pnpm@10.13.1 --activate
-  #     - name: Install dependencies
-  #       run: pnpm install --frozen-lockfile
-  #     - name: Verify if the build is ok
-  #       run: pnpm build
+  test_build:
+    name: Test NextJS build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Enable corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.13.1 --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify if the build is ok
+        run: pnpm build
