@@ -10,7 +10,7 @@ export async function PUT(
     try {
         const { id } = await context.params;
         const body = await request.json();
-        const { checked, quantity } = body;
+        const { checked } = body;
 
         const token = request.cookies.get('auth_token')?.value;
         const payload = await verifyToken(token || '');

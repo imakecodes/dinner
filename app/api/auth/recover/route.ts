@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
     // Mock implementation: always return success
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
 

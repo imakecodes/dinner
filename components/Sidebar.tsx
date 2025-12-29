@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { ViewState } from '../types';
+
 import { storageService } from '../services/storageService';
 import { useState, useEffect } from 'react';
 

@@ -1,6 +1,8 @@
 .env
 .next/
 coverage/
+tsconfig.tsbuildinfo
+
 # Logs
 logs
 *.log

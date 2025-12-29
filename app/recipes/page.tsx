@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import HistorySection from '../../components/HistorySection';
-import { useApp } from '../../components/Providers';
+
 import { storageService } from '../../services/storageService';
 import { RecipeRecord } from '../../types';
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { signToken } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
 import { generateKitchenCode } from '@/lib/kitchen-code';
 import { sendVerificationEmail } from '@/lib/email-service';

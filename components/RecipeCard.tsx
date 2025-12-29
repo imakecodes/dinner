@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { GeneratedRecipe, RecipeRecord, Difficulty } from '../types';
+import { RecipeRecord } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { storageService } from '../services/storageService';
