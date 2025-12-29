@@ -215,6 +215,7 @@ export default function MembersPage() {
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Likes</label>
                                         <TagInput
+                                            key={`likes-${editingMember?.id || 'new'}`}
                                             tags={likesTags}
                                             setTags={setLikesTags}
                                             suggestions={allLikes}
@@ -227,6 +228,7 @@ export default function MembersPage() {
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Dislikes</label>
                                         <TagInput
+                                            key={`dislikes-${editingMember?.id || 'new'}`}
                                             tags={dislikesTags}
                                             setTags={setDislikesTags}
                                             suggestions={allDislikes}
@@ -239,6 +241,7 @@ export default function MembersPage() {
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Dietary Restrictions</label>
                                         <TagInput
+                                            key={`restrictions-${editingMember?.id || 'new'}`}
                                             tags={restrictionsTags}
                                             setTags={setRestrictionsTags}
                                             suggestions={allRestrictions}
