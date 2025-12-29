@@ -74,3 +74,57 @@ export async function sendVerificationEmail(email: string, token: string) {
     console.error('[Email Service] Error sending verification email:', error);
   }
 }
+
+export async function sendInvitationEmail(
+  email: string,
+  inviterName: string,
+  kitchenName: string,
+  inviteCode: string,
+  isExistingUser: boolean
+) {
+  if (!process.env.SMTP_PASSWORD) {
+    console.warn('[Email Service] SMTP_PASSWORD not set. Skipping invitation email.');
+    return;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const ctaUrl = isExistingUser ? `${appUrl}/login` : `${appUrl}/register?email=${encodeURIComponent(email)}`;
+  const ctaText = isExistingUser ? 'Login to Dashboard' : 'Create Account';
+
+  const subject = isExistingUser
+    ? `You have been added to ${kitchenName}`
+    : `You have been invited to join ${kitchenName}`;
+
+  const messageText = isExistingUser
+    ? `Hello,\n\n${inviterName} has added you to their kitchen "${kitchenName}".\n\nLog in to your account to access the kitchen:\n${ctaUrl}`
+    : `Hello,\n\n${inviterName} has invited you to join their kitchen "${kitchenName}".\n\nTo accept the invitation, please create an account using this email address:\n${ctaUrl}\n\nKitchen Invite Code: ${inviteCode}`;
+
+  const messageHtml = `
+    <div style="font-family: sans-serif; padding: 20px;">
+      <h2>${subject}</h2>
+      <p>Hello,</p>
+      <p><strong>${inviterName}</strong> has invited you to join their kitchen "<strong>${kitchenName}</strong>".</p>
+      ${!isExistingUser ? `<p><strong>Kitchen Invite Code: ${inviteCode}</strong></p>` : ''}
+      <p>${isExistingUser ? 'Log in to your account to access the kitchen.' : 'To accept the invitation, please create an account using the button below.'}</p>
+      <a href="${ctaUrl}" style="background-color: #e11d48; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">${ctaText}</a>
+      <p style="margin-top: 20px; font-size: 14px; color: #666;">Or copy this link: <a href="${ctaUrl}">${ctaUrl}</a></p>
+    </div>
+  `;
+
+  const fromName = process.env.SMTP_EMAIL_FROM_NAME || 'Dinner Chef AI';
+  const fromEmail = process.env.SMTP_EMAIL_FROM || 'onboarding@resend.dev';
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject: subject,
+      text: messageText,
+      html: messageHtml,
+    });
+
+    console.log(`[Email Service] Invitation email sent to ${email}: ${info.messageId}`);
+  } catch (error) {
+    console.error('[Email Service] Error sending invitation email:', error);
+  }
+}

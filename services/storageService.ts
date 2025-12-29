@@ -75,9 +75,7 @@ export const storageService = {
   },
 
   deleteMember: async (id: string): Promise<void> => {
-    // Note: We haven't implemented DELETE endpoint yet but kept interface consistent
-    // For now we might just disable members
-    console.warn("Delete member not fully implemented in API");
+    await apiRequest(`/kitchen-members/${id}`, { method: 'DELETE' });
   },
 
   // --- Pantry ---
