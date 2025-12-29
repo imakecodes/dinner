@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      target: runner-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env
+    ports:
+      - "${APP_PORT:-3000}:${APP_PORT:-3000}"

@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { generateKitchenCode } from '@/lib/kitchen-code';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
         const kitchen = await prisma.kitchen.create({
             data: {
                 name,
+                inviteCode: generateKitchenCode(),
                 members: {
                     create: {
                         name: user.name || 'Admin',

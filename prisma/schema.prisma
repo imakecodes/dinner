@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -19,10 +20,22 @@ enum MeasurementSystem {
   IMPERIAL
 }
 
+enum KitchenRole {
+  ADMIN
+  MEMBER
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // Models
 model Kitchen {
   id        String   @id @default(cuid())
   name      String   @default("My Kitchen")
+  inviteCode String  @unique
   createdAt DateTime @default(now())
   
   // Relations
@@ -55,7 +68,9 @@ model KitchenMember {
   name         String
   email        String?       // For pending invites or purely guest records with contact info
   isGuest      Boolean       @default(false)
-  
+  role         KitchenRole      @default(MEMBER)
+  status       MembershipStatus @default(APPROVED)
+
   kitchenId    String
   kitchen      Kitchen       @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
   

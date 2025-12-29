@@ -3,7 +3,7 @@
 # -------------------------
 # Stage 1: builder
 # -------------------------
-FROM node:22-alpine AS builder
+FROM  git.makecodes.dev/docker/node22-alpine:latest AS builder
 WORKDIR /app
 
 # Dependências de sistema mínimas (adapte se precisar de compilação nativa)
@@ -76,13 +76,14 @@ FROM git.makecodes.dev/docker/node22-alpine AS runner-dev
 WORKDIR /app
 
 # Install curl for development and debugging
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl openssl
 
 ENV NODE_ENV=development
 
 # Install all dependencies (including dev) to run `pnpm run dev`
 RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
 COPY package.json pnpm-lock.yaml* ./
+COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile
 
 # Copy all source code to allow hot-reload when using volume mount
@@ -94,7 +95,7 @@ EXPOSE 3000
 # When mounting a named volume at /app/node_modules, it starts empty and
 # overrides node_modules created during image build. Ensure dependencies
 # exist by installing if necessary, then start dev server.
-CMD ["sh", "-lc", "echo 'Installing deps (pnpm install) on startup...'; pnpm install; pnpm run dev"]
+CMD ["sh", "-lc", "echo 'Installing deps (pnpm install) on startup...'; pnpm install; npx prisma generate; pnpm run dev"]
 
 
 

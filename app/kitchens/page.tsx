@@ -84,24 +84,67 @@ export default function KitchensPage() {
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">Your Kitchens</h2>
                             <div className="grid gap-4">
                                 {user?.kitchenMemberships?.map((m: any) => (
-                                    <div key={m.id} className={`bg-white p-4 rounded-3xl shadow-sm border-2 flex items-center justify-between transition-all ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                                    <div key={m.id} className={`bg-white p-4 rounded-3xl shadow-sm border-2 flex flex-col md:flex-row items-start md:items-center justify-between transition-all gap-4 ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${m.kitchenId === user.currentKitchenId ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'}`}>
                                                 <i className="fas fa-utensils"></i>
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-lg text-slate-900">{m.kitchen.name}</h3>
-                                                {m.kitchenId === user.currentKitchenId && <span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 text-[10px] uppercase font-bold rounded-full tracking-wide">Active</span>}
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {m.kitchenId === user.currentKitchenId && <span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 text-[10px] uppercase font-bold rounded-full tracking-wide">Active</span>}
+                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] uppercase font-bold rounded-full tracking-wide">{m.role || 'MEMBER'}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        {m.kitchenId !== user.currentKitchenId && (
-                                            <button
-                                                onClick={() => handleSwitchKitchen(m.kitchenId)}
-                                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-colors"
-                                            >
-                                                Switch
-                                            </button>
-                                        )}
+
+                                        <div className="flex items-center gap-3 w-full md:w-auto">
+                                            {/* Invite Code Section */}
+                                            <div className="flex-1 md:flex-none flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">Invite Code</span>
+                                                    <span className="font-mono font-bold text-slate-700 tracking-wider text-sm">{m.kitchen.inviteCode || 'N/A'}</span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(m.kitchen.inviteCode || '');
+                                                        // Simple alert for now, or use a toast if available
+                                                        alert('Code copied!'); 
+                                                    }}
+                                                    className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                                                    title="Copy Code"
+                                                >
+                                                    <i className="fas fa-copy"></i>
+                                                </button>
+                                                {m.role === 'ADMIN' && (
+                                                    <button 
+                                                        onClick={async () => {
+                                                            if(!confirm('Regenerate invite code? Old code will stop working.')) return;
+                                                            const { refreshKitchenCode } = await import('@/app/actions');
+                                                            const result = await refreshKitchenCode(m.kitchenId);
+                                                            if (result.success) {
+                                                                await loadData();
+                                                            } else {
+                                                                alert(result.error);
+                                                            }
+                                                        }}
+                                                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors"
+                                                        title="Regenerate Code"
+                                                    >
+                                                        <i className="fas fa-sync-alt"></i>
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {m.kitchenId !== user.currentKitchenId && (
+                                                <button
+                                                    onClick={() => handleSwitchKitchen(m.kitchenId)}
+                                                    className="px-4 py-3 md:py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-colors whitespace-nowrap"
+                                                >
+                                                    Switch
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

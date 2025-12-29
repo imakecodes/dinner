@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
+import { generateKitchenCode } from '@/lib/kitchen-code';
 
 export async function POST(req: NextRequest) {
     try {
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
                         isGuest: false,
                         kitchen: {
                             create: {
-                                name: `${name}'s Kitchen`
+                                name: `${name}'s Kitchen`,
+                                inviteCode: generateKitchenCode()
                             }
                         }
                     }
