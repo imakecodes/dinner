@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
     // Redirect /home to /
@@ -15,6 +15,8 @@ export async function proxy(request: NextRequest) {
         path === '/login' ||
         path === '/register' ||
         path === '/recover' ||
+        path === '/api/healthz' ||
+        path === '/verify-email' || // Also needed for the new page!
         path.startsWith('/api/auth'); // Allow auth API routes
 
     // Static assets and internal next paths are usually handled automatically by matcher,
