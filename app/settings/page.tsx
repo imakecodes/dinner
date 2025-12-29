@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useApp } from '../../components/Providers';
+
 import { storageService } from '../../services/storageService';
 import { MeasurementSystem } from '../../types';
 
 export default function SettingsPage() {
-    const [user, setUser] = useState<any>(null);
+    const [, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -153,8 +153,8 @@ export default function SettingsPage() {
                                 type="button"
                                 onClick={() => setMeasurementSystem('METRIC')}
                                 className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${measurementSystem === 'METRIC'
-                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
                                     }`}
                             >
                                 <span className="text-2xl">⚖️</span>
@@ -164,8 +164,8 @@ export default function SettingsPage() {
                                 type="button"
                                 onClick={() => setMeasurementSystem('IMPERIAL')}
                                 className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${measurementSystem === 'IMPERIAL'
-                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
                                     }`}
                             >
                                 <span className="text-2xl">lbs</span>

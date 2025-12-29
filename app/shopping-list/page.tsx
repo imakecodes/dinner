@@ -69,12 +69,7 @@ export default function ShoppingListPage() {
         }
     };
 
-    // NOTE: Simple delete for now as "Checked"
-    const handleMarkDone = async (name: string) => {
-        // We don't have DELETE endpoint set up for shopping list specifically by ID/Name in storageService
-        // The user request was just to LIST items.
-        // I'll leave the UI for list.
-    };
+
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-rose-100">

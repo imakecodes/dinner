@@ -1,5 +1,5 @@
 
-import React from 'react';
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import HistoryPage from '../../../app/recipes/page';
 import { storageService } from '../../../services/storageService';

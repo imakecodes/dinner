@@ -3,7 +3,7 @@
  */
 import { GET } from '@/app/api/healthz/route';
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+
 
 // Mock the prisma client
 jest.mock('@/lib/prisma', () => ({

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+
 import PantrySection from '../../components/PantrySection';
 import { useApp } from '../../components/Providers';
 

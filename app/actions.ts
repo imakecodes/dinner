@@ -54,7 +54,7 @@ export async function joinKitchen(inviteCode: string) {
   }
 
   // Create pending membership
-  const member = await prisma.kitchenMember.create({
+  await prisma.kitchenMember.create({
     data: {
       userId: user.userId,
       kitchenId: kitchen.id,
@@ -147,7 +147,7 @@ export async function rejectMember(memberId: string) {
     where: { id: memberId },
     data: { status: MembershipStatus.REJECTED },
   });
-  
+
   return { success: true };
 }
 
@@ -171,23 +171,23 @@ export async function refreshKitchenCode(kitchenId: string) {
 
   let newCode = generateKitchenCode();
   let retries = 0;
-  
+
   // Simple retry loop for uniqueness
   while (retries < 3) {
-      try {
-          await prisma.kitchen.update({
-              where: { id: kitchenId },
-              data: { inviteCode: newCode }
-          });
-          return { success: true, newCode };
-      } catch (e: any) {
-          if (e.code === 'P2002') { // Unique constraint violation
-              newCode = generateKitchenCode();
-              retries++;
-          } else {
-              throw e;
-          }
+    try {
+      await prisma.kitchen.update({
+        where: { id: kitchenId },
+        data: { inviteCode: newCode }
+      });
+      return { success: true, newCode };
+    } catch (e: any) {
+      if (e.code === 'P2002') { // Unique constraint violation
+        newCode = generateKitchenCode();
+        retries++;
+      } else {
+        throw e;
       }
+    }
   }
 
   return { error: 'Failed to generate unique code, please try again.' };

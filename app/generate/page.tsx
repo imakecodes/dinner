@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../../components/Providers';
 import { SessionContext, MealType, RecipeRecord, Difficulty } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -14,7 +14,7 @@ export default function GenerateRecipePage() {
         pantry,
         activeDiners, setActiveDiners,
         difficulty, setDifficulty,
-        prepTime, setPrepTime
+        prepTime
     } = useApp();
 
     const [isGenerating, setIsGenerating] = useState(false);

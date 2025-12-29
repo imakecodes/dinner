@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../components/Providers';
 import Footer from '../components/Footer';
 import { RecipeRecord, Kitchen } from '../types';

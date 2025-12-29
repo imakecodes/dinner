@@ -1,12 +1,10 @@
 
-import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { storageService } from '@/services/storageService';
 import Home from '@/app/page';
 import HistoryPage from '@/app/recipes/page';
 import ShoppingListPage from '@/app/shopping-list/page';
-import PantryPage from '@/app/pantry/page';
 
 // Mocks
 jest.mock('@/services/storageService');
