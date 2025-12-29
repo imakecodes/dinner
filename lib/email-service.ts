@@ -96,7 +96,7 @@ export async function sendInvitationEmail(
     : `You have been invited to join ${kitchenName}`;
 
   const messageText = isExistingUser
-    ? `Hello,\n\n${inviterName} has added you to their kitchen "${kitchenName}".\n\nLog in to your account to access the kitchen:\n${ctaUrl}`
+    ? `Hello,\n\nYou have been added to the kitchen "${kitchenName}".\n\nLog in to your account to access the kitchen:\n${ctaUrl}`
     : `Hello,\n\n${inviterName} has invited you to join their kitchen "${kitchenName}".\n\nTo accept the invitation, please create an account using this email address:\n${ctaUrl}\n\nKitchen Invite Code: ${inviteCode}`;
 
   const messageHtml = `
