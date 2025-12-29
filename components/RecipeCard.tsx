@@ -56,7 +56,8 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
         setTimeout(() => setCopyFeedback(false), 2000);
         break;
     }
-    setShowShareMenu(false);
+    // Commented out to allow "Copied!" feedback to be visible in the menu
+    // setShowShareMenu(false);
   };
 
   const confirmAddToPantry = async (rule: string) => {

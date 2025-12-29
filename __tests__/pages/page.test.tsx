@@ -15,7 +15,7 @@ jest.mock('next/link', () => {
 // Mock Providers
 jest.mock('../../components/Providers', () => ({
     useApp: () => ({
-        household: [{ id: '1' }],
+        members: [{ id: '1' }],
         pantry: [{ id: 'p1', inStock: true }, { id: 'p2', inStock: false }]
     })
 }));
@@ -43,6 +43,9 @@ describe('HomePage', () => {
         expect(screen.getAllByText('1')[0]).toBeInTheDocument();
         // Pantry in-stock count
         expect(screen.getAllByText('1')[1]).toBeInTheDocument();
+
+        // Wait for the effect to settle to avoid act() warnings
+        await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
     });
 
     it('fetches and displays recent history', async () => {

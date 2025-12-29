@@ -71,7 +71,9 @@ describe('RecipeCard', () => {
         const heartIcon = container.querySelector('.fa-heart');
         const btn = heartIcon?.closest('button');
         if (btn) {
-            fireEvent.click(btn);
+            await act(async () => {
+                fireEvent.click(btn);
+            });
             expect(storageService.toggleFavorite).toHaveBeenCalledWith('1');
         } else {
             throw new Error('Favorite button not found');
@@ -86,7 +88,9 @@ describe('RecipeCard', () => {
         const btn = container.querySelector('.fa-heart')?.closest('button');
 
         if (btn) {
-            fireEvent.click(btn);
+            await act(async () => {
+                fireEvent.click(btn);
+            });
             await waitFor(() => expect(consoleSpy).toHaveBeenCalledWith("Error toggling favorite:", expect.any(Error)));
         }
         consoleSpy.mockRestore();
