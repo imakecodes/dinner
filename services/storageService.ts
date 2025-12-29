@@ -41,6 +41,18 @@ export const storageService = {
     return data || [];
   },
 
+  getCurrentKitchen: async (): Promise<any> => {
+    return await apiRequest('/kitchens');
+  },
+
+  joinKitchen: async (code: string): Promise<{ kitchenId: string; name: string }> => {
+    return await apiRequest('/kitchens/join', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  },
+
+
   saveRecipe: async (recipe: any): Promise<void> => {
     await apiRequest('/recipes', {
       method: 'POST',

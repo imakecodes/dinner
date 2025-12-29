@@ -43,3 +43,29 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ message: 'Error creating kitchen', error: String(error) }, { status: 500 });
     }
 }
+
+// GET: Fetch current kitchen details
+export async function GET(request: NextRequest) {
+    try {
+        const token = request.cookies.get('auth_token')?.value;
+        const payload = await verifyToken(token || '');
+
+        if (!payload || !payload.kitchenId) {
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+        }
+        const kitchenId = payload.kitchenId as string;
+
+        const kitchen = await prisma.kitchen.findUnique({
+            where: { id: kitchenId }
+        });
+
+        if (!kitchen) {
+            return NextResponse.json({ message: 'Kitchen not found' }, { status: 404 });
+        }
+
+        return NextResponse.json(kitchen);
+    } catch (error) {
+        console.error('GET /api/kitchens error:', error);
+        return NextResponse.json({ message: 'Error fetching kitchen', error: String(error) }, { status: 500 });
+    }
+}

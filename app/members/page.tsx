@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { storageService } from '@/services/storageService';
-import { KitchenMember } from '@/types';
+import { KitchenMember, Kitchen } from '@/types';
 import { TagInput } from '@/components/ui/TagInput';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export default function MembersPage() {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [members, setMembers] = useState<KitchenMember[]>([]);
+    const [kitchen, setKitchen] = useState<Kitchen | null>(null);
     const [loading, setLoading] = useState(true);
     const [newMemberName, setNewMemberName] = useState('');
     const [newMemberEmail, setNewMemberEmail] = useState('');
@@ -32,6 +33,8 @@ export default function MembersPage() {
         try {
             const data = await storageService.getKitchenMembers();
             setMembers(data);
+            const kitchenData = await storageService.getCurrentKitchen();
+            setKitchen(kitchenData);
         } catch (err) {
             console.error("Failed to load members", err);
         } finally {
@@ -133,6 +136,18 @@ export default function MembersPage() {
         }
     };
 
+    const handleShareCode = (platform: 'whatsapp' | 'telegram') => {
+        if (!kitchen?.inviteCode) return;
+
+        const text = `Join my kitchen on Dinner App! Use code: ${kitchen.inviteCode}`;
+        const encodedText = encodeURIComponent(text);
+
+        switch (platform) {
+            case 'whatsapp': window.open(`https://wa.me/?text=${encodedText}`, '_blank'); break;
+            case 'telegram': window.open(`https://t.me/share/url?url=${encodedText}&text=${encodedText}`, '_blank'); break;
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-rose-100">
             <Sidebar
@@ -160,7 +175,42 @@ export default function MembersPage() {
                 </div>
             </header>
 
+
+
             <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
+                {kitchen?.inviteCode && (
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 text-center space-y-2 mb-6">
+                        <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Invite Code</h3>
+                        <div
+                            onClick={() => {
+                                navigator.clipboard.writeText(kitchen.inviteCode || '');
+                                alert('Code copied!');
+                            }}
+                            className="text-4xl font-black text-indigo-900 cursor-pointer hover:scale-105 transition-transform active:scale-95 flex items-center justify-center gap-3"
+                            title="Click to copy"
+                        >
+                            {kitchen.inviteCode}
+                            <i className="fas fa-copy text-xl text-indigo-300"></i>
+                        </div>
+                        <p className="text-xs text-indigo-400 font-medium pb-2">Share this code to invite others to your kitchen</p>
+
+                        <div className="flex justify-center gap-3 pt-2">
+                            <button
+                                onClick={() => handleShareCode('whatsapp')}
+                                className="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors"
+                            >
+                                <i className="fab fa-whatsapp text-lg"></i> WhatsApp
+                            </button>
+                            <button
+                                onClick={() => handleShareCode('telegram')}
+                                className="px-4 py-2 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors"
+                            >
+                                <i className="fab fa-telegram text-lg"></i> Telegram
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="text-center py-20 text-slate-400 font-bold animate-pulse">Loading Members...</div>
                 ) : (
@@ -393,6 +443,6 @@ export default function MembersPage() {
                 title="Remove Member"
                 message="Are you sure you want to remove this member? This action cannot be undone."
             />
-        </div>
+        </div >
     );
 }

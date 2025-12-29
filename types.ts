@@ -10,6 +10,7 @@ export type MeasurementSystem = 'METRIC' | 'IMPERIAL';
 export interface Kitchen {
   id: string;
   name: string;
+  inviteCode?: string;
   createdAt?: string | number | Date;
 }
 

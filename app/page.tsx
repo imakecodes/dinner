@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../components/Providers';
 import Footer from '../components/Footer';
-import { RecipeRecord } from '../types';
+import { RecipeRecord, Kitchen } from '../types';
 import { storageService } from '../services/storageService';
 import Link from 'next/link';
+import { CodeInput } from '../components/ui/CodeInput';
 
 export default function Home() {
   const {
@@ -14,16 +15,25 @@ export default function Home() {
   } = useApp();
 
   const [history, setHistory] = useState<RecipeRecord[]>([]);
+  const [kitchen, setKitchen] = useState<Kitchen | null>(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
-    storageService.getAllRecipes()
-      .then(setHistory)
+    Promise.all([
+      storageService.getAllRecipes(),
+      storageService.getCurrentKitchen()
+    ])
+      .then(([recipes, kitchenData]) => {
+        setHistory(recipes);
+        setKitchen(kitchenData);
+      })
       .catch(err => {
         if (err.message.includes('Unauthorized') || err.message.includes('401')) {
           // Redirect explicitly just in case Providers didn't catch it fast enough
           window.location.href = '/login';
         } else {
-          console.error("Failed to load history", err);
+          console.error("Failed to load data", err);
         }
       });
   }, []);
@@ -39,8 +49,14 @@ export default function Home() {
       {/* Dashboard Header */}
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-6 py-4">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-3">
             Good Evening, Chef! <span className="text-rose-500">👨‍🍳</span>
+            {kitchen && (
+              <span className="text-xs bg-slate-900 text-white px-3 py-1 rounded-full uppercase tracking-widest font-bold border border-slate-700 shadow-sm animate-in fade-in slide-in-from-left-4">
+                <i className="fas fa-utensils mr-2 text-rose-500"></i>
+                {kitchen.name}
+              </span>
+            )}
           </h1>
           <p className="text-slate-500 font-medium">Ready to cook something amazing today?</p>
 
@@ -92,6 +108,44 @@ export default function Home() {
             <h3 className="text-xl font-black text-slate-800 mb-1">Kitchen Check</h3>
             <p className="text-sm text-slate-500 font-medium">Manage members & settings.</p>
           </Link>
+        </div>
+
+        {/* Join Kitchen Section */}
+        <div className="bg-white rounded-3xl border-2 border-slate-200 p-6 shadow-sm">
+          <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+            <i className="fas fa-ticket-alt text-amber-500"></i>
+            Have an Invite Code?
+          </h3>
+          <div className="flex flex-col md:flex-row gap-6 items-center">
+            <div className="flex-1">
+              <CodeInput
+                onChange={setJoinCode}
+                disabled={joining}
+              />
+            </div>
+            <button
+              onClick={async () => {
+                if (joinCode.length !== 6) return;
+                setJoining(true);
+                try {
+                  const res = await storageService.joinKitchen(joinCode);
+                  // Automatically switch context
+                  await storageService.switchKitchen(res.kitchenId);
+                  // Refresh page to load new context
+                  window.location.reload();
+                } catch (err) {
+                  console.error("Failed to join", err);
+                  alert("Failed to join kitchen. Please check the code.");
+                } finally {
+                  setJoining(false);
+                }
+              }}
+              disabled={joining || joinCode.length !== 6}
+              className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-black uppercase tracking-wide shadow-lg shadow-amber-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {joining ? <i className="fas fa-spinner fa-spin"></i> : 'Join Kitchen'}
+            </button>
+          </div>
         </div>
 
         {/* Recent History */}
