@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: Request) {
@@ -49,17 +49,17 @@ export async function POST(request: NextRequest) {
 
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || !payload.houseId) {
+    if (!payload || !payload.kitchenId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const houseId = payload.houseId as string;
+    const kitchenId = payload.kitchenId as string;
 
     const suggestion = await prisma.tagSuggestion.upsert({
       where: {
-        category_tag_houseId: { category, tag, houseId }
+        category_tag_kitchenId: { category, tag, kitchenId }
       },
       update: {},
-      create: { category, tag, houseId }
+      create: { category, tag, kitchenId }
     });
     return NextResponse.json(suggestion);
   } catch (error) {

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRecipe } from '../../../services/geminiService';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { household, ...restOfContext } = body;
+        const { members, ...restOfContext } = body;
 
         // Securely get userId from token
         const token = req.cookies.get('auth_token')?.value;
@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
 
         const context = {
             ...restOfContext,
-            household,
+            members,
             measurement_system: measurementSystem
         };
 
-        const result = await generateRecipe(household, context);
+        const result = await generateRecipe(members, context);
 
         return NextResponse.json(result);
     } catch (error: any) {

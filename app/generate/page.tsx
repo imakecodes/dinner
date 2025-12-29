@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 export default function GenerateRecipePage() {
     const router = useRouter();
     const {
-        household,
+        members,
         pantry,
         activeDiners, setActiveDiners,
         difficulty, setDifficulty,
@@ -43,7 +43,7 @@ export default function GenerateRecipePage() {
             const result = await fetch('/api/recipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ household, context, language: 'en' }),
+                body: JSON.stringify({ members, context, language: 'en' }),
             }).then(res => {
                 if (!res.ok) throw new Error('API request failed');
                 return res.json();
@@ -89,7 +89,7 @@ export default function GenerateRecipePage() {
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Who is eating?</label>
                     <div className="flex flex-wrap gap-2">
-                        {household.map(m => (
+                        {members.map(m => (
                             <button
                                 key={m.id}
                                 onClick={() => setActiveDiners(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
@@ -98,7 +98,7 @@ export default function GenerateRecipePage() {
                                 {m.name}
                             </button>
                         ))}
-                        {household.length === 0 && <Link href="/kitchens" className="text-sm text-rose-600 font-bold underline">Add members first</Link>}
+                        {members.length === 0 && <Link href="/kitchens" className="text-sm text-rose-600 font-bold underline">Add members first</Link>}
                     </div>
                 </div>
 

@@ -7,8 +7,8 @@ import { storageService } from '../services/storageService';
 
 
 interface AppContextType {
-    household: KitchenMember[];
-    setHousehold: React.Dispatch<React.SetStateAction<KitchenMember[]>>;
+    members: KitchenMember[];
+    setMembers: React.Dispatch<React.SetStateAction<KitchenMember[]>>;
     pantry: PantryItem[];
     setPantry: React.Dispatch<React.SetStateAction<PantryItem[]>>;
     activeDiners: string[];
@@ -27,7 +27,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     // Initial state (Empty - Load from DB)
-    const [household, setHousehold] = useState<KitchenMember[]>([]);
+    const [members, setMembers] = useState<KitchenMember[]>([]);
 
     const [pantry, setPantry] = useState<PantryItem[]>([]);
     const [activeDiners, setActiveDiners] = useState<string[]>([]);
@@ -51,7 +51,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
                 const storedMembers = await storageService.getKitchenMembers();
                 if (storedMembers && storedMembers.length > 0) {
-                    setHousehold(storedMembers);
+                    setMembers(storedMembers);
                 }
             } catch (e: any) {
                 // If unauthorized, just ignore (user likely session expired or not logged in yet)
@@ -69,7 +69,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AppContext.Provider value={{
-            household, setHousehold,
+            members, setMembers,
             pantry, setPantry,
             activeDiners, setActiveDiners,
             mealType, setMealType,

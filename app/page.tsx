@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export default function Home() {
   const {
-    household,
+    members,
     pantry,
   } = useApp();
 
@@ -29,7 +29,7 @@ export default function Home() {
   }, []);
 
   // Stats
-  const activeCount = household.length;
+  const activeCount = members.length;
   const pantryCount = pantry.filter(i => i.inStock).length;
   const recipesCount = history.length;
 

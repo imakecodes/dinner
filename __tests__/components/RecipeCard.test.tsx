@@ -4,17 +4,20 @@ import RecipeCard from '../../components/RecipeCard';
 import { RecipeRecord } from '../../types';
 
 // Mock dependencies
+// Mock dependencies
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => {
-    return <a href={href}>{children}</a>;
-  };
+    const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
+        return <a href={href}>{children}</a>;
+    };
+    MockLink.displayName = 'MockLink';
+    return MockLink;
 });
 
 jest.mock('../../services/storageService', () => ({
-  storageService: {
-    toggleFavorite: jest.fn().mockResolvedValue(undefined),
-    addPantryItem: jest.fn().mockResolvedValue({ id: '1', name: 'Milk' }),
-  },
+    storageService: {
+        toggleFavorite: jest.fn().mockResolvedValue(undefined),
+        addPantryItem: jest.fn().mockResolvedValue({ id: '1', name: 'Milk' }),
+    },
 }));
 
 import { storageService } from '../../services/storageService';
@@ -51,7 +54,7 @@ describe('RecipeCard', () => {
     // ... render tests ...
     it('renders recipe details correctly', () => {
         render(<RecipeCard recipe={mockRecipe} />);
-        
+
         expect(screen.getByText('Test Recipe')).toBeInTheDocument();
         expect(screen.getByText('Good match')).toBeInTheDocument();
         expect(screen.getByText('Mix ingredients')).toBeInTheDocument();
@@ -59,7 +62,7 @@ describe('RecipeCard', () => {
     });
 
     it('renders difficulty badge correctly', () => {
-        render(<RecipeCard recipe={{...mockRecipe, difficulty: 'chef'}} />);
+        render(<RecipeCard recipe={{ ...mockRecipe, difficulty: 'chef' }} />);
         expect(screen.getByText('CHEF')).toBeInTheDocument();
     });
 
@@ -76,12 +79,12 @@ describe('RecipeCard', () => {
     });
 
     it('handles error when toggleFavorite fails', async () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
         (storageService.toggleFavorite as jest.Mock).mockRejectedValueOnce(new Error('Failed'));
-        
+
         const { container } = render(<RecipeCard recipe={mockRecipe} />);
         const btn = container.querySelector('.fa-heart')?.closest('button');
-        
+
         if (btn) {
             fireEvent.click(btn);
             await waitFor(() => expect(consoleSpy).toHaveBeenCalledWith("Error toggling favorite:", expect.any(Error)));
@@ -100,25 +103,25 @@ describe('RecipeCard', () => {
         jest.useFakeTimers();
         const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
         const recipeWithList = { ...mockRecipe, shopping_list: [{ name: 'Milk', quantity: '1', unit: 'L' }] };
-        
+
         Object.defineProperty(navigator, 'clipboard', {
             value: {
-              writeText: jest.fn().mockImplementation(() => Promise.resolve()),
+                writeText: jest.fn().mockImplementation(() => Promise.resolve()),
             },
             configurable: true // Allow re-definition
         });
 
         render(<RecipeCard recipe={recipeWithList} />);
-        
+
         const shareIcon = screen.getAllByRole('button').find(b => b.querySelector('.fa-share-alt'));
-        
+
         if (shareIcon) {
             await user.click(shareIcon);
             expect(screen.getByText('Copy to Clipboard')).toBeInTheDocument();
-            
+
             await user.click(screen.getByText(/Copy to Clipboard/));
             expect(navigator.clipboard.writeText).toHaveBeenCalled();
-            
+
             act(() => {
                 jest.advanceTimersByTime(100);
             });
@@ -127,21 +130,21 @@ describe('RecipeCard', () => {
     });
 
     it('handles adding to pantry', async () => {
-         const user = userEvent.setup();
-         const recipeWithList = { ...mockRecipe, shopping_list: [{ name: 'Milk', quantity: '1', unit: 'L' }] };
-         render(<RecipeCard recipe={recipeWithList} />);
-         
-         const addBtns = screen.getAllByTitle('Add to Shopping List');
-         await user.click(addBtns[0]);
-         
-         expect(screen.getByText(/Add "Milk" to List/)).toBeInTheDocument();
-         
-         const alwaysBtn = screen.getByText('Always Replenish').closest('button');
-         if (alwaysBtn) {
-             await user.click(alwaysBtn);
-             await waitFor(() => {
-                 expect(storageService.addPantryItem).toHaveBeenCalledWith('Milk', 'ALWAYS', false);
-             });
-         }
+        const user = userEvent.setup();
+        const recipeWithList = { ...mockRecipe, shopping_list: [{ name: 'Milk', quantity: '1', unit: 'L' }] };
+        render(<RecipeCard recipe={recipeWithList} />);
+
+        const addBtns = screen.getAllByTitle('Add to Shopping List');
+        await user.click(addBtns[0]);
+
+        expect(screen.getByText(/Add "Milk" to List/)).toBeInTheDocument();
+
+        const alwaysBtn = screen.getByText('Always Replenish').closest('button');
+        if (alwaysBtn) {
+            await user.click(alwaysBtn);
+            await waitFor(() => {
+                expect(storageService.addPantryItem).toHaveBeenCalledWith('Milk', 'ALWAYS', false);
+            });
+        }
     });
 });

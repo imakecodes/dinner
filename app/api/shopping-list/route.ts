@@ -1,15 +1,15 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
         const token = request.cookies.get('auth_token')?.value;
         const payload = await verifyToken(token || '');
-        if (!payload || !payload.houseId) {
+        if (!payload || !payload.kitchenId) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
-        const kitchenId = payload.kitchenId as string || payload.houseId as string;
+        const kitchenId = payload.kitchenId as string;
 
         const items = await prisma.shoppingItem.findMany({
             where: { kitchenId },
@@ -33,10 +33,10 @@ export async function POST(request: NextRequest) {
 
         const token = request.cookies.get('auth_token')?.value;
         const payload = await verifyToken(token || '');
-        if (!payload || !payload.houseId) {
+        if (!payload || !payload.kitchenId) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
-        const kitchenId = payload.kitchenId as string || payload.houseId as string;
+        const kitchenId = payload.kitchenId as string;
 
         const item = await prisma.shoppingItem.upsert({
             where: {

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GeneratedRecipe, RecipeRecord, Difficulty } from '../types';
 import Link from 'next/link';
+import Image from 'next/image';
 import { storageService } from '../services/storageService';
 
 interface Props {
@@ -79,12 +80,13 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
 
         {/* Background Image */}
         {recipe.image_base64 && (
-             <img 
-                src={recipe.image_base64} 
-                alt={recipe.recipe_title} 
-                data-testid="recipe-bg-image"
-                className="absolute inset-0 w-full h-full object-cover z-0" 
-             />
+          <Image
+            src={recipe.image_base64}
+            alt={recipe.recipe_title}
+            data-testid="recipe-bg-image"
+            fill
+            className="object-cover z-0"
+          />
         )}
 
         <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col gap-10">

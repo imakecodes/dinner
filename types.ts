@@ -84,4 +84,4 @@ export interface RecipeRecord extends GeneratedRecipe {
   image_base64?: string;
 }
 
-export type ViewState = 'home' | 'household' | 'pantry' | 'history' | 'shopping_list';
+export type ViewState = 'home' | 'members' | 'pantry' | 'history' | 'shopping_list';

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         }
 
         const userId = payload.userId as string;
-        const currentKitchenId = payload.kitchenId as string || payload.houseId as string;
+        const currentKitchenId = payload.kitchenId as string;
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
                 // Map for frontend compatibility if needed, or update frontend to use kitchenMemberships
                 memberships: user.kitchenMemberships.map(m => ({
                     ...m,
-                    houseId: m.kitchenId,
-                    house: m.kitchen
+                    kitchenId: m.kitchenId,
+                    kitchen: m.kitchen
                 })),
-                currentHouseId: currentKitchenId
+                currentHouseId: currentKitchenId // Keeping for compat if needed, but promoting currentKitchenId
             }
         });
 

@@ -25,8 +25,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Run lint
         run: pnpm lint
-      # - name: Run tests
-      #   run: pnpm test
+      - name: Run tests
+        run: pnpm test
   #     - uses: SonarSource/sonarqube-scan-action@v6
   #       with:
   #       args: >

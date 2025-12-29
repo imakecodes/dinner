@@ -5,9 +5,11 @@ import Home from '../../app/page';
 import { storageService } from '../../services/storageService';
 
 jest.mock('next/link', () => {
-    return ({ children, href }: { children: React.ReactNode; href: string }) => {
+    const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
         return <a href={href}>{children}</a>;
     };
+    MockLink.displayName = 'MockLink';
+    return MockLink;
 });
 
 // Mock Providers
@@ -35,18 +37,18 @@ describe('HomePage', () => {
 
     it('renders dashboard stats correctly', async () => {
         render(<Home />);
-        
+
         expect(screen.getByText('Good Evening, Chef!')).toBeInTheDocument();
         // Members count
         expect(screen.getAllByText('1')[0]).toBeInTheDocument();
         // Pantry in-stock count
-        expect(screen.getAllByText('1')[1]).toBeInTheDocument(); 
+        expect(screen.getAllByText('1')[1]).toBeInTheDocument();
     });
 
     it('fetches and displays recent history', async () => {
         render(<Home />);
         await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
-        
+
         expect(screen.getByText('Recent Creations')).toBeInTheDocument();
         expect(screen.getByText('Recent Recipe')).toBeInTheDocument();
     });
@@ -55,12 +57,12 @@ describe('HomePage', () => {
         // Mock error
         const error = new Error('Network Error');
         (storageService.getAllRecipes as jest.Mock).mockRejectedValue(error);
-        
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
         render(<Home />);
         await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
-        
+
         expect(consoleSpy).toHaveBeenCalledWith("Failed to load history", error);
         consoleSpy.mockRestore();
     });

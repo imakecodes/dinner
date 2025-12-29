@@ -1,15 +1,15 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || (!payload.kitchenId && !payload.houseId)) {
+    if (!payload || !payload.kitchenId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const kitchenId = (payload.kitchenId || payload.houseId) as string;
+    const kitchenId = payload.kitchenId as string;
     const userId = payload.userId as string;
 
     // Fetch recipes for this kitchen
@@ -79,10 +79,10 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || (!payload.kitchenId && !payload.houseId)) {
+    if (!payload || !payload.kitchenId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const kitchenId = (payload.kitchenId || payload.houseId) as string;
+    const kitchenId = payload.kitchenId as string;
     const userId = payload.userId as string;
 
     // Resolve current member for favorites

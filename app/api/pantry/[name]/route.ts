@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
 export async function DELETE(
@@ -9,10 +9,10 @@ export async function DELETE(
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || (!payload.kitchenId && !payload.houseId)) {
+    if (!payload || !payload.kitchenId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const kitchenId = (payload.kitchenId || payload.houseId) as string;
+    const kitchenId = payload.kitchenId as string;
 
     const { name } = await params;
     await prisma.pantryItem.delete({
@@ -37,10 +37,10 @@ export async function PUT(
   try {
     const token = request.cookies.get('auth_token')?.value;
     const payload = await verifyToken(token || '');
-    if (!payload || (!payload.kitchenId && !payload.houseId)) {
+    if (!payload || !payload.kitchenId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const kitchenId = (payload.kitchenId || payload.houseId) as string;
+    const kitchenId = payload.kitchenId as string;
 
     const { name } = await params;
     const { name: newName, inStock } = await request.json();

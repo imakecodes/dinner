@@ -30,7 +30,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
     try {
       // Optimistic Update
       const tempId = Date.now().toString();
-      const tempItem: PantryItem = { id: tempId, name: newItemName, inStock: true };
+      const tempItem: PantryItem = { id: tempId, name: newItemName, inStock: true, replenishmentRule: 'ONE_SHOT' };
       setPantry(prev => [...prev, tempItem]);
       setNewItemName('');
 

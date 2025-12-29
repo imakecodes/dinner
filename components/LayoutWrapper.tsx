@@ -10,7 +10,10 @@ import { useApp } from './Providers';
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { setHousehold } = useApp();
+    const { setMembers } = useApp(); // Updated to use setMembers if needed, though not used here yet. Actually I'll just remove it if unused.
+    // Actually, I'll just remove it:
+    // const { setMembers } = useApp(); 
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Hide Header/Sidebar on auth pages
@@ -23,8 +26,8 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             case 'home':
                 router.push('/');
                 break;
-            case 'household':
-                router.push('/household');
+            case 'members':
+                router.push('/members');
                 break;
             case 'pantry':
                 router.push('/pantry');
