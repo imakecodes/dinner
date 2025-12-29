@@ -41,7 +41,7 @@ export default function MembersPage() {
             const userProfile = await storageService.getCurrentUser();
             if (userProfile?.user?.id) {
                 // Find member record linked to this user for the *current* kitchen
-                // Note: The members list is already for the current kitchencontext
+                // Note: The members list is already for the current kitchen context
                 const currentMember = data.find(m => m.userId === userProfile.user.id);
                 setCurrentUserMember(currentMember || null);
             }
@@ -110,7 +110,7 @@ export default function MembersPage() {
     const handleEditClick = (member: KitchenMember) => {
         // Restriction: Guest can only edit themselves
         if (currentUserMember?.isGuest && currentUserMember.id !== member.id) {
-            alert("As a Guest, you can only edit your own profile.");
+            alert("Guest users can only edit their own profile. To edit other members or add new members, please ask a kitchen administrator to upgrade your permissions");
             return;
         }
 
@@ -164,7 +164,8 @@ export default function MembersPage() {
         }
     };
 
-    const canShowForm = !currentUserMember?.isGuest || (currentUserMember?.isGuest && editingMember?.id === currentUserMember?.id);
+    // Fail-safe: If loading or user not found, assume guest/hidden to prevent flash
+    const canShowForm = !loading && currentUserMember && (!currentUserMember.isGuest || (currentUserMember.isGuest && editingMember?.id === currentUserMember.id));
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-rose-100">
@@ -379,8 +380,8 @@ export default function MembersPage() {
                                 {members.map((m) => (
                                     <div
                                         key={m.id}
-                                        onClick={() => handleEditClick(m)}
-                                        className={`bg-white p-4 rounded-3xl shadow-sm border-2 cursor-pointer group transition-all ${editingMember?.id === m.id ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 hover:border-rose-200'} ${currentUserMember?.isGuest && currentUserMember?.id !== m.id ? 'opacity-50 hover:border-slate-100 cursor-not-allowed' : ''}`}
+                                        onClick={(!currentUserMember?.isGuest || currentUserMember?.id === m.id) ? () => handleEditClick(m) : undefined}
+                                        className={`bg-white p-4 rounded-3xl shadow-sm border-2 transition-all ${editingMember?.id === m.id ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100'} ${(!currentUserMember?.isGuest || currentUserMember?.id === m.id) ? 'cursor-pointer group hover:border-rose-200' : 'opacity-50 cursor-not-allowed'}`}
                                     >
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="flex items-center gap-4">
