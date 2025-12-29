@@ -69,11 +69,7 @@ export async function POST(request: NextRequest) {
     const handleSendInvite = async (toEmail: string, isExisting: boolean) => {
       try {
         if (kitchen) {
-          // We extract the inviter's name from the token payload (it's 'name' in payload)
-          // But since we are inside try block of POST, 'payload' variable is available in scope?
-          // No, 'processTags' is defined inside POST, but 'handleSendInvite' is being defined here.
-          // Let's define it inside the if(data.email) block or pass props.
-          const inviterName = (payload as any).name || 'A Kitchen Member';
+          const inviterName = (payload.name as string) || 'A Kitchen Member';
           await sendInvitationEmail(toEmail, inviterName, kitchen.name, kitchen.inviteCode || '', isExisting);
         }
       } catch (e) {
