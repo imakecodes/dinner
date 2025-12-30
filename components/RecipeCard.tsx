@@ -30,6 +30,8 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
   // State for adding to pantry with logic
   const [itemToAdd, setItemToAdd] = useState<string | null>(null);
 
+  const shareMenuRef = React.useRef<HTMLDivElement>(null);
+
   const isDev = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
@@ -93,6 +95,22 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
     }
   };
 
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+
+    if (showShareMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showShareMenu]);
+
   const handleShare = (platform: 'whatsapp' | 'telegram' | 'email' | 'copy') => {
     const list = recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ');
     const text = `*Shopping List for ${recipe.recipe_title}*\n\n- ${list}`;
@@ -108,8 +126,8 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
         setTimeout(() => setCopyFeedback(false), 2000);
         break;
     }
-    // Commented out to allow "Copied!" feedback to be visible in the menu
-    // setShowShareMenu(false);
+    
+    if (platform !== 'copy') setShowShareMenu(false);
   };
 
   const confirmAddToPantry = async (rule: string) => {
@@ -280,7 +298,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                     {t('recipeCard.toBuy')}
                   </h4>
 
-                  <div className="flex gap-2 relative">
+                  <div className="flex gap-2 relative" ref={shareMenuRef}>
                     <button
                       onClick={() => setShowShareMenu(!showShareMenu)}
                       className="w-10 h-10 bg-white border border-orange-200 text-orange-600 rounded-xl flex items-center justify-center hover:bg-orange-100 transition-all shadow-sm"

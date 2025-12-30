@@ -139,6 +139,10 @@ export const storageService = {
     await apiRequest(`/shopping-list/${id}`, { method: 'DELETE' });
   },
 
+  clearShoppingList: async (): Promise<void> => {
+    await apiRequest('/shopping-list', { method: 'DELETE' });
+  },
+
   // --- Suggestions ---
   getTags: async (category: string): Promise<string[]> => {
     const data = await apiRequest(`/tags?category=${category}`);

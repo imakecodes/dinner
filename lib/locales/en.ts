@@ -95,7 +95,10 @@ export const en = {
         readOnly: "Shopping List is generic for the Kitchen (Read Only)",
         empty: "All caught up!",
         fromPantry: "From Pantry",
-        forRecipes: "For {n} Recipe(s)"
+        forRecipes: "For {n} Recipe(s)",
+        clearAll: "Clear List",
+        clearConfirmTitle: "Clear Shopping List?",
+        clearConfirmDesc: "This will remove all manual items. Recipe ingredients will be marked as bought."
     },
     kitchens: {
         title: "Manage Kitchens",

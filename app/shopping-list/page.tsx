@@ -14,6 +14,7 @@ export default function ShoppingListPage() {
     const [items, setItems] = useState<ShoppingItem[]>([]);
     const [newItemName, setNewItemName] = useState('');
     const [loading, setLoading] = useState(true);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     useEffect(() => {
         loadList();
@@ -71,6 +72,22 @@ export default function ShoppingListPage() {
         }
     };
 
+    const handleClearList = async () => {
+        try {
+            // Optimistic clear
+            const oldItems = [...items];
+            setItems([]);
+            setShowClearConfirm(false);
+
+            await storageService.clearShoppingList();
+            await loadList(); // Reload to see if anything remained (e.g. failures or server logic)
+        } catch (err) {
+            console.error(err);
+            loadList(); // Revert
+            alert(t('common.error'));
+        }
+    };
+
 
 
     return (
@@ -96,6 +113,14 @@ export default function ShoppingListPage() {
                         </button>
                         <h1 className="font-black text-xl tracking-tight text-slate-900">{t('shopping.title')}</h1>
                     </div>
+                    {!isGuest && items.length > 0 && (
+                        <button
+                            onClick={() => setShowClearConfirm(true)}
+                            className="text-xs font-bold text-rose-500 hover:text-rose-700 bg-rose-50 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                            {t('shopping.clearAll')}
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -178,6 +203,36 @@ export default function ShoppingListPage() {
                     </>
                 )}
             </main>
+
+            {/* Clear Confirmation Dialog */}
+            {showClearConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+                        <div className="text-center space-y-2">
+                            <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto text-rose-500 text-xl mb-4">
+                                <i className="fas fa-trash-alt"></i>
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900">{t('shopping.clearConfirmTitle')}</h3>
+                            <p className="text-slate-500 text-sm font-medium">{t('shopping.clearConfirmDesc')}</p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowClearConfirm(false)}
+                                className="flex-1 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                onClick={handleClearList}
+                                className="flex-1 py-3 text-white font-bold bg-rose-500 hover:bg-rose-600 rounded-xl transition-colors shadow-lg shadow-rose-200"
+                            >
+                                {t('common.confirm')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
