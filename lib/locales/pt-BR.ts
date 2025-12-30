@@ -31,7 +31,7 @@ export const ptBR = {
         activeKitchen: "Cozinha Ativa",
         quickActions: "Ações Rápidas",
         generateRecipe: "Gerar Receita",
-        joinKitchen: "Entrar na Cozinha",
+        joinKitchen: "Entrar nesta Cozinha",
         createKitchen: "Criar Cozinha"
     },
     members: {
