@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -13,6 +13,7 @@ function VerifyEmailContent() {
 
     const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
     const [message, setMessage] = useState('');
+    const verificationAttempted = useRef(false);
 
     useEffect(() => {
         if (!token) {
@@ -20,6 +21,9 @@ function VerifyEmailContent() {
             setMessage(t('auth.invalidLink'));
             return;
         }
+
+        if (verificationAttempted.current) return;
+        verificationAttempted.current = true;
 
         const verify = async () => {
             try {
