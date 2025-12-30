@@ -81,6 +81,7 @@ describe('Recipe Translation Fallback Logic', () => {
     });
 
     it('should fallback to original shopping items when AI returns an empty list', async () => {
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
         (translateRecipe as jest.Mock).mockResolvedValue(mockTranslatedDataEmptyList);
 
         const req = new NextRequest('http://localhost/api/translate', {
@@ -110,5 +111,7 @@ describe('Recipe Translation Fallback Logic', () => {
                 shoppingItemId: 'new-shop-1'
             })
         }));
+
+        consoleSpy.mockRestore();
     });
 });
