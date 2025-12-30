@@ -97,10 +97,10 @@ export const storageService = {
     return data || [];
   },
 
-  addPantryItem: async (name: string, replenishmentRule?: string, inStock?: boolean): Promise<PantryItem | null> => {
+  addPantryItem: async (name: string, replenishmentRule?: string, inStock?: boolean, quantity?: string, unit?: string): Promise<PantryItem | null> => {
     return await apiRequest('/pantry', {
       method: 'POST',
-      body: JSON.stringify({ name, replenishmentRule, inStock }),
+      body: JSON.stringify({ name, replenishmentRule, inStock, quantity, unit }),
     });
   },
 
@@ -108,7 +108,7 @@ export const storageService = {
     await apiRequest(`/pantry/${encodeURIComponent(name)}`, { method: 'DELETE' });
   },
 
-  editPantryItem: async (currentName: string, updates: { name?: string; inStock?: boolean; replenishmentRule?: string }): Promise<void> => {
+  editPantryItem: async (currentName: string, updates: { name?: string; inStock?: boolean; replenishmentRule?: string; quantity?: string; unit?: string }): Promise<void> => {
     await apiRequest(`/pantry/${encodeURIComponent(currentName)}`, {
       method: 'PUT',
       body: JSON.stringify(updates),

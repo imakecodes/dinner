@@ -36,6 +36,8 @@ export interface PantryItem {
   name: string;
   inStock: boolean;
   replenishmentRule: ReplenishmentRule;
+  quantity?: string;
+  unit?: string;
   shoppingItemId?: string;
 }
 

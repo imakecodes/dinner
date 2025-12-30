@@ -43,12 +43,15 @@ export async function PUT(
     const kitchenId = payload.kitchenId as string;
 
     const { name } = await params;
-    const { name: newName, inStock } = await request.json();
+    const { name: newName, inStock, replenishmentRule, quantity, unit } = await request.json();
 
     // Construct dynamic update object
     const updateData: any = {};
     if (newName !== undefined) updateData.name = newName;
     if (inStock !== undefined) updateData.inStock = inStock;
+    if (replenishmentRule) updateData.replenishmentRule = replenishmentRule;
+    if (quantity !== undefined) updateData.quantity = quantity;
+    if (unit !== undefined) updateData.unit = unit;
 
     // Use transaction to handle side effects (auto-shopping list)
     const updated = await prisma.$transaction(async (tx) => {

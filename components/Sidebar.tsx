@@ -91,12 +91,19 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               <i className="fas fa-box-open w-6 group-hover:scale-110 transition-transform"></i>
               {t('nav.pantry')}
             </button>
-            <button
+      <button
               onClick={() => onNavigate('/recipes')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-book-open w-6 group-hover:scale-110 transition-transform"></i>
               {t('nav.recipes')} ({t('nav.history')})
+            </button>
+            <button
+              onClick={() => onNavigate('/planner')}
+              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
+            >
+              <i className="fas fa-calendar-alt w-6 group-hover:scale-110 transition-transform"></i>
+              Planner
             </button>
             <button
               onClick={() => onNavigate('/shopping-list')}

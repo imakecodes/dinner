@@ -62,7 +62,6 @@ export default function Home() {
               </span>
             )}
           </h1>
-          <p className="text-slate-500 font-medium">{t('actions.generateDesc')}</p>
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-4 mt-4">
@@ -83,6 +82,21 @@ export default function Home() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 mt-4 space-y-4">
+        
+        {/* Planner Widget - Today's Plan */}
+        <Link href="/planner" className="block bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.01] transition-all relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <i className="fas fa-robot text-9xl transform rotate-12"></i>
+          </div>
+          <div className="relative z-10">
+             <h2 className="text-xl font-black uppercase tracking-wider mb-2 flex items-center gap-2">
+               <i className="fas fa-brain"></i> Chef Agent
+             </h2>
+             <p className="text-indigo-100 font-medium max-w-lg">
+               I have planned your week based on your pantry inventory to reduce waste. Click to see the menu.
+             </p>
+          </div>
+        </Link>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

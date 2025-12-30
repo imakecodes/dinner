@@ -18,6 +18,9 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
+  const [editUnit, setEditUnit] = useState('');
+  const [editRule, setEditRule] = useState<'ALWAYS' | 'ONE_SHOT' | 'NEVER'>('NEVER');
 
   // Confim Dialog State
   const [itemToDelete, setItemToDelete] = useState<PantryItem | null>(null);
@@ -66,22 +69,32 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
   const startEditing = (item: PantryItem) => {
     setEditingId(item.id);
     setEditName(item.name);
+    setEditQuantity(item.quantity || '');
+    setEditUnit(item.unit || '');
+    setEditRule(item.replenishmentRule || 'NEVER');
   };
 
   const saveEdit = async (item: PantryItem) => {
-    if (!editName.trim() || editName === item.name) {
+    if (!editName.trim()) {
       setEditingId(null);
       return;
     }
     // Optimistic
-    setPantry(prev => prev.map(i => i.id === item.id ? { ...i, name: editName } : i));
+    const updates = { 
+        name: editName, 
+        quantity: editQuantity, 
+        unit: editUnit, 
+        replenishmentRule: editRule 
+    };
+    
+    setPantry(prev => prev.map(i => i.id === item.id ? { ...i, ...updates } : i));
     setEditingId(null);
 
     try {
-      await storageService.editPantryItem(item.name, { name: editName });
+      await storageService.editPantryItem(item.name, updates);
     } catch (error) {
-      console.error("Failed to edit name", error);
-      setPantry(prev => prev.map(i => i.id === item.id ? { ...i, name: item.name } : i));
+      console.error("Failed to edit item", error);
+      setPantry(prev => prev.map(i => i.id === item.id ? item : i)); // Revert
     }
   };
 
@@ -174,23 +187,59 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
                 {filteredPantry.map(item => (
                   <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
                     {/* Name Column */}
+                    {/* Name & Details Column */}
                     <td className="px-6 py-4">
                       {editingId === item.id ? (
-                        <input
-                          autoFocus
-                          className="w-full px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-amber-500 outline-none"
-                          value={editName}
-                          onChange={e => setEditName(e.target.value)}
-                          onBlur={() => saveEdit(item)}
-                          onKeyDown={e => e.key === 'Enter' && saveEdit(item)}
-                        />
+                        <div className="flex flex-col gap-2">
+                             <input
+                               autoFocus
+                               className="w-full px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+                               value={editName}
+                               onChange={e => setEditName(e.target.value)}
+                               onKeyDown={e => e.key === 'Enter' && saveEdit(item)}
+                               placeholder="Item Name"
+                             />
+                             <div className="flex gap-2">
+                                <input
+                                    className="w-20 px-2 py-1 border border-slate-300 rounded text-xs"
+                                    value={editQuantity}
+                                    onChange={e => setEditQuantity(e.target.value)}
+                                    placeholder="Qty"
+                                />
+                                <input
+                                    className="w-20 px-2 py-1 border border-slate-300 rounded text-xs"
+                                    value={editUnit}
+                                    onChange={e => setEditUnit(e.target.value)}
+                                    placeholder="Unit"
+                                />
+                                <select 
+                                    className="text-xs border border-slate-300 rounded px-1"
+                                    value={editRule}
+                                    onChange={e => setEditRule(e.target.value as any)}
+                                >
+                                    <option value="NEVER">Manual</option>
+                                    <option value="ONE_SHOT">One Shot</option>
+                                    <option value="ALWAYS">Auto-Refill</option>
+                                </select>
+                                <button onClick={() => saveEdit(item)} className="text-xs bg-emerald-500 text-white px-2 rounded">OK</button>
+                             </div>
+                        </div>
                       ) : (
-                        <span
-                          className={`font-medium text-slate-700 ${!item.inStock && 'opacity-50 line-through'} ${!isGuest ? 'cursor-pointer hover:text-amber-600' : ''}`}
-                          onClick={() => !isGuest && startEditing(item)}
-                        >
-                          {item.name}
-                        </span>
+                        <div>
+                            <span
+                              className={`font-medium text-slate-700 block ${!item.inStock && 'opacity-50 line-through'} ${!isGuest ? 'cursor-pointer hover:text-amber-600' : ''}`}
+                              onClick={() => !isGuest && startEditing(item)}
+                            >
+                              {item.name}
+                            </span>
+                            {(item.quantity || item.unit || item.replenishmentRule !== 'NEVER') && (
+                                <div className="text-[10px] text-slate-400 flex gap-2 mt-0.5">
+                                    {item.quantity && <span>{item.quantity} {item.unit}</span>}
+                                    {item.replenishmentRule === 'ALWAYS' && <span className="text-amber-500 font-bold"><i className="fas fa-sync-alt"></i> Auto</span>}
+                                    {item.replenishmentRule === 'ONE_SHOT' && <span className="text-blue-400"><i className="fas fa-arrow-right"></i> One-off</span>}
+                                </div>
+                            )}
+                        </div>
                       )}
                     </td>
 

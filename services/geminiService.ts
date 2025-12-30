@@ -149,6 +149,32 @@ export const translateRecipe = async (
 
   if (!response.text) throw new Error("Translation failed");
 
+  // Log Usage
+  try {
+      const inputTokens = response.usageMetadata?.promptTokenCount || 0;
+      const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
+
+      // Translation is usually context-free regarding specific user attribution in this function signature,
+      // but we might want to pass it in.
+      // However, for now, we'll log it without user/kitchen attribution if not available, 
+      // OR we can change the function signature.
+      // Given the constraints, let's just log the tokens.
+      
+      // Actually, looking at usages, we usually have a context.
+      // But let's keep it simple and safe for now.
+      await prisma.geminiUsage.create({
+          data: {
+              prompt,
+              response: response.text,
+              inputTokens,
+              outputTokens,
+              // userId, kitchenId - ambiguous here without signature change, leaving null which is allowed
+          }
+      });
+  } catch (err) {
+      console.error("Failed to log Gemini usage:", err);
+  }
+
   return JSON.parse(response.text) as GeneratedRecipe;
 };
 

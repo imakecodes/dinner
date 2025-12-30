@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, replenishmentRule, inStock } = await request.json();
+    const { name, replenishmentRule, inStock, quantity, unit } = await request.json();
     if (!name) return NextResponse.json({ message: 'Name is required' }, { status: 400 });
 
     const token = request.cookies.get('auth_token')?.value;
@@ -53,13 +53,17 @@ export async function POST(request: NextRequest) {
         },
         update: {
           replenishmentRule: rule,
-          inStock: initialStock
+          inStock: initialStock,
+          quantity: quantity || null,
+          unit: unit || null
         },
         create: {
           name,
           kitchenId,
           inStock: initialStock,
-          replenishmentRule: rule
+          replenishmentRule: rule,
+          quantity: quantity || null,
+          unit: unit || null
         }
       });
 

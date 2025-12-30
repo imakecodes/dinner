@@ -46,6 +46,10 @@ model Kitchen {
   ingredients     Ingredient[]
   tagSuggestions  TagSuggestion[]
   geminiUsage     GeminiUsage[]
+  
+  // Orchestrator
+  mealPlans       MealPlan[]
+  agentLogs       AgentLog[]
 }
 
 model User {
@@ -87,8 +91,55 @@ model KitchenMember {
   likes        Like[]
   dislikes     Dislike[]
   favorites    FavoriteRecipe[]
+  mealPlans    MealPlan[]
 
   @@unique([userId, kitchenId]) // Unique membership per kitchen
+}
+
+// Phase 3: Orchestrator Models
+enum PlanStatus {
+  PLANNED
+  COOKED
+  SKIPPED
+}
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  date      DateTime
+  mealType  String   // "Dinner", "Lunch" (matches Recipe.meal_type or similar)
+  
+  status    PlanStatus @default(PLANNED)
+  notes     String?    @db.Text
+  language  String     @default("en")
+  
+  members   KitchenMember[] // Who is eating?
+
+  kitchenId String
+  kitchen   Kitchen  @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
+
+  recipeId  String?
+  recipe    Recipe?  @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([kitchenId, date, mealType]) // Only one "Dinner" per day per kitchen
+}
+
+enum AgentLogType {
+  INFO
+  REPLANNING
+  WARNING
+}
+
+model AgentLog {
+  id        String       @id @default(cuid())
+  createdAt DateTime     @default(now())
+  message   String       @db.Text
+  type      AgentLogType @default(INFO)
+
+  kitchenId String
+  kitchen   Kitchen  @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
 }
 
 model Restriction {
@@ -114,6 +165,8 @@ model PantryItem {
   name              String
   inStock           Boolean           @default(true)
   replenishmentRule ReplenishmentRule @default(NEVER)
+  quantity          String?           // e.g. "4", "500"
+  unit              String?           // e.g. "cans", "g"
 
   kitchenId         String
   kitchen           Kitchen           @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
@@ -196,6 +249,9 @@ model Recipe {
   originalRecipeId String?
   originalRecipe   Recipe?  @relation("RecipeTranslations", fields: [originalRecipeId], references: [id], onDelete: SetNull)
   translations     Recipe[] @relation("RecipeTranslations")
+
+  // Orchestrator
+  mealPlans        MealPlan[]
 }
 
 model RecipeIngredient {
