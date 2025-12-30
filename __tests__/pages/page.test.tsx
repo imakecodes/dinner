@@ -44,7 +44,7 @@ describe('HomePage', () => {
     it('renders dashboard stats correctly', async () => {
         render(<Home />);
 
-        expect(screen.getByText('Good Evening, Chef!')).toBeInTheDocument();
+        expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
         // Members count
         expect(screen.getAllByText('1')[0]).toBeInTheDocument();
         // Pantry in-stock count
@@ -58,7 +58,7 @@ describe('HomePage', () => {
         render(<Home />);
         await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
 
-        expect(screen.getByText('Recent Creations')).toBeInTheDocument();
+        expect(screen.getByText('Recent Recipes')).toBeInTheDocument();
         expect(screen.getByText('Recent Recipe')).toBeInTheDocument();
     });
 

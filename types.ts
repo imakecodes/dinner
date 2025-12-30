@@ -61,6 +61,7 @@ export interface SessionContext {
   prep_time_preference: PrepTimePreference;
   observation?: string;
   measurement_system?: MeasurementSystem;
+  language?: string;
 }
 
 // Raw output from the AI Generator

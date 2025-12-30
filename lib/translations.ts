@@ -183,7 +183,10 @@ export const translations = {
             whatsapp: "WhatsApp",
             telegram: "Telegram",
             copyClipboard: "Copy to Clipboard",
-            copied: "Copied!"
+            copied: "Copied!",
+            translate: "Translate Recipe",
+            showOriginal: "Show Original",
+            translating: "Translating..."
         },
         recipeForm: {
             titleCreate: "Create Recipe",
@@ -445,7 +448,10 @@ export const translations = {
             whatsapp: "WhatsApp",
             telegram: "Telegram",
             copyClipboard: "Copiar para Área de Transferência",
-            copied: "Copiado!"
+            copied: "Copiado!",
+            translate: "Traduzir Receita",
+            showOriginal: "Mostrar Original",
+            translating: "Traduzindo..."
         },
         recipeForm: {
             titleCreate: "Criar Receita",

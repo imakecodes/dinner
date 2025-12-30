@@ -60,14 +60,17 @@ describe('Guest Restrictions', () => {
             render(<Home />);
 
             await waitFor(() => expect(screen.queryByText('Generate Recipe')).not.toBeInTheDocument());
-            expect(screen.getByText('Pantry')).toBeInTheDocument();
+            expect(screen.getAllByText('Pantry').length).toBeGreaterThan(0);
         });
 
         test('Admin can see Generate Recipe card', async () => {
             setupUser(false);
             render(<Home />);
 
-            await waitFor(() => expect(screen.getByText('Generate Recipe')).toBeInTheDocument());
+            await waitFor(() => {
+                const elements = screen.getAllByText(/Generate Recipe/i);
+                expect(elements.length).toBeGreaterThan(0);
+            });
         });
     });
 

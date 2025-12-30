@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { storageService } from '../services/storageService';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useApp } from './Providers';
 
 interface Props {
   recipe: RecipeRecord;
@@ -13,9 +14,12 @@ interface Props {
 }
 
 const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { isGuest } = useCurrentMember();
   const [recipe, setRecipe] = useState<RecipeRecord>(initialRecipe);
+  const [originalRecipe, setOriginalRecipe] = useState<RecipeRecord | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [hasTranslated, setHasTranslated] = useState(false);
   // Initial favorite state comes from the record itself now
   const [isFavorite, setIsFavorite] = useState(initialRecipe.isFavorite);
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -28,7 +32,41 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
 
   useEffect(() => {
     setRecipe(initialRecipe);
+    setHasTranslated(false);
+    setOriginalRecipe(null);
   }, [initialRecipe]);
+
+  const handleTranslate = async () => {
+    if (hasTranslated && originalRecipe) {
+      // Revert
+      setRecipe(originalRecipe);
+      setHasTranslated(false);
+      return;
+    }
+
+    if (isTranslating) return;
+    setIsTranslating(true);
+
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetLanguage: lang })
+      });
+
+      if (!res.ok) throw new Error('Translation failed');
+      const translatedData = await res.json();
+
+      setOriginalRecipe(recipe);
+      setRecipe({ ...recipe, ...translatedData });
+      setHasTranslated(true);
+    } catch (err) {
+      console.error(err);
+      alert(t('common.error'));
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const toggleFavorite = async () => {
     try {
@@ -118,6 +156,22 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 >
                   <i className="fas fa-edit mr-2"></i> {t('recipeCard.edit')}
                 </Link>
+              )}
+              {/* Translate Button */}
+              {((recipe.language && recipe.language !== lang) || hasTranslated) && (
+                 <button
+                   onClick={handleTranslate}
+                   disabled={isTranslating}
+                   className="px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all tracking-widest bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
+                 >
+                   {isTranslating ? (
+                     <><i className="fas fa-spinner fa-spin mr-2"></i> {t('recipeCard.translating')}</>
+                   ) : hasTranslated ? (
+                     <><i className="fas fa-undo mr-2"></i> {t('recipeCard.showOriginal')}</>
+                   ) : (
+                     <><i className="fas fa-language mr-2"></i> {t('recipeCard.translate')}</>
+                   )}
+                 </button>
               )}
               <button
                 onClick={toggleFavorite}

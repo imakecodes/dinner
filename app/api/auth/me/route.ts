@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
                 surname: true,
                 email: true,
                 measurementSystem: true,
+                language: true,
                 kitchenMemberships: {
                     include: {
                         kitchen: true
@@ -83,7 +84,8 @@ export async function PUT(request: NextRequest) {
         const updateData: any = {
             name: data.name,
             surname: data.surname,
-            measurementSystem: data.measurementSystem
+            measurementSystem: data.measurementSystem,
+            language: data.language
         };
 
         if (data.password && data.password.trim() !== '') {
@@ -99,7 +101,8 @@ export async function PUT(request: NextRequest) {
                 name: true,
                 surname: true,
                 email: true,
-                measurementSystem: true
+                measurementSystem: true,
+                language: true
             }
         });
 

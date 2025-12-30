@@ -164,7 +164,7 @@ describe('RecipeForm', () => {
         const alertMock = jest.spyOn(window, 'alert').mockImplementation();
         render(<RecipeForm onSubmit={mockSubmit} isSubmitting={false} title="Create Recipe" initialData={{ recipe_title: '' }} />);
 
-        const titleInput = screen.getByLabelText('Recipe Title');
+        const titleInput = screen.getByPlaceholderText("Recipe Title (e.g. Mom's Lasagna)");
         expect(titleInput).toBeRequired();
 
         alertMock.mockRestore();

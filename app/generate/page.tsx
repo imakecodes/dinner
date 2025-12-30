@@ -16,7 +16,8 @@ export default function GenerateRecipePage() {
         pantry,
         activeDiners, setActiveDiners,
         difficulty, setDifficulty,
-        prepTime
+        prepTime,
+        language
     } = useApp();
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -45,7 +46,7 @@ export default function GenerateRecipePage() {
             const result = await fetch('/api/recipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ members, context, language: 'en' }),
+                body: JSON.stringify({ members, context, language: language || 'en' }),
             }).then(res => {
                 if (!res.ok) throw new Error('API request failed');
                 return res.json();
@@ -56,7 +57,7 @@ export default function GenerateRecipePage() {
                 id: Date.now().toString(),
                 isFavorite: false,
                 createdAt: Date.now(),
-                language: 'en'
+                language: language || 'en'
             };
 
             await storageService.saveRecipe(newRecord);
