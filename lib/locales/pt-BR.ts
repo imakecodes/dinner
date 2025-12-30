@@ -9,7 +9,8 @@ export const ptBR = {
         error: "Ocorreu um erro",
         back: "Voltar",
         menu: "Menu",
-        slogan: "Inteligência Culinária Segura e Inteligente"
+        slogan: "Inteligência Culinária Segura e Inteligente",
+        confirm: "Confirmar"
     },
     nav: {
         home: "Início",
@@ -95,7 +96,10 @@ export const ptBR = {
         readOnly: "Lista de Compras é genérica para a Cozinha (Apenas Leitura)",
         empty: "Tudo pronto!",
         fromPantry: "Da Despensa",
-        forRecipes: "Para {n} Receita(s)"
+        forRecipes: "Para {n} Receita(s)",
+        clearAll: "Limpar Lista",
+        clearConfirmTitle: "Limpar Lista de Compras?",
+        clearConfirmDesc: "Isso removerá todos os itens manuais. Ingredientes de receitas serão marcados como comprados."
     },
     kitchens: {
         title: "Gerenciar Cozinhas",

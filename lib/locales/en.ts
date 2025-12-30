@@ -9,7 +9,8 @@ export const en = {
         error: "An error occurred",
         back: "Back",
         menu: "Menu",
-        slogan: "Smart & Safe Culinary Intelligence"
+        slogan: "Smart & Safe Culinary Intelligence",
+        confirm: "Confirm"
     },
     nav: {
         home: "Home",
