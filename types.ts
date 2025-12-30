@@ -4,6 +4,7 @@ export type Difficulty = 'easy' | 'intermediate' | 'advanced' | 'chef';
 export type PrepTimePreference = 'quick' | 'plenty';
 export type ReplenishmentRule = 'ALWAYS' | 'ONE_SHOT' | 'NEVER';
 export type MeasurementSystem = 'METRIC' | 'IMPERIAL';
+export type Language = 'en' | 'pt-BR';
 
 // --- User & Kitchen ---
 
@@ -82,7 +83,7 @@ export interface RecipeRecord extends GeneratedRecipe {
   isFavorite: boolean; // Computed for the current member/user
   createdAt: number;
   dishImage?: string;
-  language?: string;
+  language?: Language;
   image_base64?: string;
 }
 

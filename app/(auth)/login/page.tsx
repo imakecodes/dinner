@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -26,7 +28,7 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.error || 'Login failed');
+                throw new Error(data.error || t('common.error'));
             }
 
             // Force a hard refresh to update server components/middleware state if needed,
@@ -47,8 +49,8 @@ export default function LoginPage() {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 mb-6 shadow-lg shadow-rose-100">
                         <i className="fas fa-utensils text-2xl"></i>
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Welcome Back!</h1>
-                    <p className="text-slate-500 font-medium">Log in to continue your culinary journey.</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{t('auth.loginTitle')}</h1>
+                    <p className="text-slate-500 font-medium">{t('auth.loginSubtitle')}</p>
                 </div>
 
                 {error && (
@@ -59,19 +61,19 @@ export default function LoginPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.email')}</label>
                         <input
                             type="email"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-0 outline-none transition-colors font-medium text-slate-700 bg-slate-50/50"
-                            placeholder="chef@dinner.com"
+                            placeholder={t('members.emailPlaceholder')}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.password')}</label>
                         <input
                             type="password"
                             required
@@ -82,7 +84,7 @@ export default function LoginPage() {
                         />
                         <div className="text-right mt-2">
                             <Link href="/recover" className="text-sm font-bold text-rose-600 hover:text-rose-700">
-                                Forgot password?
+                                {t('auth.forgotPassword')}
                             </Link>
                         </div>
                     </div>
@@ -92,15 +94,15 @@ export default function LoginPage() {
                         disabled={loading}
                         className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black shadow-lg shadow-rose-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        {loading ? <i className="fas fa-circle-notch fa-spin"></i> : 'Log In'}
+                        {loading ? <i className="fas fa-circle-notch fa-spin"></i> : t('auth.loginBtn')}
                     </button>
                 </form>
 
                 <div className="mt-4 text-center">
                     <p className="text-slate-500 font-medium">
-                        Don&apos;t have an account?{' '}
+                        {t('auth.noAccount')}{' '}
                         <Link href="/register" className="text-rose-600 font-black hover:underline">
-                            Sign Up
+                            {t('auth.signupBtn')}
                         </Link>
                     </p>
                 </div>

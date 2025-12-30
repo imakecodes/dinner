@@ -3,11 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function VerifyEmailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
+    const { t } = useTranslation();
 
     const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
     const [message, setMessage] = useState('');
@@ -15,7 +17,7 @@ function VerifyEmailContent() {
     useEffect(() => {
         if (!token) {
             setStatus('error');
-            setMessage('Invalid verification link.');
+            setMessage(t('auth.invalidLink'));
             return;
         }
 
@@ -33,25 +35,25 @@ function VerifyEmailContent() {
                     setStatus('success');
                 } else {
                     setStatus('error');
-                    setMessage(data.error || 'Verification failed.');
+                    setMessage(data.error || t('auth.verifyFailed'));
                 }
             } catch (err) {
                 setStatus('error');
-                setMessage('Network error. Please try again.');
+                setMessage(t('auth.networkError'));
             }
         };
 
         verify();
-    }, [token, router]);
+    }, [token, router, t]);
 
     return (
         <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
-            <h1 className="text-2xl font-bold mb-4 text-slate-800">Email Verification</h1>
+            <h1 className="text-2xl font-bold mb-4 text-slate-800">{t('auth.verifyTitle')}</h1>
 
             {status === 'verifying' && (
                 <div className="flex flex-col items-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-                    <p className="text-slate-600">Verifying your email...</p>
+                    <p className="text-slate-600">{t('auth.verifying')}</p>
                 </div>
             )}
 
@@ -60,14 +62,14 @@ function VerifyEmailContent() {
                     <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <p className="text-lg font-bold text-slate-800">Account Verified!</p>
-                    <p className="text-slate-600 mt-2 mb-6">Your email has been confirmed. Please log in to continue.</p>
+                    <p className="text-lg font-bold text-slate-800">{t('auth.accountVerified')}</p>
+                    <p className="text-slate-600 mt-2 mb-6">{t('auth.verifiedMsg')}</p>
 
                     <Link
                         href="/login"
                         className="inline-block w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold shadow-md transition-colors"
                     >
-                        Go to Login
+                        {t('auth.goToLogin')}
                     </Link>
                 </div>
             )}
@@ -77,10 +79,10 @@ function VerifyEmailContent() {
                     <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-lg font-medium">Verification Failed</p>
+                    <p className="text-lg font-medium">{t('auth.verifyFailed')}</p>
                     <p className="text-slate-600 mt-2">{message}</p>
                     <Link href="/login" className="mt-6 inline-block text-orange-600 hover:text-orange-700 font-medium">
-                        Back to Login
+                        {t('auth.backToLogin')}
                     </Link>
                 </div>
             )}

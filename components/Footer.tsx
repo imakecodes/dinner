@@ -1,6 +1,9 @@
 
 import React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+
 const Footer: React.FC = () => {
+  const { t } = useTranslation();
 
   return (
     <footer className="mt-32 py-16 border-t border-slate-200 text-center">
@@ -10,7 +13,7 @@ const Footer: React.FC = () => {
           Dinner?
         </div>
         <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">
-          Smart & Safe Culinary Intelligence
+          {t('common.slogan')}
         </p>
 
         <div className="mt-8 flex justify-center gap-6 text-slate-300">

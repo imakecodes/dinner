@@ -7,7 +7,10 @@ import { KitchenMember, Kitchen } from '@/types';
 import { TagInput } from '@/components/ui/TagInput';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
+import { useTranslation } from '@/hooks/useTranslation';
+
 export default function MembersPage() {
+    const { t } = useTranslation();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [members, setMembers] = useState<KitchenMember[]>([]);
     const [kitchen, setKitchen] = useState<Kitchen | null>(null);
@@ -110,7 +113,7 @@ export default function MembersPage() {
     const handleEditClick = (member: KitchenMember) => {
         // Restriction: Guest can only edit themselves
         if (currentUserMember?.isGuest && currentUserMember.id !== member.id) {
-            alert("Guest users can only edit their own profile. To edit other members or add new members, please ask a kitchen administrator to upgrade your permissions");
+            alert(t('members.guestEditError'));
             return;
         }
 
@@ -155,7 +158,7 @@ export default function MembersPage() {
     const handleShareCode = (platform: 'whatsapp' | 'telegram') => {
         if (!kitchen?.inviteCode) return;
 
-        const text = `Join my kitchen on Dinner App! Use code: ${kitchen.inviteCode}`;
+        const text = `${t('members.shareCode')}: ${kitchen.inviteCode}`;
         const encodedText = encodeURIComponent(text);
 
         switch (platform) {
@@ -189,7 +192,7 @@ export default function MembersPage() {
                         >
                             <i className="fas fa-bars"></i>
                         </button>
-                        <h1 className="font-black text-xl tracking-tight text-slate-900">Kitchen Members</h1>
+                        <h1 className="font-black text-xl tracking-tight text-slate-900">{t('members.title')}</h1>
                     </div>
                 </div>
             </header>
@@ -199,19 +202,19 @@ export default function MembersPage() {
             <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
                 {kitchen?.inviteCode && !currentUserMember?.isGuest && (
                     <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 text-center space-y-2 mb-6">
-                        <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Invite Code</h3>
+                        <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">{t('kitchens.inviteCode')}</h3>
                         <div
                             onClick={() => {
                                 navigator.clipboard.writeText(kitchen.inviteCode || '');
-                                alert('Code copied!');
+                                alert(t('members.copied'));
                             }}
                             className="text-4xl font-black text-indigo-900 cursor-pointer hover:scale-105 transition-transform active:scale-95 flex items-center justify-center gap-3"
-                            title="Click to copy"
+                            title={t('members.clickToCopy')}
                         >
                             {kitchen.inviteCode}
                             <i className="fas fa-copy text-xl text-indigo-300"></i>
                         </div>
-                        <p className="text-xs text-indigo-400 font-medium pb-2">Share this code to invite others to your kitchen</p>
+                        <p className="text-xs text-indigo-400 font-medium pb-2">{t('members.shareCode')}</p>
 
                         <div className="flex justify-center gap-3 pt-2">
                             <button
@@ -231,7 +234,7 @@ export default function MembersPage() {
                 )}
 
                 {loading ? (
-                    <div className="text-center py-20 text-slate-400 font-bold animate-pulse">Loading Members...</div>
+                    <div className="text-center py-20 text-slate-400 font-bold animate-pulse">{t('common.loading')}</div>
                 ) : (
                     <>
                         {/* Manage Member Form (Moved to Top) - Show if Admin OR if Guest matches Edited Member */}
@@ -242,11 +245,11 @@ export default function MembersPage() {
                                         <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-sm">
                                             <i className={`fas ${editingMember ? 'fa-user-edit' : 'fa-user-plus'}`}></i>
                                         </span>
-                                        {editingMember ? 'Edit Member' : 'Add Guest / Member'}
+                                        {editingMember ? t('members.editMember') : t('members.addMember')}
                                     </div>
                                     {editingMember && (
                                         <button onClick={handleCancelEdit} className="text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider">
-                                            Cancel
+                                            {t('common.cancel')}
                                         </button>
                                     )}
                                 </h2>
@@ -254,10 +257,10 @@ export default function MembersPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Name Field */}
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Name</label>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">{t('members.name')}</label>
                                             <input
                                                 type="text"
-                                                placeholder="e.g. Grandma, Mike"
+                                                placeholder={t('members.namePlaceholder')}
                                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-slate-300 placeholder:font-medium"
                                                 value={newMemberName}
                                                 onChange={(e) => setNewMemberName(e.target.value)}
@@ -268,10 +271,10 @@ export default function MembersPage() {
 
                                         {/* Email Field */}
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email (Optional)</label>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">{t('members.emailOptional')}</label>
                                             <input
                                                 type="email"
-                                                placeholder="invite@example.com"
+                                                placeholder={t('members.emailPlaceholder')}
                                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-medium text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-slate-300 placeholder:font-medium"
                                                 name="email"
                                                 value={newMemberEmail} // Controlled by state
@@ -283,39 +286,39 @@ export default function MembersPage() {
                                     {/* Preferences Fields - Stacked Vertical */}
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Likes</label>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">{t('members.likes')}</label>
                                             <TagInput
                                                 key={`likes-${editingMember?.id || 'new'}`}
                                                 tags={likesTags}
                                                 setTags={setLikesTags}
                                                 suggestions={allLikes}
-                                                placeholder="Type likes (e.g. Italian, Spicy)..."
+                                                placeholder={t('members.likesPlaceholder')}
                                                 icon="fa-heart"
                                                 chipColorClass="bg-emerald-100 text-emerald-700 border border-emerald-200"
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Dislikes</label>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">{t('members.dislikes')}</label>
                                             <TagInput
                                                 key={`dislikes-${editingMember?.id || 'new'}`}
                                                 tags={dislikesTags}
                                                 setTags={setDislikesTags}
                                                 suggestions={allDislikes}
-                                                placeholder="Type dislikes (e.g. Mushrooms, Fish)..."
+                                                placeholder={t('members.dislikesPlaceholder')}
                                                 icon="fa-thumbs-down"
                                                 chipColorClass="bg-slate-100 text-slate-600 border border-slate-200"
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Dietary Restrictions</label>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">{t('members.restrictions')}</label>
                                             <TagInput
                                                 key={`restrictions-${editingMember?.id || 'new'}`}
                                                 tags={restrictionsTags}
                                                 setTags={setRestrictionsTags}
                                                 suggestions={allRestrictions}
-                                                placeholder="Type restrictions (e.g. Vegan, Nut Allergy)..."
+                                                placeholder={t('members.restrictionsPlaceholder')}
                                                 icon="fa-ban"
                                                 chipColorClass="bg-rose-100 text-rose-700 border border-rose-200"
                                             />
@@ -325,7 +328,7 @@ export default function MembersPage() {
                                     {/* Actions */}
                                     <div className="pt-2 flex justify-between items-center">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-slate-400 uppercase">Role:</span>
+                                            <span className="text-xs font-bold text-slate-400 uppercase">{t('members.role')}:</span>
                                             {!currentUserMember?.isGuest ? (
                                                 <>
                                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -337,17 +340,17 @@ export default function MembersPage() {
                                                             onChange={(e) => setNewMemberIsGuest(e.target.checked)} // Update state
                                                             disabled={editingMember?.role === 'ADMIN'}
                                                         />
-                                                        <span className="text-sm font-medium text-slate-700">Guest</span>
+                                                        <span className="text-sm font-medium text-slate-700">{t('members.guest')}</span>
                                                     </label>
                                                     {/* Helper text for Admin */}
                                                     {editingMember?.role === 'ADMIN' && (
                                                         <span className="text-[10px] uppercase font-black text-amber-500 bg-amber-50 px-2 py-1 rounded ml-2">
-                                                            Admin cannot be Guest
+                                                            {t('members.adminCannotBeGuest')}
                                                         </span>
                                                     )}
                                                 </>
                                             ) : (
-                                                <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">Guest</span>
+                                                <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">{t('members.guest')}</span>
                                             )}
                                         </div>
                                         <button
@@ -355,27 +358,27 @@ export default function MembersPage() {
                                             disabled={!newMemberName.trim() || isAdding}
                                             className={`px-4 py-4 text-white rounded-xl font-bold shadow-lg transition-all w-full md:w-auto ${editingMember ? 'bg-slate-900 hover:bg-black shadow-slate-200' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
                                         >
-                                            {isAdding ? <i className="fas fa-spinner fa-spin"></i> : (editingMember ? 'Save Changes' : 'Add Member')}
+                                            {isAdding ? <i className="fas fa-spinner fa-spin"></i> : (editingMember ? t('common.save') : t('members.addMember'))}
                                         </button>
                                     </div>
 
                                     <p className="text-center text-xs text-slate-400 font-medium">
-                                        {editingMember ? 'Updating helps the AI adjust recipes instantly.' : 'Tip: Add preferences to help the AI chef personalize recipes!'}
+                                        {editingMember ? t('members.saveBoxGuest') : t('members.saveBoxAdd')}
                                     </p>
                                 </form>
                             </section>
                         ) : (
                             <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6 text-center mb-6">
-                                <p className="text-blue-600 font-bold mb-2">You are viewing this kitchen as a Guest.</p>
-                                <p className="text-xs text-blue-400">Select your profile below to update your preferences.</p>
+                                <p className="text-blue-600 font-bold mb-2">{t('members.guestViewTitle')}</p>
+                                <p className="text-xs text-blue-400">{t('members.guestViewDesc')}</p>
                             </div>
                         )}
 
                         {/* Member List */}
                         <section className="space-y-4">
-                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">Who is in this kitchen?</h2>
+                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">{t('members.whoIs')}</h2>
                             <div className="grid gap-4">
-                                {members.length === 0 && <div className="text-slate-500 font-medium text-center py-4 bg-white rounded-3xl border border-slate-100 italic">No members found.</div>}
+                                {members.length === 0 && <div className="text-slate-500 font-medium text-center py-4 bg-white rounded-3xl border border-slate-100 italic">{t('members.noMembers')}</div>}
 
                                 {members.map((m) => (
                                     <div
@@ -392,15 +395,15 @@ export default function MembersPage() {
                                                     <div className="flex items-center gap-2">
                                                         <h3 className="font-bold text-xl text-slate-900">{m.name}</h3>
                                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border ${m.role === 'ADMIN' ? 'bg-amber-100 text-amber-600 border-amber-200' : m.isGuest ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-indigo-100 text-indigo-600 border-indigo-200'}`}>
-                                                            {m.role === 'ADMIN' ? 'Owner' : m.isGuest ? 'Guest' : 'Member'}
+                                                            {m.role === 'ADMIN' ? t('members.owner') : m.isGuest ? t('members.guest') : t('members.member')}
                                                         </span>
                                                     </div>
                                                     {m.email && (
                                                         <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400 mt-0.5">
                                                             <i className="fas fa-envelope text-[10px]"></i>
                                                             {m.email}
-                                                            {!m.userId && <span className="text-orange-500 bg-orange-50 px-1.5 rounded ml-1">Pending</span>}
-                                                            {m.userId && <span className="text-indigo-500 bg-indigo-50 px-1.5 rounded ml-1">Linked</span>}
+                                                            {!m.userId && <span className="text-orange-500 bg-orange-50 px-1.5 rounded ml-1">{t('members.pending')}</span>}
+                                                            {m.userId && <span className="text-indigo-500 bg-indigo-50 px-1.5 rounded ml-1">{t('members.linked')}</span>}
                                                         </div>
                                                     )}
                                                 </div>
@@ -410,7 +413,7 @@ export default function MembersPage() {
                                                 <button
                                                     onClick={(e) => handleDeleteClick(m.id, e)}
                                                     className="w-10 h-10 rounded-xl hover:bg-rose-100 text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors"
-                                                    title="Remove member"
+                                                    title={t('members.remove')}
                                                 >
                                                     <i className="fas fa-trash-alt"></i>
                                                 </button>
@@ -422,42 +425,42 @@ export default function MembersPage() {
                                             {/* Likes */}
                                             <div className="bg-slate-50/50 rounded-xl p-3">
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2 flex items-center gap-1">
-                                                    <i className="fas fa-heart"></i> Likes
+                                                    <i className="fas fa-heart"></i> {t('members.likes')}
                                                 </h4>
                                                 <div className="flex flex-col gap-1.5">
                                                     {m.likes?.length ? m.likes.map((l, i) => (
                                                         <span key={i} className="text-xs font-bold text-emerald-800 bg-emerald-100/50 px-2 py-1 rounded-md inline-block w-fit">
                                                             {l}
                                                         </span>
-                                                    )) : <span className="text-xs text-slate-300 italic">None</span>}
+                                                    )) : <span className="text-xs text-slate-300 italic">{t('members.none')}</span>}
                                                 </div>
                                             </div>
 
                                             {/* Dislikes */}
                                             <div className="bg-slate-50/50 rounded-xl p-3">
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-1">
-                                                    <i className="fas fa-thumbs-down"></i> Dislikes
+                                                    <i className="fas fa-thumbs-down"></i> {t('members.dislikes')}
                                                 </h4>
                                                 <div className="flex flex-col gap-1.5">
                                                     {m.dislikes?.length ? m.dislikes.map((d, i) => (
                                                         <span key={i} className="text-xs font-bold text-slate-600 bg-slate-200/50 px-2 py-1 rounded-md inline-block w-fit">
                                                             {d}
                                                         </span>
-                                                    )) : <span className="text-xs text-slate-300 italic">None</span>}
+                                                    )) : <span className="text-xs text-slate-300 italic">{t('members.none')}</span>}
                                                 </div>
                                             </div>
 
                                             {/* Restrictions */}
                                             <div className="bg-slate-50/50 rounded-xl p-3">
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-2 flex items-center gap-1">
-                                                    <i className="fas fa-ban"></i> Restrictions
+                                                    <i className="fas fa-ban"></i> {t('members.restrictions')}
                                                 </h4>
                                                 <div className="flex flex-col gap-1.5">
                                                     {m.restrictions?.length ? m.restrictions.map((r, i) => (
                                                         <span key={i} className="text-xs font-bold text-rose-700 bg-rose-100/50 px-2 py-1 rounded-md inline-block w-fit">
                                                             {r}
                                                         </span>
-                                                    )) : <span className="text-xs text-slate-300 italic">Safe</span>}
+                                                    )) : <span className="text-xs text-slate-300 italic">{t('members.safe')}</span>}
                                                 </div>
                                             </div>
                                         </div>
@@ -473,8 +476,8 @@ export default function MembersPage() {
                 isOpen={!!confirmDeleteId}
                 onClose={() => setConfirmDeleteId(null)}
                 onConfirm={confirmDelete}
-                title="Remove Member"
-                message="Are you sure you want to remove this member? This action cannot be undone."
+                title={t('members.removeConfirmTitle')}
+                message={t('members.removeConfirmMsg')}
             />
         </div>
     );

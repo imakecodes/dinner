@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { storageService } from '../services/storageService';
 import { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ interface Props {
 
 const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const [user, setUser] = useState<any>(null);
   const [isHouseDropdownOpen, setIsHouseDropdownOpen] = useState(false);
 
@@ -79,7 +81,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-home w-6 group-hover:scale-110 transition-transform"></i>
-              Home
+              {t('nav.home')}
             </button>
 
             <button
@@ -87,47 +89,47 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-box-open w-6 group-hover:scale-110 transition-transform"></i>
-              Pantry & Fridge
+              {t('nav.pantry')}
             </button>
             <button
               onClick={() => onNavigate('/recipes')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-book-open w-6 group-hover:scale-110 transition-transform"></i>
-              Recipes
+              {t('nav.recipes')} ({t('nav.history')})
             </button>
             <button
               onClick={() => onNavigate('/shopping-list')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-shopping-basket w-6 group-hover:scale-110 transition-transform"></i>
-              Shopping List
+              {t('nav.shopping')}
             </button>
             <button
               onClick={() => onNavigate('/members')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-users w-6 group-hover:scale-110 transition-transform"></i>
-              Kitchen Members
+              {t('nav.members')}
             </button>
             <button
               onClick={() => onNavigate('/kitchens')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-home w-6 group-hover:scale-110 transition-transform"></i>
-              Manage Kitchens
+              {t('nav.kitchens')}
             </button>
             <button
               onClick={() => onNavigate('/settings')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-cog w-6 group-hover:scale-110 transition-transform"></i>
-              Settings
+              {t('nav.settings')}
             </button>
           </nav>
 
           <div className="mt-auto pt-8 border-t border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Account</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('nav.account')}</p>
             <div className="relative mb-4">
               {/* User Profile / House Info */}
               <div className="flex items-center gap-4 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -153,7 +155,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               {isHouseDropdownOpen && user?.kitchenMemberships && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
                   <div className="p-3 bg-slate-50 border-b border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Kitchen</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('nav.switchKitchen')}</p>
                   </div>
                   <div className="max-h-48 overflow-y-auto">
                     {user.kitchenMemberships.map((m: any) => (
@@ -169,7 +171,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
                   </div>
                   <div className="p-2 border-t border-slate-100">
                     <button onClick={() => { setIsHouseDropdownOpen(false); onNavigate('/kitchens'); }} className="w-full py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg">
-                      <i className="fas fa-plus mr-1"></i> New Kitchen
+                      <i className="fas fa-plus mr-1"></i> {t('nav.newKitchen')}
                     </button>
                   </div>
                 </div>
@@ -181,7 +183,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-rose-600 font-bold hover:bg-rose-50 transition-colors text-sm"
             >
               <i className="fas fa-sign-out-alt"></i>
-              Sign Out
+              {t('nav.logout')}
             </button>
           </div>
         </div>

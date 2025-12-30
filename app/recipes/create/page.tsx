@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import RecipeForm from '@/components/RecipeForm';
 import { storageService } from '@/services/storageService';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function CreateRecipePage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (formData: any) => {
@@ -29,7 +31,7 @@ export default function CreateRecipePage() {
             // For now home/history is fine.
         } catch (error) {
             console.error("Failed to create recipe:", error);
-            alert("Failed to create recipe. Please try again.");
+            alert(t('common.error'));
         } finally {
             setIsSubmitting(false);
         }
@@ -43,14 +45,14 @@ export default function CreateRecipePage() {
                         <i className="fas fa-arrow-left text-xl"></i>
                     </Link>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                        Create Recipe
+                        {t('recipeForm.titleCreate')}
                     </h1>
                 </div>
             </header>
 
             <main className="max-w-3xl mx-auto px-4">
                 <RecipeForm
-                    title="Design Your Dish"
+                    title={t('recipeForm.titleCreate')}
                     onSubmit={handleSubmit}
                     isSubmitting={isSubmitting}
                 />

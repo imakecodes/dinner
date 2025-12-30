@@ -2,6 +2,7 @@
 import React from 'react';
 import { RecipeRecord } from '../types';
 import { storageService } from '../services/storageService';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface Props {
   history: RecipeRecord[];
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGuest }) => {
+  const { t } = useTranslation();
 
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
 
@@ -37,7 +39,7 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
     <section className="bg-slate-50 rounded-[2.5rem] p-8 md:p-10 border border-slate-200">
       <h2 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
         <i className="fas fa-book-open text-rose-500"></i>
-        Recipes
+        {t('nav.recipes')}
       </h2>
 
       {/* Grid: 1 col on mobile, max 2 cols on larger screens */}
@@ -100,7 +102,7 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
                   onClick={() => requestDelete(recipe.id)}
                   className="text-slate-400 hover:text-red-500 text-xs font-bold transition-colors flex items-center gap-2 px-2 py-1 hover:bg-red-50 rounded-lg"
                 >
-                  <i className="fas fa-trash"></i> Delete
+                  <i className="fas fa-trash"></i> {t('common.delete')}
                 </button>
               )}
               {isGuest && <div></div>} {/* Spacer if delete hidden */}
@@ -109,7 +111,7 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
                 onClick={() => onViewRecipe?.(recipe)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-rose-100 hover:text-rose-700 transition-all border border-rose-100"
               >
-                View Recipe <i className="fas fa-arrow-right"></i>
+                {t('recipes.view')} <i className="fas fa-arrow-right"></i>
               </button>
             </div>
           </div>
@@ -124,9 +126,9 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
                 <i className="fas fa-exclamation-triangle text-2xl"></i>
               </div>
-              <h3 className="text-xl font-black text-slate-900">Delete Recipe?</h3>
+              <h3 className="text-xl font-black text-slate-900">{t('recipes.deleteTitle')}</h3>
               <p className="text-slate-500 text-sm font-medium mt-2">
-                This action cannot be undone. Are you sure you want to delete this recipe?
+                {t('recipes.deleteDesc')}
               </p>
             </div>
 
@@ -135,13 +137,13 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
                 onClick={() => setItemToDelete(null)}
                 className="py-3 px-4 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={confirmDelete}
                 className="py-3 px-4 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-200"
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>

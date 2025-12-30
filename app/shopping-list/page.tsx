@@ -5,9 +5,11 @@ import Sidebar from '@/components/Sidebar';
 import { storageService } from '@/services/storageService';
 import { ShoppingItem } from '@/types';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ShoppingListPage() {
     const { isGuest } = useCurrentMember();
+    const { t } = useTranslation();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [items, setItems] = useState<ShoppingItem[]>([]);
     const [newItemName, setNewItemName] = useState('');
@@ -92,21 +94,21 @@ export default function ShoppingListPage() {
                         >
                             <i className="fas fa-bars"></i>
                         </button>
-                        <h1 className="font-black text-xl tracking-tight text-slate-900">Shopping List</h1>
+                        <h1 className="font-black text-xl tracking-tight text-slate-900">{t('shopping.title')}</h1>
                     </div>
                 </div>
             </header>
 
             <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
                 {loading ? (
-                    <div className="text-center py-20 text-slate-400 font-bold animate-pulse">Loading List...</div>
+                    <div className="text-center py-20 text-slate-400 font-bold animate-pulse">{t('shopping.loading')}</div>
                 ) : (
                     <>
                         {!isGuest && (
                             <form onSubmit={handleAddItem} className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Add item..."
+                                    placeholder={t('shopping.addItem')}
                                     className="flex-1 bg-transparent px-4 font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none"
                                     value={newItemName}
                                     onChange={(e) => setNewItemName(e.target.value)}
@@ -118,7 +120,7 @@ export default function ShoppingListPage() {
                         )}
                         {isGuest && (
                             <div className="text-center mb-4 p-4 bg-slate-100 rounded-2xl text-slate-500 text-sm font-bold">
-                                Shopping List is generic for the Kitchen (Read Only)
+                                {t('shopping.readOnly')}
                             </div>
                         )}
 
@@ -126,7 +128,7 @@ export default function ShoppingListPage() {
                             {items.length === 0 && (
                                 <div className="text-center py-20 opacity-50">
                                     <i className="fas fa-leaf text-4xl mb-4 text-slate-300"></i>
-                                    <p className="font-bold text-slate-400">All caught up!</p>
+                                    <p className="font-bold text-slate-400">{t('shopping.empty')}</p>
                                 </div>
                             )}
 
@@ -151,12 +153,12 @@ export default function ShoppingListPage() {
                                             <div className="flex gap-2 mt-1">
                                                 {item.pantryItem && (
                                                     <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                                        From Pantry ({item.pantryItem.replenishmentRule})
+                                                        {t('shopping.fromPantry')} ({item.pantryItem.replenishmentRule})
                                                     </span>
                                                 )}
                                                 {item.recipeItems?.length > 0 && (
                                                     <span className="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                                                        For {item.recipeItems.length} Recipe(s)
+                                                        {t('shopping.forRecipes').replace('{n}', item.recipeItems.length.toString())}
                                                     </span>
                                                 )}
                                             </div>

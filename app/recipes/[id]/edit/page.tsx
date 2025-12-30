@@ -6,11 +6,13 @@ import Link from 'next/link';
 import RecipeForm from '@/components/RecipeForm';
 import { storageService } from '@/services/storageService';
 import { RecipeRecord } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function EditRecipePage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
+    const { t } = useTranslation();
 
     const [recipe, setRecipe] = useState<RecipeRecord | null>(null);
     const [loading, setLoading] = useState(true);
@@ -37,14 +39,14 @@ export default function EditRecipePage() {
             router.push(`/recipes/${id}`);
         } catch (error) {
             console.error("Failed to update recipe:", error);
-            alert("Failed to update recipe.");
+            alert(t('settings.updateError'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    if (loading) return <div className="p-10 text-center font-bold text-slate-400">Loading recipe...</div>;
-    if (!recipe) return <div className="p-10 text-center font-bold text-slate-400">Recipe not found.</div>;
+    if (loading) return <div className="p-10 text-center font-bold text-slate-400">{t('common.loading')}</div>;
+    if (!recipe) return <div className="p-10 text-center font-bold text-slate-400">{t('recipeDetails.notFound')}</div>;
 
     return (
         <div className="min-h-screen bg-slate-50 selection:bg-rose-100 pb-20">
@@ -54,14 +56,14 @@ export default function EditRecipePage() {
                         <i className="fas fa-arrow-left text-xl"></i>
                     </Link>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                        Edit Recipe
+                        {t('recipeForm.titleEdit')}
                     </h1>
                 </div>
             </header>
 
             <main className="max-w-3xl mx-auto px-4">
                 <RecipeForm
-                    title={`Editing: ${recipe.recipe_title}`}
+                    title={`${t('recipeForm.titleEdit')}: ${recipe.recipe_title}`}
                     initialData={recipe}
                     onSubmit={handleSubmit}
                     isSubmitting={isSubmitting}

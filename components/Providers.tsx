@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { KitchenMember, MealType, Difficulty, PrepTimePreference, PantryItem } from '../types';
+import { KitchenMember, MealType, Difficulty, PrepTimePreference, PantryItem, Language } from '../types';
 import { storageService } from '../services/storageService';
 
 
@@ -19,6 +19,8 @@ interface AppContextType {
     setDifficulty: React.Dispatch<React.SetStateAction<Difficulty>>;
     prepTime: PrepTimePreference;
     setPrepTime: React.Dispatch<React.SetStateAction<PrepTimePreference>>;
+    language: Language;
+    setLanguage: React.Dispatch<React.SetStateAction<Language>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,6 +37,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
     const [prepTime, setPrepTime] = useState<PrepTimePreference>('quick');
 
+    const [language, setLanguage] = useState<Language>('en');
+
     // Load initial data from storageService if available (optional enhancement)
     useEffect(() => {
         // Skip fetching on auth pages
@@ -44,6 +48,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         async function loadData() {
             try {
+                // Load User Preferences first (Language)
+                const storedUser = await storageService.getCurrentUser();
+                if (storedUser && storedUser.user && storedUser.user.language) {
+                    setLanguage(storedUser.user.language as Language);
+                }
+
                 const storedPantry = await storageService.getPantry();
                 if (storedPantry && storedPantry.length > 0) {
                     setPantry(storedPantry);
@@ -74,7 +84,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             activeDiners, setActiveDiners,
             mealType, setMealType,
             difficulty, setDifficulty,
-            prepTime, setPrepTime
+            prepTime, setPrepTime,
+            language, setLanguage
         }}>
 
             {children}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { storageService } from '../services/storageService';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface Props {
   recipe: RecipeRecord;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
+  const { t } = useTranslation();
   const { isGuest } = useCurrentMember();
   const [recipe, setRecipe] = useState<RecipeRecord>(initialRecipe);
   // Initial favorite state comes from the record itself now
@@ -98,13 +100,13 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
           <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
               <div className="inline-flex px-3 py-1 bg-white/10 backdrop-blur-md text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
-                Today&apos;s Suggestion
+                {t('recipeCard.todaysSuggestion')}
               </div>
               <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20 text-white ${recipe.difficulty === 'easy' ? 'bg-green-500/80' :
                 recipe.difficulty === 'intermediate' ? 'bg-yellow-500/80' :
                   recipe.difficulty === 'chef' ? 'bg-slate-900 border-rose-500/50' : 'bg-red-500/80'
                 }`}>
-                {recipe.difficulty === 'chef' ? <><i className="fas fa-hat-chef mr-1"></i> CHEF</> : recipe.difficulty}
+                {recipe.difficulty === 'chef' ? <><i className="fas fa-hat-chef mr-1"></i> {t('recipeCard.chef')}</> : recipe.difficulty}
               </div>
             </div>
 
@@ -114,7 +116,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                   href={`/recipes/${recipe.id}/edit`}
                   className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest bg-white text-slate-900 hover:bg-slate-100 border border-slate-200"
                 >
-                  <i className="fas fa-edit mr-2"></i> Edit
+                  <i className="fas fa-edit mr-2"></i> {t('recipeCard.edit')}
                 </Link>
               )}
               <button
@@ -122,9 +124,9 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-2xl transition-all tracking-widest ${isFavorite ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
               >
                 {isFavorite ? (
-                  <><i className="fas fa-heart-broken mr-2"></i>Unfavorite</>
+                  <><i className="fas fa-heart-broken mr-2"></i>{t('recipeCard.unfavorite')}</>
                 ) : (
-                  <><i className="fas fa-heart mr-2"></i>Favorite</>
+                  <><i className="fas fa-heart mr-2"></i>{t('recipeCard.favorite')}</>
                 )}
               </button>
             </div>
@@ -161,7 +163,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
             <div>
               <h4 className="text-xl font-black text-slate-900 flex items-center gap-3 mb-6">
                 <i className="fas fa-shopping-basket text-amber-500"></i>
-                From Pantry
+                {t('recipeCard.fromPantry')}
               </h4>
               <ul className="space-y-3">
                 {recipe.ingredients_from_pantry.map((rawIng, idx) => {
@@ -199,7 +201,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                         )}
                         <span className="leading-tight">{ing.name}</span>
                       </div>
-                      <span className="ml-auto text-[8px] font-black uppercase bg-white px-2 py-1 rounded-full text-emerald-600 border border-emerald-200 shadow-sm opacity-60 group-hover:opacity-100 transition-opacity">Pantry</span>
+                      <span className="ml-auto text-[8px] font-black uppercase bg-white px-2 py-1 rounded-full text-emerald-600 border border-emerald-200 shadow-sm opacity-60 group-hover:opacity-100 transition-opacity">{t('recipeCard.pantry')}</span>
                     </li>
                   );
                 })}
@@ -211,7 +213,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 <div className="flex justify-between items-center mb-6">
                   <h4 className="text-lg font-black text-orange-900 flex items-center gap-3">
                     <i className="fas fa-cart-plus"></i>
-                    To Buy
+                    {t('recipeCard.toBuy')}
                   </h4>
 
                   <div className="flex gap-2 relative">
@@ -225,13 +227,13 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                     {showShareMenu && (
                       <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-100 shadow-2xl rounded-2xl p-2 z-30 animate-in fade-in zoom-in-95 duration-200">
                         <button onClick={() => handleShare('whatsapp')} className="w-full flex items-center gap-3 p-4 hover:bg-emerald-50 rounded-xl text-xs font-black text-slate-700 transition-colors">
-                          <i className="fab fa-whatsapp text-emerald-500 text-lg"></i> WhatsApp
+                          <i className="fab fa-whatsapp text-emerald-500 text-lg"></i> {t('recipeCard.whatsapp')}
                         </button>
                         <button onClick={() => handleShare('telegram')} className="w-full flex items-center gap-3 p-4 hover:bg-sky-50 rounded-xl text-xs font-black text-slate-700 transition-colors">
-                          <i className="fab fa-telegram text-sky-500 text-lg"></i> Telegram
+                          <i className="fab fa-telegram text-sky-500 text-lg"></i> {t('recipeCard.telegram')}
                         </button>
                         <button onClick={() => handleShare('copy')} className="w-full flex items-center gap-3 p-4 hover:bg-rose-50 rounded-xl text-xs font-black text-rose-600 transition-colors">
-                          <i className="fas fa-copy text-lg"></i> {copyFeedback ? 'Copied!' : 'Copy to Clipboard'}
+                          <i className="fas fa-copy text-lg"></i> {copyFeedback ? t('recipeCard.copied') : t('recipeCard.copyClipboard')}
                         </button>
                       </div>
                     )}
@@ -270,7 +272,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                             <button
                               onClick={() => setItemToAdd(ing.name)}
                               className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-orange-200 hover:scale-110 active:scale-95 transition-all outline-none"
-                              title="Add to Shopping List"
+                              title={t('recipeCard.addToShoppingList')}
                             >
                               <i className="fas fa-cart-shopping text-xs"></i>
                             </button>
@@ -297,7 +299,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
           <div className="md:col-span-7">
             <h4 className="text-xl font-black text-slate-900 flex items-center gap-3 mb-10">
               <i className="fas fa-list-ol text-rose-500"></i>
-              Step by Step
+              {t('recipeCard.stepByStep')}
             </h4>
             <div className="space-y-12 relative">
               <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
@@ -319,35 +321,35 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
             <div>
-              <h3 className="text-xl font-black text-slate-900">Add &quot;{itemToAdd}&quot; to List?</h3>
-              <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-wide">Select how to track this item</p>
+              <h3 className="text-xl font-black text-slate-900">{t('recipeCard.addToListTitle').replace('{item}', itemToAdd)}</h3>
+              <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-wide">{t('recipeCard.trackItem')}</p>
             </div>
 
             <div className="grid gap-3">
               <button onClick={() => confirmAddToPantry('ALWAYS')} className="p-4 rounded-xl bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 flex items-center gap-3 transition-all border border-indigo-100">
                 <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700"><i className="fas fa-sync"></i></div>
                 <div className="text-left">
-                  <div className="text-sm">Always Replenish</div>
-                  <div className="text-[10px] opacity-70">Auto-add to list when empty</div>
+                  <div className="text-sm">{t('recipeCard.alwaysReplenish')}</div>
+                  <div className="text-[10px] opacity-70">{t('recipeCard.alwaysReplenishDesc')}</div>
                 </div>
               </button>
               <button onClick={() => confirmAddToPantry('ONE_SHOT')} className="p-4 rounded-xl bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 flex items-center gap-3 transition-all border border-emerald-100">
                 <div className="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-700"><i className="fas fa-check"></i></div>
                 <div className="text-left">
-                  <div className="text-sm">One Shot</div>
-                  <div className="text-[10px] opacity-70">Buy heavily once</div>
+                  <div className="text-sm">{t('recipeCard.oneShot')}</div>
+                  <div className="text-[10px] opacity-70">{t('recipeCard.oneShotDesc')}</div>
                 </div>
               </button>
               <button onClick={() => confirmAddToPantry('NEVER')} className="p-4 rounded-xl bg-slate-50 text-slate-700 font-bold hover:bg-slate-100 flex items-center gap-3 transition-all border border-slate-200">
                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600"><i className="fas fa-ban"></i></div>
                 <div className="text-left">
-                  <div className="text-sm">Just Track</div>
-                  <div className="text-[10px] opacity-70">Don&apos;t replenish automatically</div>
+                  <div className="text-sm">{t('recipeCard.justTrack')}</div>
+                  <div className="text-[10px] opacity-70">{t('recipeCard.justTrackDesc')}</div>
                 </div>
               </button>
             </div>
 
-            <button onClick={() => setItemToAdd(null)} className="w-full py-3 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase tracking-wide">Cancel</button>
+            <button onClick={() => setItemToAdd(null)} className="w-full py-3 text-slate-400 font-bold hover:text-slate-600 text-sm uppercase tracking-wide">{t('recipeCard.cancel')}</button>
           </div>
         </div>
       )}

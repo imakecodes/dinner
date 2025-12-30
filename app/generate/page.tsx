@@ -6,9 +6,11 @@ import { SessionContext, MealType, RecipeRecord, Difficulty } from '../../types'
 import { storageService } from '../../services/storageService';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function GenerateRecipePage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const {
         members,
         pantry,
@@ -24,7 +26,7 @@ export default function GenerateRecipePage() {
 
     const handleGenerateRecipe = async () => {
         if (activeDiners.length === 0) {
-            setError("Please select who is eating first! (Check 'Members')");
+            setError(t('generate.selectDinersError'));
             return;
         }
         setIsGenerating(true);
@@ -63,7 +65,7 @@ export default function GenerateRecipePage() {
             router.push(`/recipes/${newRecord.id}`);
 
         } catch (err: any) {
-            setError("Failed to generate recipe. Please try again.");
+            setError(t('common.error'));
             console.error(err);
         } finally {
             setIsGenerating(false);
@@ -78,7 +80,7 @@ export default function GenerateRecipePage() {
                         <i className="fas fa-arrow-left text-xl"></i>
                     </Link>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                        New Recipe
+                        {t('generate.title')}
                     </h1>
                 </div>
             </header>
@@ -87,7 +89,7 @@ export default function GenerateRecipePage() {
 
                 {/* Who (Simplified Select) */}
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Who is eating?</label>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t('generate.whoIsEating')}</label>
                     <div className="flex flex-wrap gap-2">
                         {members.map(m => (
                             <button
@@ -98,29 +100,29 @@ export default function GenerateRecipePage() {
                                 {m.name}
                             </button>
                         ))}
-                        {members.length === 0 && <Link href="/kitchens" className="text-sm text-rose-600 font-bold underline">Add members first</Link>}
+                        {members.length === 0 && <Link href="/kitchens" className="text-sm text-rose-600 font-bold underline">{t('generate.addMembersFirst')}</Link>}
                     </div>
                 </div>
 
                 {/* Type & Difficulty */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Meal Type</label>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t('generate.mealType')}</label>
                         <div className="flex gap-2 flex-wrap">
-                            {['appetizer', 'main', 'dessert', 'snack'].map(t => (
+                            {['appetizer', 'main', 'dessert', 'snack'].map(val => (
                                 <button
-                                    key={t}
-                                    onClick={() => setMealType(t as MealType)}
-                                    className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border-2 uppercase ${mealType === t ? 'bg-rose-100 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-400'}`}
+                                    key={val}
+                                    onClick={() => setMealType(val as MealType)}
+                                    className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border-2 uppercase ${mealType === val ? 'bg-rose-100 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-400'}`}
                                 >
-                                    {t}
+                                    {val === 'main' ? t('recipeForm.mainCourse') : val === 'appetizer' ? t('recipeForm.appetizer') : val === 'dessert' ? t('recipeForm.dessert') : t('recipeForm.snack')}
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Difficulty</label>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t('generate.difficulty')}</label>
                         <div className="flex gap-2 flex-wrap">
                             {['easy', 'intermediate', 'advanced'].map(d => (
                                 <button
@@ -128,7 +130,7 @@ export default function GenerateRecipePage() {
                                     onClick={() => setDifficulty(d as Difficulty)}
                                     className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border-2 uppercase ${difficulty === d ? 'bg-indigo-100 border-indigo-500 text-indigo-700' : 'bg-white border-slate-200 text-slate-400'}`}
                                 >
-                                    {d}
+                                    {d === 'easy' ? t('recipeForm.easy') : d === 'intermediate' ? t('recipeForm.intermediate') : t('recipeForm.advanced')}
                                 </button>
                             ))}
                         </div>
@@ -137,11 +139,11 @@ export default function GenerateRecipePage() {
 
                 {/* Observation */}
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Any special requests?</label>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t('generate.specialRequests')}</label>
                     <textarea
                         value={observation}
                         onChange={e => setObservation(e.target.value)}
-                        placeholder="e.g. I have 20 minutes, use the oven..."
+                        placeholder={t('generate.specialRequestsPlaceholder')}
                         className="w-full h-32 p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:border-rose-500 outline-none resize-none"
                     />
                 </div>
@@ -153,13 +155,13 @@ export default function GenerateRecipePage() {
                     className="w-full py-6 bg-rose-600 rounded-3xl text-white font-black text-xl shadow-xl shadow-rose-200 hover:bg-rose-700 hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
                 >
                     {isGenerating ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-magic"></i>}
-                    {isGenerating ? 'Cooking Magic...' : 'Generate Recipe'}
+                    {isGenerating ? t('generate.generating') : t('generate.generateBtn')}
                 </button>
 
                 <div className="text-center">
-                    <span className="text-slate-400 font-medium text-sm"> — OR — </span>
+                    <span className="text-slate-400 font-medium text-sm"> {t('generate.or')} </span>
                     <Link href="/recipes/create" className="block mt-4 py-3 bg-white border-2 border-slate-200 rounded-2xl text-slate-600 font-bold hover:border-slate-300 hover:bg-slate-50 transition-all">
-                        <i className="fas fa-pen-to-square mr-2"></i> Create Manually
+                        <i className="fas fa-pen-to-square mr-2"></i> {t('generate.createManually')}
                     </Link>
                 </div>
 

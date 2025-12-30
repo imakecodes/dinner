@@ -5,11 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { storageService } from '@/services/storageService';
 import { RecipeRecord } from '@/types';
 import RecipeCard from '@/components/RecipeCard';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function RecipeDetailsPage() {
     const { id } = useParams();
     const router = useRouter();
-    // const { lang } = useApp(); // Removed
+    const { t } = useTranslation();
     const [recipe, setRecipe] = useState<RecipeRecord | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -35,12 +36,12 @@ export default function RecipeDetailsPage() {
     if (!recipe) {
         return (
             <div className="text-center mt-20">
-                <h2 className="text-2xl font-bold text-slate-700">Recipe not found!</h2>
+                <h2 className="text-2xl font-bold text-slate-700">{t('recipeDetails.notFound')}</h2>
                 <button
                     onClick={() => router.back()}
                     className="mt-4 px-6 py-2 bg-rose-600 text-white rounded-xl"
                 >
-                    Go Back
+                    {t('recipeDetails.goBack')}
                 </button>
             </div>
         );
@@ -52,7 +53,7 @@ export default function RecipeDetailsPage() {
                 onClick={() => router.push('/recipes')}
                 className="flex items-center gap-2 text-slate-500 hover:text-rose-600 font-bold transition-colors"
             >
-                <i className="fas fa-arrow-left"></i> Back to Recipes
+                <i className="fas fa-arrow-left"></i> {t('recipeDetails.backToRecipes')}
             </button>
 
             <RecipeCard

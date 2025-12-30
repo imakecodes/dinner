@@ -2,7 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { PantryItem } from '../types';
 import { storageService } from '../services/storageService';
 import { ConfirmDialog } from './ConfirmDialog';
+
 import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface Props {
   pantry: PantryItem[];
@@ -11,6 +13,7 @@ interface Props {
 
 const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
   const { isGuest } = useCurrentMember();
+  const { t } = useTranslation();
   const [newItemName, setNewItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -107,9 +110,9 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
           <div>
             <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800">
               <i className="fas fa-box-open text-amber-500"></i>
-              Pantry & Fridge
+              {t('pantry.title')}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">What do we have today? The AI will prioritize these items.</p>
+            <p className="text-sm text-slate-500 mt-1">{t('pantry.subtitle')}</p>
           </div>
         </div>
 
@@ -117,7 +120,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
         {!isGuest && (
           <div className="flex gap-2">
             <input
-              placeholder="Ex: Zucchini, Chicken Breast..."
+              placeholder={t('pantry.placeholder')}
               className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-amber-500"
               value={newItemName}
               onKeyPress={e => e.key === 'Enter' && handleAdd()}
@@ -131,7 +134,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
                 : 'bg-amber-500 text-white shadow-amber-100 hover:bg-amber-600'
                 }`}
             >
-              Include
+              {t('pantry.include')}
             </button>
           </div>
         )}
@@ -144,7 +147,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
             <i className="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
             <input
               type="text"
-              placeholder="Search pantry..."
+              placeholder={t('pantry.search')}
               className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-slate-200 transition-all"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -156,15 +159,15 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
           {filteredPantry.length === 0 ? (
             <div className="p-12 text-center text-slate-400">
               <i className="fas fa-carrot text-4xl mb-3 opacity-20"></i>
-              <p>No ingredients found.</p>
+              <p>{t('pantry.empty')}</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead className="bg-slate-50 sticky top-0 z-10 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-3">Ingredient</th>
-                  <th className="px-6 py-3 text-center">In Stock?</th>
-                  {!isGuest && <th className="px-6 py-3 text-right">Actions</th>}
+                  <th className="px-6 py-3">{t('pantry.ingredient')}</th>
+                  <th className="px-6 py-3 text-center">{t('pantry.inStockQuestion')}</th>
+                  {!isGuest && <th className="px-6 py-3 text-right">{t('pantry.actions')}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -222,8 +225,8 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
 
       <ConfirmDialog
         isOpen={!!itemToDelete}
-        title="Remove Ingredient?"
-        message={`Are you sure you want to remove ${itemToDelete?.name} from your pantry?`}
+        title={t('pantry.removeTitle')}
+        message={t('pantry.removeMsg').replace('{item}', itemToDelete?.name || '')}
         onClose={() => setItemToDelete(null)}
         onConfirm={confirmDelete}
       />
