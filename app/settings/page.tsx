@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 import { storageService } from '../../services/storageService';
 import { MeasurementSystem, Language } from '../../types';
@@ -24,11 +24,7 @@ export default function SettingsPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    useEffect(() => {
-        loadUser();
-    }, []);
-
-    const loadUser = async () => {
+    const loadUser = useCallback(async () => {
         try {
             const data = await storageService.getCurrentUser();
             if (data && data.user) {
@@ -45,7 +41,11 @@ export default function SettingsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [setGlobalLanguage]);
+
+    useEffect(() => {
+        loadUser();
+    }, [loadUser]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
