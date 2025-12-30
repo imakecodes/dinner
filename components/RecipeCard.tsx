@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { RecipeRecord } from '../types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { storageService } from '../services/storageService';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
@@ -16,6 +17,7 @@ interface Props {
 const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
   const { t, lang } = useTranslation();
   const { isGuest } = useCurrentMember();
+  const router = useRouter();
   const [recipe, setRecipe] = useState<RecipeRecord>(initialRecipe);
   const [originalRecipe, setOriginalRecipe] = useState<RecipeRecord | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -55,7 +57,15 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
       });
 
       if (!res.ok) throw new Error('Translation failed');
+      if (!res.ok) throw new Error('Translation failed');
       const translatedData = await res.json();
+
+      // Check if we received a new ID (persistence logic)
+      if (translatedData.id && translatedData.id !== recipe.id) {
+         // Redirect to the new recipe
+         router.push(`/recipes/${translatedData.id}`);
+         return; 
+      }
 
       setOriginalRecipe(recipe);
       setRecipe({ ...recipe, ...translatedData });

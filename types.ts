@@ -86,6 +86,7 @@ export interface RecipeRecord extends GeneratedRecipe {
   dishImage?: string;
   language?: Language;
   image_base64?: string;
+  originalRecipeId?: string | null;
 }
 
 export type ViewState = 'home' | 'members' | 'pantry' | 'history' | 'shopping_list';

@@ -1,5 +1,47 @@
 
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
+
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+if (!global.Request) {
+    global.Request = class Request {
+        constructor(input, init) {
+            this.input = input;
+            this.init = init;
+            this.headers = new Headers(init?.headers);
+        }
+        async json() {
+            return JSON.parse(this.init?.body || '{}');
+        }
+    };
+}
+if (!global.Response) {
+    global.Response = class Response {
+        constructor(body, init) {
+            this.body = body;
+            this.status = init?.status || 200;
+            this.ok = this.status >= 200 && this.status < 300;
+            this.headers = new Headers(init?.headers);
+        }
+        async json() {
+            return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+        }
+        static json(data, init) {
+            return new Response(JSON.stringify(data), init);
+        }
+    };
+}
+if (!global.Headers) {
+    global.Headers = class Headers {
+        constructor(init) {
+            this.map = new Map(Object.entries(init || {}));
+        }
+        get(name) { return this.map.get(name); }
+        set(name, value) { this.map.set(name, value); }
+    };
+}
 
 const translations = {
   en: {

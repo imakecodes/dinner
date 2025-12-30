@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { translateRecipe } from '@/services/geminiService';
-import { GeneratedRecipe, RecipeRecord } from '@/types';
+import { GeneratedRecipe } from '@/types';
 
 export async function POST(
     req: NextRequest,
-    context: { params: Promise<{ id: string }> } // Updated to match Next.js 15+ dynamic route params type
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const { id } = await context.params;
@@ -15,23 +15,54 @@ export async function POST(
             return NextResponse.json({ error: 'Target language is required' }, { status: 400 });
         }
 
+        // 1. Fetch the recipe to be translated
         const recipe = await prisma.recipe.findUnique({
             where: { id },
+            include: {
+                ingredients: { include: { ingredient: true } },
+                shoppingItems: { include: { shoppingItem: true } }
+            }
         });
 
         if (!recipe) {
             return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
         }
 
-        // Prepare object for translation (excluding DB fields)
+        // 2. Determine the "Root" Original ID
+        // If this recipe is already a translation, use its original. Otherwise, this IS the original.
+        const rootOriginalId = recipe.originalRecipeId || recipe.id;
+
+        // 3. Check if a translation already exists for this language linked to the same root
+        const existingTranslation = await prisma.recipe.findFirst({
+            where: {
+                originalRecipeId: rootOriginalId,
+                language: targetLanguage
+            }
+        });
+
+        if (existingTranslation) {
+            // Return existing translation immediately
+            // We need to fetch it with full details to match the expect response format if frontend expects full object
+            // Ideally we redirect, but the frontend expects the data to render/redirect.
+            // Let's return the basic fields or fetch full if needed. Frontend currently expects GeneratedRecipe-like + id.
+            return NextResponse.json(existingTranslation);
+        }
+
+        // 4. Prepare payload for AI
         const generatedFormat: GeneratedRecipe = {
             analysis_log: recipe.analysis_log,
             recipe_title: recipe.recipe_title,
             match_reasoning: recipe.match_reasoning,
-            // Re-parsing JSON fields if necessary, but Prisma types should handle them if we cast correctly
-            // Actually, we need to fetch ingredients/shopping list from relations
-            ingredients_from_pantry: [], // Placeholder, fetching below
-            shopping_list: [],
+            ingredients_from_pantry: recipe.ingredients.filter(i => i.inPantry).map(i => ({
+                name: i.ingredient.name,
+                quantity: i.quantity || '',
+                unit: i.unit || ''
+            })),
+            shopping_list: recipe.shoppingItems.map(i => ({
+                name: i.shoppingItem.name,
+                quantity: i.shoppingItem.quantity || '',
+                unit: i.shoppingItem.unit || ''
+            })),
             step_by_step: recipe.step_by_step as string[],
             safety_badge: recipe.safety_badge,
             meal_type: recipe.meal_type as any,
@@ -39,162 +70,126 @@ export async function POST(
             prep_time: recipe.prep_time
         };
 
-        // Fetch ingredients from pantry relation
-        const ingredients = await prisma.recipeIngredient.findMany({
-            where: { recipeId: id, inPantry: true },
-            include: { ingredient: true }
-        });
-
-        // Fetch shopping list from relation
-        const shoppingItems = await prisma.recipeShoppingItem.findMany({
-            where: { recipeId: id },
-            include: { shoppingItem: true }
-        });
-
-        generatedFormat.ingredients_from_pantry = ingredients.map(i => ({
-            name: i.ingredient.name,
-            quantity: i.quantity || '',
-            unit: i.unit || ''
-        }));
-
-        generatedFormat.shopping_list = shoppingItems.map(i => ({
-            name: i.shoppingItem.name,
-            quantity: i.shoppingItem.quantity || '',
-            unit: i.shoppingItem.unit || ''
-        }));
-
-        // Call AI Translation Service
+        // 5. Call AI
         const translated = await translateRecipe(generatedFormat, targetLanguage);
 
-        // PERSIST TRANSLATION
-        // We will update the recipe in place. This converts the recipe to the new language.
-        
-        // 1. Transaction to update Recipe and replace ingredients/shopping items
-        await prisma.$transaction(async (tx) => {
-            // Update Recipe fields
-            await tx.recipe.update({
-                where: { id },
+        // 6. Create Linked Records in Transaction
+        const newRecipe = await prisma.$transaction(async (tx) => {
+            // A. Create the new Recipe Record
+            const createdRecipe = await tx.recipe.create({
                 data: {
                     recipe_title: translated.recipe_title,
                     match_reasoning: translated.match_reasoning,
                     step_by_step: translated.step_by_step,
                     language: targetLanguage,
-                    // We don't change analysis_log usually, but AI provides a note, so maybe append it if you want.
-                    // For now, let's keep original analysis log or if translated has it, use it.
-                    // translated.analysis_log might be "Translated from English..."
-                    analysis_log: translated.analysis_log || recipe.analysis_log
+                    analysis_log: translated.analysis_log || recipe.analysis_log,
+                    safety_badge: recipe.safety_badge,
+                    meal_type: recipe.meal_type,
+                    difficulty: recipe.difficulty,
+                    prep_time: recipe.prep_time,
+                    dishImage: recipe.dishImage, // Shared image
+                    kitchenId: recipe.kitchenId,
+                    originalRecipeId: rootOriginalId // LINK HERE
                 }
             });
 
-            // 2. Update Ingredients (Pantry)
-            // Strategy: Delete existing RecipeIngredient links and recreate them
-            // BUT we want to keep the link to the original 'Ingredient' entity if possible?
-            // Actually, the ingredient NAME is what is translated. So we likely need NEW Ingredient entities or find existing ones in that language.
-            // For simplicity in this hackathon context: 
-            // We will unlink old ingredients and link to new/existing ingredients matching the translated names.
-
-            await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
+            // B. Handle Ingredients (Pantry items)
+            // We iterate through the TRANSLATED list.
+            // Assumption: AI maintains order so index i corresponds to recipe.ingredients[i] (filtered by inPantry)
+            // This is loose but accepted for this implementation as strict mapping is hard without IDs.
+            const originalPantryIngredients = recipe.ingredients.filter(i => i.inPantry);
 
             if (translated.ingredients_from_pantry && Array.isArray(translated.ingredients_from_pantry)) {
-            for (const ing of translated.ingredients_from_pantry) {
-                // Find or create Ingredient by name (per kitchen? context doesn't give kitchenId easily here but Recipe has it)
-                // We need kitchenId. Recipe has it.
-                
-                // Oops, 'recipe' fetched above has kitchenId
-                const ingredientName = ing.name;
+                for (let i = 0; i < translated.ingredients_from_pantry.length; i++) {
+                    const ing = translated.ingredients_from_pantry[i];
+                    const originalRef = originalPantryIngredients[i]; // May be undefined if array lengths mismatch
 
-                let dbIngredient = await tx.ingredient.findUnique({
-                    where: {
-                        name_kitchenId: {
-                            name: ingredientName,
-                            kitchenId: recipe.kitchenId
+                    // Search for existing ingredient in this language
+                    let dbIngredient = await tx.ingredient.findUnique({
+                        where: {
+                            name_kitchenId: {
+                                name: ing.name,
+                                kitchenId: recipe.kitchenId
+                            }
                         }
-                    }
-                });
+                    });
 
-                if (!dbIngredient) {
-                    dbIngredient = await tx.ingredient.create({
+                    // If not found, create it linked to original if possible
+                    if (!dbIngredient) {
+                        dbIngredient = await tx.ingredient.create({
+                            data: {
+                                name: ing.name,
+                                kitchenId: recipe.kitchenId,
+                                // Link to original ingredient ID if we have a reference
+                                originalIngredientId: originalRef ? originalRef.ingredientId : undefined
+                            }
+                        });
+                    }
+
+                    // Create the Recipe-Ingredient link
+                    await tx.recipeIngredient.create({
                         data: {
-                            name: ingredientName,
-                            kitchenId: recipe.kitchenId
+                            recipeId: createdRecipe.id,
+                            ingredientId: dbIngredient.id,
+                            quantity: ing.quantity,
+                            unit: ing.unit,
+                            amount: `${ing.quantity} ${ing.unit}`.trim(),
+                            inPantry: true
                         }
                     });
                 }
-
-                await tx.recipeIngredient.create({
-                    data: {
-                        recipeId: id,
-                        ingredientId: dbIngredient.id,
-                        quantity: ing.quantity,
-                        unit: ing.unit,
-                        amount: `${ing.quantity} ${ing.unit}`.trim(),
-                        inPantry: true // These came from 'ingredients_from_pantry' list
-                    }
-                });
-            }
             }
 
-            // 3. Update Shopping List
-            await tx.recipeShoppingItem.deleteMany({ where: { recipeId: id } });
-
+            // C. Handle Shopping List
             if (translated.shopping_list && Array.isArray(translated.shopping_list)) {
-            for (const item of translated.shopping_list) {
-                const itemName = item.name;
+                for (let i = 0; i < translated.shopping_list.length; i++) {
+                    const item = translated.shopping_list[i];
+                    const originalRef = recipe.shoppingItems[i]; // May be undefined
 
-                let dbShoppingItem = await tx.shoppingItem.findUnique({
-                    where: {
-                        name_kitchenId: {
-                            name: itemName,
-                            kitchenId: recipe.kitchenId
-                        }
-                    }
-                });
-
-                if (!dbShoppingItem) {
-                    dbShoppingItem = await tx.shoppingItem.create({
-                        data: {
-                            name: itemName,
-                            kitchenId: recipe.kitchenId
+                    let dbShoppingItem = await tx.shoppingItem.findUnique({
+                        where: {
+                            name_kitchenId: {
+                                name: item.name,
+                                kitchenId: recipe.kitchenId
+                            }
                         }
                     });
-                }
 
-                await tx.recipeShoppingItem.create({
-                    data: {
-                        recipeId: id,
-                        shoppingItemId: dbShoppingItem.id
+                    if (!dbShoppingItem) {
+                        dbShoppingItem = await tx.shoppingItem.create({
+                            data: {
+                                name: item.name,
+                                kitchenId: recipe.kitchenId,
+                                originalShoppingItemId: originalRef ? originalRef.shoppingItemId : undefined
+                            }
+                        });
                     }
-                });
-                
-                // Note: We might be losing quantity/unit on the ShoppingItem model if it store it directly?
-                // Model: ShoppingItem has quantity/unit. RecipeShoppingItem is just a link.
-                // If we reuse an existing ShoppingItem, we shouldn't overwrite its quantity unless specific logic.
-                // But for this generated recipe, we effectively want to say "This recipe needs X amount of item Y".
-                // The current schema: ShoppingItem has 'quantity' and 'unit'. This implies a ShoppingItem is an instance on a list.
-                // If multiple recipes point to the same ShoppingItem, the quantity is ambiguous. 
-                // However, the schema seems to use unique[name, kitchenId], which implies ShoppingItem is unique per name.
-                // So if "Apples" is in the list, it's there once.
-                
-                // For the purpose of translation, we just link to the translated item name.
-                // We update the ShoppingItem's quantity/unit to match this recipe's requirement? 
-                // Or maybe just leave it provided the name matches.
-                // Let's update it to ensure the list reflects the current recipe needs if it's new.
-                
-                if (item.quantity || item.unit) {
-                     await tx.shoppingItem.update({
-                        where: { id: dbShoppingItem.id },
+
+                    // Link Recipe to ShoppingItem
+                    await tx.recipeShoppingItem.create({
                         data: {
-                            quantity: item.quantity,
-                            unit: item.unit
+                            recipeId: createdRecipe.id,
+                            shoppingItemId: dbShoppingItem.id
                         }
-                     });
+                    });
+
+                    // Update quantity/unit on the ShoppingItem itself if needed (preserving existing logic)
+                    if (item.quantity || item.unit) {
+                        await tx.shoppingItem.update({
+                            where: { id: dbShoppingItem.id },
+                            data: {
+                                quantity: item.quantity,
+                                unit: item.unit
+                            }
+                        });
+                    }
                 }
             }
-            }
+
+            return createdRecipe;
         });
 
-        // Return the translated object (which now matches DB state)
-        return NextResponse.json(translated);
+        return NextResponse.json(newRecipe);
 
     } catch (error: any) {
         console.error('Translation error:', error);

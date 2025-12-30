@@ -14,7 +14,11 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',
+    '^@google/genai$': '<rootDir>/__mocks__/google_genai_mock.js',
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@google/genai|@google/generative-ai)/)'
+  ],
 }
  
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

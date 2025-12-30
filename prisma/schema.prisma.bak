@@ -134,11 +134,6 @@ model Ingredient {
 
   recipeIngredients RecipeIngredient[]
 
-  // Translation Support
-  originalIngredientId String?
-  originalIngredient   Ingredient?  @relation("IngredientTranslations", fields: [originalIngredientId], references: [id], onDelete: SetNull)
-  translations         Ingredient[] @relation("IngredientTranslations")
-
   @@unique([name, kitchenId])
 }
 
@@ -157,11 +152,6 @@ model ShoppingItem {
 
   // Recipes that need this item
   recipeItems RecipeShoppingItem[]
-
-  // Translation Support
-  originalShoppingItemId String?
-  originalShoppingItem   ShoppingItem?  @relation("ShoppingItemTranslations", fields: [originalShoppingItemId], references: [id], onDelete: SetNull)
-  translations           ShoppingItem[] @relation("ShoppingItemTranslations")
 
   @@unique([name, kitchenId])
 }
@@ -191,11 +181,6 @@ model Recipe {
   kitchen         Kitchen  @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
   
   favoritedBy     FavoriteRecipe[]
-
-  // Translation Support
-  originalRecipeId String?
-  originalRecipe   Recipe?  @relation("RecipeTranslations", fields: [originalRecipeId], references: [id], onDelete: SetNull)
-  translations     Recipe[] @relation("RecipeTranslations")
 }
 
 model RecipeIngredient {

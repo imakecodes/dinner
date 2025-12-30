@@ -13,6 +13,18 @@ jest.mock('next/link', () => {
     return MockLink;
 });
 
+jest.mock('next/navigation', () => ({
+    useRouter: () => ({
+        push: jest.fn(),
+        replace: jest.fn(),
+        refresh: jest.fn(),
+        back: jest.fn(),
+        forward: jest.fn(),
+    }),
+    usePathname: () => '',
+    useSearchParams: () => new URLSearchParams(),
+}));
+
 jest.mock('../../services/storageService', () => ({
     storageService: {
         toggleFavorite: jest.fn().mockResolvedValue(undefined),
