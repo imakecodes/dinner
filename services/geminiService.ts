@@ -140,7 +140,8 @@ export const translateRecipe = async (
             meal_type: { type: Type.STRING },
             difficulty: { type: Type.STRING },
             prep_time: { type: Type.STRING }
-        }
+        },
+        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time"]
       }
     }
   });

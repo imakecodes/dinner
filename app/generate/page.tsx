@@ -60,10 +60,10 @@ export default function GenerateRecipePage() {
                 language: language || 'en'
             };
 
-            await storageService.saveRecipe(newRecord);
+            const savedRecipe = await storageService.saveRecipe(newRecord);
 
             // Redirect to the new recipe
-            router.push(`/recipes/${newRecord.id}`);
+            router.push(`/recipes/${savedRecipe.id}`);
 
         } catch (err: any) {
             setError(t('common.error'));

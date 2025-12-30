@@ -53,8 +53,8 @@ export const storageService = {
   },
 
 
-  saveRecipe: async (recipe: any): Promise<void> => {
-    await apiRequest('/recipes', {
+  saveRecipe: async (recipe: any): Promise<RecipeRecord> => {
+    return await apiRequest('/recipes', {
       method: 'POST',
       body: JSON.stringify(recipe),
     });

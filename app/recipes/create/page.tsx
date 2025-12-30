@@ -24,8 +24,8 @@ export default function CreateRecipePage() {
                 // The API POST route creates relations from these arrays
             };
 
-            await storageService.saveRecipe(newRecipe);
-            router.push('/recipes'); // Redirect Home or to History list
+            const savedRecipe = await storageService.saveRecipe(newRecipe);
+            router.push(`/recipes/${savedRecipe.id}`);
             // Note: Ideally redirect to the specific recipe, but ID is generated on server for POST. 
             // We could await result and get ID if storageService returns it.
             // For now home/history is fine.
