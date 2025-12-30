@@ -1,4 +1,7 @@
 import nodemailer from 'nodemailer';
+import { kitchenJoinRequestTemplate } from './email/templates/kitchen-join-request';
+import { verificationEmailTemplate } from './email/templates/verification';
+import { invitationEmailTemplate } from './email/templates/invitation';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.resend.com',
@@ -21,19 +24,13 @@ export async function sendKitchenJoinRequestEmail(
   }
 
   try {
+    const html = kitchenJoinRequestTemplate(requesterName, kitchenName);
     const info = await transporter.sendMail({
       from: '"Dinner Chef AI" <onboarding@resend.dev>', // Update this with your verified sender
       to: adminEmail,
       subject: `${requesterName} wants to join ${kitchenName}`,
       text: `Hello Admin,\n\n${requesterName} has requested to join your kitchen "${kitchenName}".\n\nPlease log in to the dashboard to approve or reject this request.`,
-      html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>Kitchen Join Request</h2>
-          <p>Hello Admin,</p>
-          <p><strong>${requesterName}</strong> has requested to join your kitchen "<strong>${kitchenName}</strong>".</p>
-          <p>Please log in to the dashboard to approve or reject this request.</p>
-        </div>
-      `,
+      html,
     });
 
     console.log(`[Email Service] Email sent: ${info.messageId}`);
@@ -54,19 +51,13 @@ export async function sendVerificationEmail(email: string, token: string) {
   const fromEmail = process.env.SMTP_EMAIL_FROM || 'onboarding@resend.dev';
 
   try {
+    const html = verificationEmailTemplate(verificationUrl);
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: email,
       subject: 'Verify your email address',
       text: `Welcome to Dinner Chef AI!\n\nPlease click the link below to verify your email address:\n${verificationUrl}\n\nIf you did not sign up, please ignore this email.`,
-      html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>Welcome to Dinner Chef AI!</h2>
-          <p>Please click the button below to verify your email address:</p>
-          <a href="${verificationUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Verify Email</a>
-          <p style="margin-top: 20px; font-size: 14px; color: #666;">Or copy this link: <a href="${verificationUrl}">${verificationUrl}</a></p>
-        </div>
-      `,
+      html,
     });
 
     console.log(`[Email Service] Verification email sent: ${info.messageId}`);
@@ -99,17 +90,14 @@ export async function sendInvitationEmail(
     ? `Hello,\n\nYou have been added to the kitchen "${kitchenName}".\n\nLog in to your account to access the kitchen:\n${ctaUrl}`
     : `Hello,\n\n${inviterName} has invited you to join their kitchen "${kitchenName}".\n\nTo accept the invitation, please create an account using this email address:\n${ctaUrl}\n\nKitchen Invite Code: ${inviteCode}`;
 
-  const messageHtml = `
-    <div style="font-family: sans-serif; padding: 20px;">
-      <h2>${subject}</h2>
-      <p>Hello,</p>
-      <p><strong>${inviterName}</strong> has invited you to join their kitchen "<strong>${kitchenName}</strong>".</p>
-      ${!isExistingUser ? `<p><strong>Kitchen Invite Code: ${inviteCode}</strong></p>` : ''}
-      <p>${isExistingUser ? 'Log in to your account to access the kitchen.' : 'To accept the invitation, please create an account using the button below.'}</p>
-      <a href="${ctaUrl}" style="background-color: #e11d48; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">${ctaText}</a>
-      <p style="margin-top: 20px; font-size: 14px; color: #666;">Or copy this link: <a href="${ctaUrl}">${ctaUrl}</a></p>
-    </div>
-  `;
+  const html = invitationEmailTemplate(
+    inviterName,
+    kitchenName,
+    inviteCode,
+    ctaUrl,
+    ctaText,
+    isExistingUser
+  );
 
   const fromName = process.env.SMTP_EMAIL_FROM_NAME || 'Dinner Chef AI';
   const fromEmail = process.env.SMTP_EMAIL_FROM || 'onboarding@resend.dev';
@@ -120,7 +108,7 @@ export async function sendInvitationEmail(
       to: email,
       subject: subject,
       text: messageText,
-      html: messageHtml,
+      html,
     });
 
     console.log(`[Email Service] Invitation email sent to ${email}: ${info.messageId}`);
