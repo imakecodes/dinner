@@ -36,8 +36,9 @@ async function apiRequest(path: string, options: RequestInit = {}) {
 
 export const storageService = {
   // --- Recipes / History ---
-  getAllRecipes: async (): Promise<RecipeRecord[]> => {
-    const data = await apiRequest('/recipes');
+  getAllRecipes: async (lang?: string): Promise<RecipeRecord[]> => {
+    const query = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+    const data = await apiRequest(`/recipes${query}`);
     return data || [];
   },
 

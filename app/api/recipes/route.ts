@@ -12,15 +12,24 @@ export async function GET(request: NextRequest) {
     const kitchenId = payload.kitchenId as string;
     const userId = payload.userId as string;
 
-    // Fetch recipes for this kitchen
+    const lang = request.nextUrl.searchParams.get('lang') || 'en';
+
+    // Fetch ALL recipes for this kitchen (originals and translations)
     const recipes = await prisma.recipe.findMany({
       where: {
-        kitchenId: kitchenId
+        kitchenId: kitchenId,
       },
       orderBy: {
         createdAt: "desc"
       },
       include: {
+        translations: { // Include translations
+          select: {
+            id: true,
+            language: true, 
+            recipe_title: true
+          }
+        },
         ingredients: {
           include: {
             ingredient: true
@@ -41,30 +50,70 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const formattedRecipes = recipes.map(r => {
-      const normalizeMapping = (item: any, relation: any) => {
-        let name = item.name;
-        let quantity = relation.quantity || '';
-        let unit = relation.unit || '';
+    // Group by "Family" (Root ID)
+    const familyMap = new Map<string, typeof recipes>();
+    
+    recipes.forEach(r => {
+      const rootId = r.originalRecipeId || r.id;
+      if (!familyMap.has(rootId)) {
+        familyMap.set(rootId, []);
+      }
+      familyMap.get(rootId)?.push(r);
+    });
 
-        if (name.startsWith('{')) {
-          try {
-            const parsed = JSON.parse(name);
-            name = parsed.name || name;
-            quantity = quantity || parsed.quantity || '';
-            unit = unit || parsed.unit || '';
-          } catch (e) { }
+    const formattedRecipes = Array.from(familyMap.values()).map(family => {
+        // Strategy: 
+        // 1. Try to find exact language match
+        // 2. Fallback to original (where originalRecipeId is null)
+        // 3. Fallback to first available
+        
+        let selected = family.find(r => r.language === lang);
+        
+        if (!selected) {
+            selected = family.find(r => r.originalRecipeId === null);
         }
-        return { name, quantity, unit };
-      };
+        
+        if (!selected) {
+            selected = family[0];
+        }
 
-      return {
-        ...r,
-        ingredients_from_pantry: r.ingredients.filter(i => i.inPantry).map(i => normalizeMapping(i.ingredient, i)),
-        shopping_list: r.shoppingItems.map(s => normalizeMapping(s.shoppingItem, s)),
-        step_by_step: typeof r.step_by_step === 'string' ? JSON.parse(r.step_by_step) : r.step_by_step,
-        isFavorite: r.favoritedBy.length > 0
-      };
+        // If we selected a translation, we should probably attach the *other* versions as "translations" 
+        // options so the UI knows they exist.
+        // The UI currently expects 'translations' to be a list of {id, language, title}.
+        // We can reconstruct that from the family.
+        
+        const availableTranslations = family.map(f => ({
+            id: f.id,
+            language: f.language as any,
+            recipe_title: f.recipe_title
+        })).filter(t => t.id !== selected?.id);
+
+        const r = selected!;
+        
+        const normalizeMapping = (item: any, relation: any) => {
+            let name = item.name;
+            let quantity = relation.quantity || '';
+            let unit = relation.unit || '';
+
+            if (name.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(name);
+                name = parsed.name || name;
+                quantity = quantity || parsed.quantity || '';
+                unit = unit || parsed.unit || '';
+            } catch (e) { }
+            }
+            return { name, quantity, unit };
+        };
+
+        return {
+            ...r,
+            ingredients_from_pantry: r.ingredients.filter(i => i.inPantry).map(i => normalizeMapping(i.ingredient, i)),
+            shopping_list: r.shoppingItems.map(s => normalizeMapping(s.shoppingItem, s)),
+            step_by_step: typeof r.step_by_step === 'string' ? JSON.parse(r.step_by_step) : r.step_by_step,
+            isFavorite: r.favoritedBy.length > 0,
+            translations: availableTranslations
+        };
     });
 
     return NextResponse.json(formattedRecipes);

@@ -114,7 +114,8 @@ export const translateRecipe = async (
     Translate the given JSON recipe into "${fullLanguage}".
     Preserve the JSON structure exactly. 
     Translate all user-facing strings (title, reasoning, instructions).
-    IMPORTANT: You MUST translate the 'name' and 'unit' fields inside 'ingredients_from_pantry' and 'shopping_list' arrays.
+    IMPORTANT: You MUST translate the 'name' and 'unit' fields inside 'ingredients_from_pantry' AND 'shopping_list' arrays.
+    Do NOT remove any items from 'shopping_list' or 'ingredients_from_pantry'. Keep the counts exactly the same.
     Do not translate Keys.
     For 'analysis_log', provide a brief translation note.
   `;

@@ -87,6 +87,11 @@ export interface RecipeRecord extends GeneratedRecipe {
   language?: Language;
   image_base64?: string;
   originalRecipeId?: string | null;
+  translations?: {
+    id: string;
+    language: Language;
+    recipe_title: string;
+  }[];
 }
 
 export type ViewState = 'home' | 'members' | 'pantry' | 'history' | 'shopping_list';

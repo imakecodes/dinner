@@ -12,17 +12,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export default function HistoryPage() {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, lang } = useTranslation();
     const { isGuest } = useCurrentMember();
     const [history, setHistory] = useState<RecipeRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        storageService.getAllRecipes().then(setHistory);
-    }, []);
+        storageService.getAllRecipes(lang).then(setHistory);
+    }, [lang]);
 
     const refreshHistory = async () => {
-        const data = await storageService.getAllRecipes();
+        const data = await storageService.getAllRecipes(lang);
         setHistory(data);
     };
 

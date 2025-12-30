@@ -82,6 +82,32 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
                   <i className="far fa-calendar-alt"></i>
                   {new Date(recipe.createdAt).toLocaleDateString()}
                 </span>
+                
+                {/* Available Translations Badges */}
+                {recipe.translations && recipe.translations.length > 0 && (
+                  <div className="flex gap-1">
+                    {recipe.translations.map(t => (
+                      <span 
+                        key={t.id} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Hacky: We want to view the translated recipe.
+                          // onViewRecipe expects a record. We only have partial data.
+                          // Ideally parent handles this or we fetch full.
+                          // For now, let's just act as if we clicked the main card but override ID?
+                          // Actually easier: Let's just visually show they exist. 
+                          // The main card view handles switching translations? No, that's inside the card.
+                          // Let's redirect to that specific ID
+                          window.location.href = `/recipes/${t.id}`;
+                        }}
+                        className="w-6 h-4 flex items-center justify-center bg-slate-100 rounded text-[8px] font-bold text-slate-500 border border-slate-200 hover:bg-rose-100 hover:text-rose-600 hover:border-rose-200 cursor-pointer"
+                        title={t.recipe_title}
+                      >
+                        {t.language === 'pt-BR' ? 'PT' : 'EN'}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <h3 className="font-black text-slate-900 text-xl md:text-2xl tracking-tight leading-snug group-hover:text-rose-600 transition-colors">

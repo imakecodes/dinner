@@ -141,12 +141,28 @@ export async function POST(
             }
 
             // C. Handle Shopping List
-            if (translated.shopping_list && Array.isArray(translated.shopping_list)) {
-                for (let i = 0; i < translated.shopping_list.length; i++) {
-                    const item = translated.shopping_list[i];
-                    const originalRef = recipe.shoppingItems[i]; // May be undefined
+            let shoppingListToProcess = translated.shopping_list;
+            
+            // Fallback: If AI returns empty list but original had items, use original (untranslated) to prevent data loss
+            if ((!shoppingListToProcess || shoppingListToProcess.length === 0) && recipe.shoppingItems.length > 0) {
+                console.warn("Translation returned empty shopping list. Falling back to original.");
+                shoppingListToProcess = recipe.shoppingItems.map(i => ({
+                    name: i.shoppingItem.name,
+                    quantity: i.shoppingItem.quantity || '',
+                    unit: i.shoppingItem.unit || ''
+                }));
+            }
 
-                    let dbShoppingItem = await tx.shoppingItem.findUnique({
+            if (shoppingListToProcess && Array.isArray(shoppingListToProcess)) {
+                for (let i = 0; i < shoppingListToProcess.length; i++) {
+                    const item = shoppingListToProcess[i];
+                    const originalRef = recipe.shoppingItems[i]; // May be undefined if lengths differ
+
+                    // 1. Find or Create the Shopping Item (Global/Kitchen level)
+                    // If we have an originalRef, validation could ideally check if we are just renaming it?
+                    // But here we want a NEW item in the Target Language (e.g. "Cebola" instead of "Onion")
+                    
+                    const dbShoppingItem = await tx.shoppingItem.findUnique({
                         where: {
                             name_kitchenId: {
                                 name: item.name,
@@ -155,34 +171,39 @@ export async function POST(
                         }
                     });
 
-                    if (!dbShoppingItem) {
-                        dbShoppingItem = await tx.shoppingItem.create({
+                    let shoppingItemId = dbShoppingItem?.id;
+
+                    if (!shoppingItemId) {
+                        const newShopItem = await tx.shoppingItem.create({
                             data: {
                                 name: item.name,
+                                quantity: item.quantity,
+                                unit: item.unit,
                                 kitchenId: recipe.kitchenId,
-                                originalShoppingItemId: originalRef ? originalRef.shoppingItemId : undefined
+                                originalShoppingItemId: originalRef?.shoppingItemId // Link to original if aligned
                             }
                         });
+                        shoppingItemId = newShopItem.id;
+                    } else if (dbShoppingItem) {
+                        // Update quantity/unit on the ShoppingItem itself if needed (preserving existing logic)
+                        if (item.quantity || item.unit) {
+                            await tx.shoppingItem.update({
+                                where: { id: dbShoppingItem.id },
+                                data: {
+                                    quantity: item.quantity,
+                                    unit: item.unit
+                                }
+                            });
+                        }
                     }
 
-                    // Link Recipe to ShoppingItem
+                    // 2. Link it to the New Recipe
                     await tx.recipeShoppingItem.create({
                         data: {
                             recipeId: createdRecipe.id,
-                            shoppingItemId: dbShoppingItem.id
+                            shoppingItemId: shoppingItemId
                         }
                     });
-
-                    // Update quantity/unit on the ShoppingItem itself if needed (preserving existing logic)
-                    if (item.quantity || item.unit) {
-                        await tx.shoppingItem.update({
-                            where: { id: dbShoppingItem.id },
-                            data: {
-                                quantity: item.quantity,
-                                unit: item.unit
-                            }
-                        });
-                    }
                 }
             }
 
