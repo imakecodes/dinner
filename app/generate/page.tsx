@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../components/Providers';
 import { SessionContext, MealType, RecipeRecord, Difficulty } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -24,6 +24,26 @@ export default function GenerateRecipePage() {
     const [error, setError] = useState<string | null>(null);
     const [observation, setObservation] = useState('');
     const [mealType, setMealType] = useState<MealType>('main');
+    const initializedRef = useRef(false);
+
+    useEffect(() => {
+        // Default to Admin if no one is selected (and members are loaded)
+        // We use a ref to ensure this only happens once per page load (Auto-selection)
+        if (members.length > 0 && !initializedRef.current) {
+            // Only auto-select if nothing is currently selected
+            if (activeDiners.length === 0) {
+                // Try to find ADMIN first, otherwise fallback to first member or stay empty
+                const admin = members.find(m => m.role === 'ADMIN');
+                if (admin) {
+                    setActiveDiners([admin.id]);
+                } else if (members.length > 0) {
+                   // Fallback: If no Admin found (e.g. data issue), select the first member
+                   setActiveDiners([members[0].id]);
+                }
+            }
+            initializedRef.current = true;
+        }
+    }, [members, activeDiners, setActiveDiners]);
 
     const handleGenerateRecipe = async () => {
         if (activeDiners.length === 0) {
