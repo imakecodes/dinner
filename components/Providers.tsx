@@ -39,9 +39,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const [language, setLanguage] = useState<Language>('en');
 
+    // Detect browser language on mount
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !localStorage.getItem('user_language_preference')) {
+            const browserLang = navigator.language;
+            if (browserLang.toLowerCase().startsWith('pt')) {
+                setLanguage('pt-BR');
+            }
+        }
+    }, []);
+
     // Load initial data from storageService if available (optional enhancement)
     useEffect(() => {
-        // Skip fetching on auth pages
+        // Skip fetching data on auth pages, but we can still check local storage or existing session later
         if (pathname === '/login' || pathname === '/register' || pathname === '/recover' || pathname === '/verify-email') {
             return;
         }
