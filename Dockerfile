@@ -67,8 +67,9 @@ COPY --chown=node:node prisma ./prisma
 COPY --chown=node:node prisma.config.ts ./prisma.config.ts
 COPY --chown=node:node scripts/start.sh ./start.sh
 
-# Install prisma locally so prisma.config.ts can resolve 'prisma/config'
-RUN npm install prisma@7.2.0
+# Copy prisma from builder so prisma.config.ts can resolve 'prisma/config'
+COPY --from=builder --chown=node:node /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=node:node /app/node_modules/@prisma ./node_modules/@prisma
 
 RUN chmod +x ./start.sh
 
