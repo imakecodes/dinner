@@ -250,7 +250,16 @@ export const en = {
         verifyFailed: "Verification Failed",
         invalidLink: "Invalid verification link.",
         networkError: "Network error. Please try again.",
-        userExistsError: "User already exists"
+        userExistsError: "User already exists",
+        resetPasswordTitle: "Reset Password",
+        resetPasswordSubtitle: "Enter your new password below.",
+        newPassword: "New Password",
+        resetPassword: "Reset Password",
+        passwordMismatch: "Passwords do not match",
+        passwordTooShort: "Password must be at least 6 characters",
+        passwordResetSuccess: "Password Reset Successfully!",
+        invalidResetLink: "Invalid or expired reset link",
+        requestNewLink: "Request New Link"
     },
     generate: {
         title: "New Recipe",
