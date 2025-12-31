@@ -65,7 +65,7 @@ COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
 # Copy Prisma schema, config, and startup script
 COPY --chown=node:node prisma ./prisma
-COPY --chown=node:node prisma.config.ts ./prisma.config.ts
+
 COPY --chown=node:node scripts/start.sh ./start.sh
 RUN chmod +x ./start.sh
 
