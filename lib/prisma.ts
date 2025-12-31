@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import mariadb from 'mariadb';
 
 
 // Use globalThis to avoid "Cannot find name 'global'" error in standard environment
@@ -18,28 +17,32 @@ const createPrismaClient = () => {
   }
 
   try {
-    // Fix protocol for mariadb driver
-    // Use URL object to append connection options
-    const url = new URL(process.env.DATABASE_URL.replace('mysql://', 'mariadb://'));
+    // Parse the connection string to extract details
+    const dbUrl = new URL(process.env.DATABASE_URL);
 
-    // Explicit pool configuration to avoid timeouts in Dev environment
-    // Setting both camelCase (Driver standard) and snake_case (Prisma standard) to be safe
-    url.searchParams.set('connectionLimit', '5');
-    url.searchParams.set('connection_limit', '5');
+    // Extract connection details
+    const host = dbUrl.hostname;
+    const port = parseInt(dbUrl.port) || 3306;
+    const user = decodeURIComponent(dbUrl.username);
+    const password = decodeURIComponent(dbUrl.password);
+    const database = dbUrl.pathname.slice(1); // Remove leading '/'
 
-    url.searchParams.set('idleTimeout', '60');
+    console.log(`Prisma initializing MariaDB adapter to ${host}:${port}/${database}...`);
 
-    url.searchParams.set('acquireTimeout', '30000'); // 30s
-    url.searchParams.set('pool_timeout', '30');      // 30s
-
-    url.searchParams.set('connectTimeout', '20000'); // 20s
-    url.searchParams.set('connect_timeout', '20');   // 20s
-
-    console.log('Prisma initializing MariaDB Pool with options:', url.searchParams.toString());
-
-    const pool = mariadb.createPool(url.toString());
-
-    const adapter = new PrismaMariaDb(pool as any);
+    // Per official Prisma docs: pass config directly to PrismaMariaDb, NOT a pool
+    // https://www.prisma.io/docs/orm/overview/databases/mysql-mariadb
+    const adapter = new PrismaMariaDb({
+      host,
+      port,
+      user,
+      password,
+      database,
+      connectionLimit: 5,
+      idleTimeout: 60,
+      acquireTimeout: 30000,
+      connectTimeout: 20000,
+      allowPublicKeyRetrieval: true
+    });
 
     return new PrismaClient({
       adapter,
