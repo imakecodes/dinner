@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+
+export const dynamic = 'force-dynamic';
+import { prisma } from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
 import { comparePassword } from '@/lib/password';
-
-const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
     try {
