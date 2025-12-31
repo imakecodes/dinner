@@ -42,7 +42,7 @@ export async function sendKitchenJoinRequestEmail(
   }
 }
 
-export async function sendVerificationEmail(email: string, token: string) {
+export async function sendVerificationEmail(email: string, token: string, language: string = 'en') {
   if (!process.env.SMTP_PASSWORD) {
     console.warn('[Email Service] SMTP_PASSWORD not set. Skipping verification email.');
     return;
@@ -53,13 +53,19 @@ export async function sendVerificationEmail(email: string, token: string) {
   const fromName = process.env.SMTP_EMAIL_FROM_NAME || 'Dinner Chef AI';
   const fromEmail = process.env.SMTP_EMAIL_FROM || 'onboarding@resend.dev';
 
+  const isPt = language.toLowerCase().startsWith('pt');
+  const subject = isPt ? 'Verifique seu endereço de email' : 'Verify your email address';
+  const text = isPt
+    ? `Bem-vindo ao Dinner Chef AI!\n\nClique no link abaixo para verificar seu endereço de email:\n${verificationUrl}\n\nSe você não se cadastrou, ignore este email.`
+    : `Welcome to Dinner Chef AI!\n\nPlease click the link below to verify your email address:\n${verificationUrl}\n\nIf you did not sign up, please ignore this email.`;
+
   try {
-    const html = verificationEmailTemplate(verificationUrl);
+    const html = verificationEmailTemplate(verificationUrl, language);
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      subject: 'Verify your email address',
-      text: `Welcome to Dinner Chef AI!\n\nPlease click the link below to verify your email address:\n${verificationUrl}\n\nIf you did not sign up, please ignore this email.`,
+      subject: subject,
+      text: text,
       html,
     });
 
