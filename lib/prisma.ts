@@ -9,11 +9,20 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 // Ex MySQL: "mysql://user:pass@host:3306/db"
 // Ex SQLite: "file:/app/data/dev.db"
 const createPrismaClient = () => {
-  // Avoid creating connection in build environment if env var is missing
+  // During build/CI, DATABASE_URL may not be set. Return a stub client.
+  // The adapter requires valid config, so we create one that will fail at runtime
+  // but allows the build to complete.
   if (!process.env.DATABASE_URL) {
-    return new PrismaClient({
-      datasourceUrl: 'file:./dummy.db'
-    } as any);
+    console.warn('DATABASE_URL not set - using placeholder adapter for build');
+    const placeholderAdapter = new PrismaMariaDb({
+      host: 'localhost',
+      port: 3306,
+      user: 'placeholder',
+      password: 'placeholder',
+      database: 'placeholder',
+      connectionLimit: 1
+    });
+    return new PrismaClient({ adapter: placeholderAdapter });
   }
 
   try {
@@ -50,9 +59,16 @@ const createPrismaClient = () => {
     });
   } catch (error) {
     console.error("Failed to initialize Prisma Client with Adapter:", error);
-    return new PrismaClient({
-      datasourceUrl: 'file:./dummy.db'
-    } as any);
+    // Fallback with placeholder adapter
+    const placeholderAdapter = new PrismaMariaDb({
+      host: 'localhost',
+      port: 3306,
+      user: 'placeholder',
+      password: 'placeholder',
+      database: 'placeholder',
+      connectionLimit: 1
+    });
+    return new PrismaClient({ adapter: placeholderAdapter });
   }
 };
 
