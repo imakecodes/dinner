@@ -122,7 +122,7 @@ export const ptBR = {
         searchPlaceholder: "Buscar por título ou ingrediente...",
         noResults: "Nenhuma receita encontrada",
         noResultsSearch: "Sem resultados para \"{term}\". Tente outra palavra-chave!",
-        empty: "Você ainda não salvou nenhuma receita. Gere uma para começar!",
+        empty: "Você ainda não salvou nenhuma receita. Crie uma para começar!",
         view: "Ver Receita",
         delete: "Excluir",
         deleteTitle: "Excluir Receita?",
