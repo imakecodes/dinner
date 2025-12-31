@@ -9,6 +9,8 @@ import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApp } from './Providers';
 
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+
 interface Props {
   recipe: RecipeRecord;
   onSaved?: () => void;
@@ -16,7 +18,7 @@ interface Props {
 
 const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
   const { t, lang } = useTranslation();
-  const { isGuest } = useCurrentMember();
+  const { member, isGuest } = useCurrentMember();
   const router = useRouter();
   const [recipe, setRecipe] = useState<RecipeRecord>(initialRecipe);
   const [originalRecipe, setOriginalRecipe] = useState<RecipeRecord | null>(null);
@@ -26,6 +28,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
   const [isFavorite, setIsFavorite] = useState(initialRecipe.isFavorite);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // State for adding to pantry with logic
   const [itemToAdd, setItemToAdd] = useState<string | null>(null);
@@ -59,14 +62,13 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
       });
 
       if (!res.ok) throw new Error('Translation failed');
-      if (!res.ok) throw new Error('Translation failed');
       const translatedData = await res.json();
 
       // Check if we received a new ID (persistence logic)
       if (translatedData.id && translatedData.id !== recipe.id) {
-         // Redirect to the new recipe
-         router.push(`/recipes/${translatedData.id}`);
-         return; 
+        // Redirect to the new recipe
+        router.push(`/recipes/${translatedData.id}`);
+        return;
       }
 
       setOriginalRecipe(recipe);
@@ -92,6 +94,16 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
       if (onSaved) onSaved(); // Refreshes history list in parent
     } catch (err) {
       console.error("Error toggling favorite:", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await storageService.deleteRecipe(recipe.id);
+      router.push('/recipes');
+    } catch (err) {
+      console.error("Failed to delete recipe", err);
+      alert(t('common.error'));
     }
   };
 
@@ -126,7 +138,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
         setTimeout(() => setCopyFeedback(false), 2000);
         break;
     }
-    
+
     if (platform !== 'copy') setShowShareMenu(false);
   };
 
@@ -177,6 +189,15 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
             </div>
 
             <div className="flex items-center gap-3">
+              {member?.role === 'ADMIN' && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-10 h-10 rounded-xl bg-white border border-rose-200 text-rose-500 flex items-center justify-center hover:bg-rose-50 hover:border-rose-300 transition-colors shadow-lg"
+                  title={t('recipes.delete')}
+                >
+                  <i className="fas fa-trash-alt"></i>
+                </button>
+              )}
               {!isGuest && (
                 <Link
                   href={`/recipes/${recipe.id}/edit`}
@@ -187,19 +208,19 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
               )}
               {/* Translate Button */}
               {((recipe.language && recipe.language !== lang) || hasTranslated) && (
-                 <button
-                   onClick={handleTranslate}
-                   disabled={isTranslating}
-                   className="px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all tracking-widest bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
-                 >
-                   {isTranslating ? (
-                     <><i className="fas fa-spinner fa-spin mr-2"></i> {t('recipeCard.translating')}</>
-                   ) : hasTranslated ? (
-                     <><i className="fas fa-undo mr-2"></i> {t('recipeCard.showOriginal')}</>
-                   ) : (
-                     <><i className="fas fa-language mr-2"></i> {t('recipeCard.translate')}</>
-                   )}
-                 </button>
+                <button
+                  onClick={handleTranslate}
+                  disabled={isTranslating}
+                  className="px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all tracking-widest bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
+                >
+                  {isTranslating ? (
+                    <><i className="fas fa-spinner fa-spin mr-2"></i> {t('recipeCard.translating')}</>
+                  ) : hasTranslated ? (
+                    <><i className="fas fa-undo mr-2"></i> {t('recipeCard.showOriginal')}</>
+                  ) : (
+                    <><i className="fas fa-language mr-2"></i> {t('recipeCard.translate')}</>
+                  )}
+                </button>
               )}
               <button
                 onClick={toggleFavorite}
@@ -399,6 +420,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
         </div>
       </div>
 
+
       {itemToAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-4 max-w-sm w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
@@ -435,7 +457,15 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
           </div>
         </div>
       )}
-    </article>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={t('recipes.deleteTitle')}
+        message={t('recipes.deleteDesc')}
+      />
+    </article >
   );
 };
 
