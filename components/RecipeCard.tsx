@@ -125,7 +125,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
 
   const handleShare = (platform: 'whatsapp' | 'telegram' | 'email' | 'copy') => {
     const list = recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ');
-    const text = `*Shopping List for ${recipe.recipe_title}*\n\n- ${list}`;
+    const text = `*${t('recipeCard.shoppingListFor').replace('{title}', recipe.recipe_title)}*\n\n- ${list}`;
     const encodedText = encodeURIComponent(text);
 
     switch (platform) {

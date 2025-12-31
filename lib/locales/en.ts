@@ -188,7 +188,9 @@ export const en = {
         copied: "Copied!",
         translate: "Translate Recipe",
         showOriginal: "Show Original",
-        translating: "Translating..."
+
+        translating: "Translating...",
+        shoppingListFor: "Shopping List for {title}"
     },
     recipeForm: {
         titleCreate: "Create Recipe",

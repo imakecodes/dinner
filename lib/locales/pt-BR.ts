@@ -9,7 +9,7 @@ export const ptBR = {
         error: "Ocorreu um erro",
         back: "Voltar",
         menu: "Menu",
-        slogan: "Inteligência Culinária Segura e Inteligente",
+        slogan: "Culinária Inteligente e Segura",
         confirm: "Confirmar"
     },
     nav: {
@@ -188,7 +188,9 @@ export const ptBR = {
         copied: "Copiado!",
         translate: "Traduzir Receita",
         showOriginal: "Mostrar Original",
-        translating: "Traduzindo..."
+
+        translating: "Traduzindo...",
+        shoppingListFor: "Lista de Compras para {title}"
     },
     recipeForm: {
         titleCreate: "Criar Receita",
@@ -276,7 +278,7 @@ export const ptBR = {
         specialRequests: "Algum pedido especial?",
         specialRequestsPlaceholder: "ex: Tenho 20 minutos, usar o forno...",
         generateBtn: "Gerar Receita",
-        generating: "Cozinhando Mágica...",
+        generating: "Criando receita...",
         or: "— OU —",
         createManually: "Criar Manualmente",
         selectDinersError: "Selecione quem vai comer primeiro! (Verifique 'Membros')",
