@@ -260,7 +260,8 @@ export const ptBR = {
         passwordTooShort: "A senha deve ter pelo menos 6 caracteres",
         passwordResetSuccess: "Senha redefinida com sucesso!",
         invalidResetLink: "Link inválido ou expirado",
-        requestNewLink: "Solicitar Novo Link"
+        requestNewLink: "Solicitar Novo Link",
+        defaultKitchenName: "Cozinha de {name}"
     },
     generate: {
         title: "Nova Receita",

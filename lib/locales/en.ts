@@ -259,7 +259,8 @@ export const en = {
         passwordTooShort: "Password must be at least 6 characters",
         passwordResetSuccess: "Password Reset Successfully!",
         invalidResetLink: "Invalid or expired reset link",
-        requestNewLink: "Request New Link"
+        requestNewLink: "Request New Link",
+        defaultKitchenName: "{name}'s Kitchen"
     },
     generate: {
         title: "New Recipe",
