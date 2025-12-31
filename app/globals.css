@@ -14,6 +14,30 @@ body {
   background: rgb(var(--background-rgb));
 }
 
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #e2e8f0;
+    border-radius: 20px;
+  }
+
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply bg-rose-600 text-white hover:bg-rose-700 transition-all active:scale-95 shadow-xl shadow-rose-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none;

@@ -75,7 +75,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
             </button>
           </div>
 
-          <nav className="flex-1 space-y-2">
+          <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
             <button
               onClick={() => onNavigate('/')}
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
