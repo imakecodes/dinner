@@ -188,7 +188,9 @@ export const en = {
         copied: "Copied!",
         translate: "Translate Recipe",
         showOriginal: "Show Original",
-        translating: "Translating..."
+
+        translating: "Translating...",
+        shoppingListFor: "Shopping List for {title}"
     },
     recipeForm: {
         titleCreate: "Create Recipe",
@@ -259,7 +261,12 @@ export const en = {
         passwordTooShort: "Password must be at least 6 characters",
         passwordResetSuccess: "Password Reset Successfully!",
         invalidResetLink: "Invalid or expired reset link",
-        requestNewLink: "Request New Link"
+        requestNewLink: "Request New Link",
+        defaultKitchenName: "{name}'s Kitchen",
+        unverifiedError: "Account not verified. Please check your email.",
+        resendVerification: "Resend Verification Email",
+        verificationResent: "Verification email sent!",
+        resendError: "Failed to resend email."
     },
     generate: {
         title: "New Recipe",

@@ -164,7 +164,7 @@ export default function MembersPage() {
 
         switch (platform) {
             case 'whatsapp': window.open(`https://wa.me/?text=${encodedText}`, '_blank'); break;
-            case 'telegram': window.open(`https://t.me/share/url?url=${encodedText}&text=${encodedText}`, '_blank'); break;
+            case 'telegram': window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.origin)}&text=${encodedText}`, '_blank'); break;
         }
     };
 

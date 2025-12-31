@@ -25,6 +25,12 @@ export async function POST(req: NextRequest) {
 
         const hashedPassword = await hashPassword(password);
 
+        const { t, lang } = getServerTranslator(req);
+
+        // Get localized format (e.g., "{name}'s Kitchen" or "Cozinha de {name}")
+        const kitchenNameFormat = t('auth.defaultKitchenName');
+        const kitchenName = kitchenNameFormat.replace('{name}', name);
+
         // Create User, linked to a new House via HouseholdMember
         const user = await prisma.user.create({
             data: {
@@ -32,6 +38,7 @@ export async function POST(req: NextRequest) {
                 password: hashedPassword,
                 name,
                 surname,
+                language: lang,
                 verificationToken: crypto.randomUUID(),
                 kitchenMemberships: {
                     create: {
@@ -39,7 +46,7 @@ export async function POST(req: NextRequest) {
                         isGuest: false,
                         kitchen: {
                             create: {
-                                name: `${name}'s Kitchen`,
+                                name: kitchenName,
                                 inviteCode: generateKitchenCode()
                             }
                         }
@@ -54,7 +61,7 @@ export async function POST(req: NextRequest) {
         });
 
         // Send verification email
-        await sendVerificationEmail(user.email, user.verificationToken!);
+        await sendVerificationEmail(user.email, user.verificationToken!, user.language);
 
         return NextResponse.json({ message: 'Registration successful. Please check your email to verify your account.' }, { status: 201 });
     } catch (error) {

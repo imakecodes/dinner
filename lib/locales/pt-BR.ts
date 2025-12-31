@@ -9,7 +9,7 @@ export const ptBR = {
         error: "Ocorreu um erro",
         back: "Voltar",
         menu: "Menu",
-        slogan: "Inteligência Culinária Segura e Inteligente",
+        slogan: "Culinária Inteligente e Segura",
         confirm: "Confirmar"
     },
     nav: {
@@ -47,13 +47,13 @@ export const ptBR = {
         namePlaceholder: "ex: Vovó, Miguel",
         emailOptional: "Email (Opcional)",
         emailPlaceholder: "convite@exemplo.com",
-        likes: "Gostos",
-        likesPlaceholder: "Digite gostos (ex: Italiano, Picante)...",
-        dislikes: "Não Gosta",
+        likes: "Preferências",
+        likesPlaceholder: "Digite as preferências (ex: Italiano, Picante)...",
+        dislikes: "O que não gosta",
         dislikesPlaceholder: "Digite o que não gosta (ex: Cogumelos, Peixe)...",
         restrictions: "Restrições Alimentares",
         restrictionsPlaceholder: "Digite restrições (ex: Vegano, Alergia a Nozes)...",
-        role: "Função",
+        role: "Permissão",
         adminCannotBeGuest: "Admin não pode ser Convidado",
         saveBoxGuest: "Atualizar ajuda a IA a ajustar receitas instantaneamente.",
         saveBoxAdd: "Dica: Adicione preferências para ajudar o chef IA a personalizar receitas!",
@@ -188,7 +188,9 @@ export const ptBR = {
         copied: "Copiado!",
         translate: "Traduzir Receita",
         showOriginal: "Mostrar Original",
-        translating: "Traduzindo..."
+
+        translating: "Traduzindo...",
+        shoppingListFor: "Lista de Compras para {title}"
     },
     recipeForm: {
         titleCreate: "Criar Receita",
@@ -260,7 +262,12 @@ export const ptBR = {
         passwordTooShort: "A senha deve ter pelo menos 6 caracteres",
         passwordResetSuccess: "Senha redefinida com sucesso!",
         invalidResetLink: "Link inválido ou expirado",
-        requestNewLink: "Solicitar Novo Link"
+        requestNewLink: "Solicitar Novo Link",
+        defaultKitchenName: "Cozinha de {name}",
+        unverifiedError: "Conta não verificada. Verifique seu email.",
+        resendVerification: "Reenviar Email de Verificação",
+        verificationResent: "Email de verificação reenviado!",
+        resendError: "Falha ao reenviar email."
     },
     generate: {
         title: "Nova Receita",
@@ -271,7 +278,7 @@ export const ptBR = {
         specialRequests: "Algum pedido especial?",
         specialRequestsPlaceholder: "ex: Tenho 20 minutos, usar o forno...",
         generateBtn: "Gerar Receita",
-        generating: "Cozinhando Mágica...",
+        generating: "Criando receita...",
         or: "— OU —",
         createManually: "Criar Manualmente",
         selectDinersError: "Selecione quem vai comer primeiro! (Verifique 'Membros')",
