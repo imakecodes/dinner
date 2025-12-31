@@ -12,7 +12,7 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 const pool = mariadb.createPool(
   process.env.DATABASE_URL!.replace('mysql://', 'mariadb://')
 );
-const adapter = new PrismaMariaDb(pool);
+const adapter = new PrismaMariaDb(pool as any);
 
 export const prisma =
   globalForPrisma.prisma ||
