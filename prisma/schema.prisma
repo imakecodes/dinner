@@ -65,6 +65,10 @@ model User {
   // Verification
   emailVerified     DateTime?
   verificationToken String?   @db.Text
+
+  // Password Reset
+  passwordResetToken   String?   @db.Text
+  passwordResetExpires DateTime?
 }
 
 model KitchenMember {

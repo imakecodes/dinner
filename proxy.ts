@@ -17,6 +17,7 @@ export async function proxy(request: NextRequest) {
         path === '/recover' ||
         path === '/api/healthz' ||
         path === '/verify-email' || // Also needed for the new page!
+        path === '/reset-password' ||
         path.startsWith('/api/auth'); // Allow auth API routes
 
     // Static assets and internal next paths are usually handled automatically by matcher,

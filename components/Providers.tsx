@@ -52,7 +52,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Load initial data from storageService if available (optional enhancement)
     useEffect(() => {
         // Skip fetching data on auth pages, but we can still check local storage or existing session later
-        if (pathname === '/login' || pathname === '/register' || pathname === '/recover' || pathname === '/verify-email') {
+        if (pathname === '/login' || pathname === '/register' || pathname === '/recover' || pathname === '/verify-email' || pathname === '/reset-password') {
             return;
         }
 

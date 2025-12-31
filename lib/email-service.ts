@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { kitchenJoinRequestTemplate } from './email/templates/kitchen-join-request';
 import { verificationEmailTemplate } from './email/templates/verification';
 import { invitationEmailTemplate } from './email/templates/invitation';
+import { passwordResetEmailTemplate } from './email/templates/password-reset';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.resend.com',
@@ -116,5 +117,38 @@ export async function sendInvitationEmail(
     console.log(`[Email Service] Invitation email sent to ${email}: ${info.messageId}`);
   } catch (error) {
     console.error('[Email Service] Error sending invitation email:', error);
+  }
+}
+
+export async function sendPasswordResetEmail(email: string, token: string, language: string = 'en') {
+  if (!process.env.SMTP_PASSWORD) {
+    console.warn('[Email Service] SMTP_PASSWORD not set. Skipping password reset email.');
+    return;
+  }
+
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+
+  const fromName = process.env.SMTP_EMAIL_FROM_NAME || 'Dinner Chef AI';
+  const fromEmail = process.env.SMTP_EMAIL_FROM || 'onboarding@resend.dev';
+
+  const isPt = language.toLowerCase().startsWith('pt');
+  const subject = isPt ? 'Redefina sua senha' : 'Reset your password';
+  const text = isPt
+    ? `Você solicitou uma redefinição de senha.\n\nClique no link abaixo para redefinir sua senha:\n${resetUrl}\n\nEste link expirará em 1 hora. Se você não solicitou, ignore este email.`
+    : `You requested a password reset.\n\nClick the link below to reset your password:\n${resetUrl}\n\nThis link will expire in 1 hour. If you did not request this, please ignore this email.`;
+
+  try {
+    const html = passwordResetEmailTemplate(resetUrl, language);
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+
+    console.log(`[Email Service] Password reset email sent: ${info.messageId}`);
+  } catch (error) {
+    console.error('[Email Service] Error sending password reset email:', error);
   }
 }

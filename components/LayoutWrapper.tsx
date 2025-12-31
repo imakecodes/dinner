@@ -14,7 +14,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
     // Hide Header/Sidebar on auth pages
     // Using simple includes check. Can be robustified if needed.
-    const isAuthPage = ['/login', '/register', '/recover'].includes(pathname || '');
+    const isAuthPage = ['/login', '/register', '/recover', '/reset-password'].includes(pathname || '');
 
     return (
         <>

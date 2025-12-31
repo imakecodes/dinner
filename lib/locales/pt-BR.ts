@@ -251,7 +251,16 @@ export const ptBR = {
         verifyFailed: "Falha na Verificação",
         invalidLink: "Link de verificação inválido.",
         networkError: "Erro de rede. Tente novamente.",
-        userExistsError: "O usuário já existe"
+        userExistsError: "O usuário já existe",
+        resetPasswordTitle: "Redefinir Senha",
+        resetPasswordSubtitle: "Digite sua nova senha abaixo.",
+        newPassword: "Nova Senha",
+        resetPassword: "Redefinir Senha",
+        passwordMismatch: "As senhas não conferem",
+        passwordTooShort: "A senha deve ter pelo menos 6 caracteres",
+        passwordResetSuccess: "Senha redefinida com sucesso!",
+        invalidResetLink: "Link inválido ou expirado",
+        requestNewLink: "Solicitar Novo Link"
     },
     generate: {
         title: "Nova Receita",
