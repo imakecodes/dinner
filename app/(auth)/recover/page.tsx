@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function RecoverPage() {
-    const { t } = useTranslation();
+    const { t, lang } = useTranslation();
     const [email, setEmail] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
     const [message, setMessage] = useState('');
@@ -19,7 +19,7 @@ export default function RecoverPage() {
             const res = await fetch('/api/auth/recover', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, language: lang }),
             });
             const data = await res.json();
             setMessage(data.message);

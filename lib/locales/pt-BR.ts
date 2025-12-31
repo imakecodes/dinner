@@ -241,6 +241,7 @@ export const ptBR = {
         backToLogin: "Voltar para Login",
         checkEmailTitle: "Verifique seu email",
         checkEmailSent: "Enviamos um link de verificação para {email}. Verifique sua caixa de entrada.",
+        recoverySent: "Se uma conta existir com este email, você receberá instruções de redefinição de senha.",
         checkEmailSpam: "Não recebeu? Verifique sua caixa de spam.",
         verifyTitle: "Verificação de Email",
         verifying: "Verificando seu email...",
