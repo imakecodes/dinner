@@ -1,16 +1,18 @@
+import { escapeHtml } from '../utils/html-escape';
 
-export const baseTemplate = (content: string, title: string) => `
+export const baseTemplate = (content: string, title: string) => {
+  const safeTitle = escapeHtml(title);
+  
+  return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
       line-height: 1.6;
       margin: 0;
       padding: 0;
@@ -32,9 +34,6 @@ export const baseTemplate = (content: string, title: string) => `
       text-align: left;
     }
     .logo-container {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
       text-decoration: none;
     }
     .logo-icon {
@@ -43,18 +42,21 @@ export const baseTemplate = (content: string, title: string) => `
       width: 36px;
       height: 36px;
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-size: 18px;
       box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.2);
+      display: inline-block;
+      vertical-align: middle;
+      text-align: center;
+      line-height: 36px;
     }
     .logo-text {
       color: #0f172a; /* slate-900 */
       font-size: 24px;
-      margin: 0;
+      margin: 0 0 0 12px;
       font-weight: 900;
       letter-spacing: -0.05em; /* tight tracking */
+      display: inline-block;
+      vertical-align: middle;
     }
     .content {
       padding: 32px;
@@ -82,11 +84,6 @@ export const baseTemplate = (content: string, title: string) => `
       margin-top: 24px;
       text-align: center;
       box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.2), 0 2px 4px -1px rgba(225, 29, 72, 0.1);
-      transition: all 0.2s;
-    }
-    .button:hover {
-      background-color: #be123c; /* rose-700 */
-      transform: translateY(-1px);
     }
     h2 {
       color: #0f172a; /* slate-900 */
@@ -128,10 +125,7 @@ export const baseTemplate = (content: string, title: string) => `
       display: block;
       text-shadow: 2px 2px 0px rgba(225,29,72,0.1);
     }
-    /* Logo Icon Text simulation */
-    .icon-text::before {
-      content: "🍴"; 
-    }
+
     @media only screen and (max-width: 600px) {
       .container {
         margin: 0;
@@ -153,7 +147,7 @@ export const baseTemplate = (content: string, title: string) => `
   <div class="container">
     <div class="header">
       <div class="logo-container">
-        <div class="logo-icon"><span class="icon-text"></span></div>
+        <div class="logo-icon">🍴</div>
         <span class="logo-text">Dinner?</span>
       </div>
     </div>
@@ -168,3 +162,4 @@ export const baseTemplate = (content: string, title: string) => `
 </body>
 </html>
 `;
+};

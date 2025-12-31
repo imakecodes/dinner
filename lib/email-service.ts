@@ -23,8 +23,10 @@ export async function sendKitchenJoinRequestEmail(
     return;
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
   try {
-    const html = kitchenJoinRequestTemplate(requesterName, kitchenName);
+    const html = kitchenJoinRequestTemplate(requesterName, kitchenName, appUrl);
     const info = await transporter.sendMail({
       from: '"Dinner Chef AI" <onboarding@resend.dev>', // Update this with your verified sender
       to: adminEmail,
