@@ -47,7 +47,7 @@ export const baseTemplate = (content: string, title: string) => {
       display: inline-block;
       vertical-align: middle;
       text-align: center;
-      line-height: 36px;
+      line-height: 36px; /* Match height for vertical centering */
     }
     .logo-text {
       color: #0f172a; /* slate-900 */

@@ -4,7 +4,7 @@
  * @returns The escaped string safe for HTML insertion
  */
 export const escapeHtml = (value: string): string => {
-  if (!value) return '';
+  if (typeof value !== 'string' || !value) return '';
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
