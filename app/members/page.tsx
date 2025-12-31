@@ -19,6 +19,7 @@ export default function MembersPage() {
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [newMemberIsGuest, setNewMemberIsGuest] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const [editingMember, setEditingMember] = useState<KitchenMember | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -206,13 +207,14 @@ export default function MembersPage() {
                         <div
                             onClick={() => {
                                 navigator.clipboard.writeText(kitchen.inviteCode || '');
-                                alert(t('members.copied'));
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 2000);
                             }}
                             className="text-4xl font-black text-indigo-900 cursor-pointer hover:scale-105 transition-transform active:scale-95 flex items-center justify-center gap-3"
                             title={t('members.clickToCopy')}
                         >
                             {kitchen.inviteCode}
-                            <i className="fas fa-copy text-xl text-indigo-300"></i>
+                            <i className={`fas ${copied ? 'fa-check text-green-500' : 'fa-copy text-indigo-300'} text-xl transition-all`}></i>
                         </div>
                         <p className="text-xs text-indigo-400 font-medium pb-2">{t('members.shareCode')}</p>
 

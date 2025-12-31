@@ -11,6 +11,7 @@ export default function KitchensPage() {
     const [user, setUser] = useState<any>(null);
     const [newKitchenName, setNewKitchenName] = useState('');
     const [loading, setLoading] = useState(true);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -110,13 +111,13 @@ export default function KitchensPage() {
                                                 <button
                                                     onClick={() => {
                                                         navigator.clipboard.writeText(m.kitchen.inviteCode || '');
-                                                        // Simple alert for now, or use a toast if available
-                                                        alert('Code copied!');
+                                                        setCopiedId(m.kitchenId);
+                                                        setTimeout(() => setCopiedId(null), 2000);
                                                     }}
                                                     className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
-                                                    title="Copy Code"
+                                                    title={t('members.clickToCopy')}
                                                 >
-                                                    <i className="fas fa-copy"></i>
+                                                    <i className={`fas ${copiedId === m.kitchenId ? 'fa-check text-green-500' : 'fa-copy'} transition-all`}></i>
                                                 </button>
                                                 {m.role === 'ADMIN' && (
                                                     <button
@@ -127,7 +128,7 @@ export default function KitchensPage() {
                                                             if (result.success) {
                                                                 await loadData();
                                                             } else {
-                                                                alert(result.error);
+                                                                console.error(result.error);
                                                             }
                                                         }}
                                                         className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors"
