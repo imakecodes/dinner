@@ -249,7 +249,8 @@ export const en = {
         goToLogin: "Go to Login",
         verifyFailed: "Verification Failed",
         invalidLink: "Invalid verification link.",
-        networkError: "Network error. Please try again."
+        networkError: "Network error. Please try again.",
+        userExistsError: "User already exists"
     },
     generate: {
         title: "New Recipe",

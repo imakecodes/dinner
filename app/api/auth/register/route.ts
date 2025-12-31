@@ -3,21 +3,24 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { generateKitchenCode } from '@/lib/kitchen-code';
 import { sendVerificationEmail } from '@/lib/email-service';
+import { getServerTranslator } from '@/lib/i18n-server';
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, surname, email, password } = await req.json();
+        const { email, password, name, surname } = await req.json();
 
-        if (!name || !surname || !email || !password) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        if (!email || !password) {
+            return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
         }
 
         const existingUser = await prisma.user.findUnique({
             where: { email },
         });
 
+
         if (existingUser) {
-            return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+            const { t } = getServerTranslator(req);
+            return NextResponse.json({ error: t('auth.userExistsError') }, { status: 400 });
         }
 
         const hashedPassword = await hashPassword(password);

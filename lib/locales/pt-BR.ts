@@ -250,7 +250,8 @@ export const ptBR = {
         goToLogin: "Ir para Login",
         verifyFailed: "Falha na Verificação",
         invalidLink: "Link de verificação inválido.",
-        networkError: "Erro de rede. Tente novamente."
+        networkError: "Erro de rede. Tente novamente.",
+        userExistsError: "O usuário já existe"
     },
     generate: {
         title: "Nova Receita",
