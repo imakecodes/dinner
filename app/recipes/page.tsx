@@ -80,7 +80,7 @@ export default function HistoryPage() {
                     </p>
                     {!searchTerm && !isGuest && (
                         <button
-                            onClick={() => router.push('/')}
+                            onClick={() => router.push('/generate')}
                             className="mt-6 px-6 py-2 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors"
                         >
                             {t('actions.generateTitle')}
