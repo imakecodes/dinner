@@ -261,7 +261,11 @@ export const ptBR = {
         passwordResetSuccess: "Senha redefinida com sucesso!",
         invalidResetLink: "Link inválido ou expirado",
         requestNewLink: "Solicitar Novo Link",
-        defaultKitchenName: "Cozinha de {name}"
+        defaultKitchenName: "Cozinha de {name}",
+        unverifiedError: "Conta não verificada. Verifique seu email.",
+        resendVerification: "Reenviar Email de Verificação",
+        verificationResent: "Email de verificação reenviado!",
+        resendError: "Falha ao reenviar email."
     },
     generate: {
         title: "Nova Receita",

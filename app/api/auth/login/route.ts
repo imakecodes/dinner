@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
 import { comparePassword } from '@/lib/password';
+import { getServerTranslator } from '@/lib/i18n-server';
 
 export async function POST(req: NextRequest) {
     try {
@@ -26,6 +27,11 @@ export async function POST(req: NextRequest) {
 
         if (!isValid) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+        }
+
+        if (!user.emailVerified) {
+            const { t } = getServerTranslator(req);
+            return NextResponse.json({ error: 'Account not verified', code: 'auth.unverified' }, { status: 403 });
         }
 
         // Use the first house as default for now

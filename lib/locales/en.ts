@@ -260,7 +260,11 @@ export const en = {
         passwordResetSuccess: "Password Reset Successfully!",
         invalidResetLink: "Invalid or expired reset link",
         requestNewLink: "Request New Link",
-        defaultKitchenName: "{name}'s Kitchen"
+        defaultKitchenName: "{name}'s Kitchen",
+        unverifiedError: "Account not verified. Please check your email.",
+        resendVerification: "Resend Verification Email",
+        verificationResent: "Verification email sent!",
+        resendError: "Failed to resend email."
     },
     generate: {
         title: "New Recipe",

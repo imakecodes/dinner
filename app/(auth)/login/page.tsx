@@ -12,6 +12,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,6 +29,9 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (!res.ok) {
+                if (data.code === 'auth.unverified') {
+                    throw new Error(t('auth.unverifiedError'));
+                }
                 throw new Error(data.error || t('common.error'));
             }
 
@@ -56,6 +60,42 @@ export default function LoginPage() {
                 {error && (
                     <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-bold border border-red-200">
                         {error}
+                        {error === t('auth.unverifiedError') && (
+                            <div className="mt-3 pt-3 border-t border-red-100">
+                                {resendStatus === 'sent' ? (
+                                    <div className="text-emerald-600 flex items-center gap-2">
+                                        <i className="fas fa-check-circle"></i>
+                                        {t('auth.verificationResent')}
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={async () => {
+                                            setResendStatus('sending');
+                                            try {
+                                                const res = await fetch('/api/auth/resend-verification', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ email }),
+                                                });
+                                                if (res.ok) {
+                                                    setResendStatus('sent');
+                                                } else {
+                                                    setResendStatus('error');
+                                                }
+                                            } catch (e) {
+                                                setResendStatus('error');
+                                            }
+                                        }}
+                                        disabled={resendStatus === 'sending'}
+                                        className="text-xs uppercase tracking-wider font-black text-red-700 underline hover:no-underline disabled:opacity-50 disabled:no-underline flex items-center gap-2"
+                                        type="button"
+                                    >
+                                        {resendStatus === 'sending' && <i className="fas fa-circle-notch fa-spin"></i>}
+                                        {resendStatus === 'error' ? t('auth.resendError') : t('auth.resendVerification')}
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
