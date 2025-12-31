@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../components/Providers';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { SessionContext, MealType, RecipeRecord, Difficulty } from '../../types';
 import { storageService } from '../../services/storageService';
 import Link from 'next/link';
@@ -26,6 +27,15 @@ export default function GenerateRecipePage() {
     const [mealType, setMealType] = useState<MealType>('main');
     const initializedRef = useRef(false);
 
+    // Enforce role access: Guests cannot generate recipes
+    const { isGuest, loading: memberLoading } = useCurrentMember();
+
+    useEffect(() => {
+        if (!memberLoading && isGuest) {
+            router.push('/');
+        }
+    }, [isGuest, memberLoading, router]);
+
     useEffect(() => {
         // Default to Admin if no one is selected (and members are loaded)
         // We use a ref to ensure this only happens once per page load (Auto-selection)
@@ -37,8 +47,8 @@ export default function GenerateRecipePage() {
                 if (admin) {
                     setActiveDiners([admin.id]);
                 } else if (members.length > 0) {
-                   // Fallback: If no Admin found (e.g. data issue), select the first member
-                   setActiveDiners([members[0].id]);
+                    // Fallback: If no Admin found (e.g. data issue), select the first member
+                    setActiveDiners([members[0].id]);
                 }
             }
             initializedRef.current = true;

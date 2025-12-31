@@ -23,6 +23,10 @@ jest.mock('@/hooks/useTranslation', () => ({
     }),
 }));
 
+jest.mock('@/hooks/useCurrentMember', () => ({
+    useCurrentMember: () => ({ isGuest: false, loading: false, member: { role: 'ADMIN' } }),
+}));
+
 // We'll use a variable to control the mock return value for useApp
 let mockUseAppValues: any = {};
 
@@ -47,7 +51,7 @@ describe('GenerateRecipePage', () => {
             difficulty: 'easy',
             setDifficulty: mockSetDifficulty,
             prepTime: 'quick',
-            mealType: 'main', 
+            mealType: 'main',
             setMealType: mockSetMealType,
             language: 'en'
         };
@@ -58,7 +62,7 @@ describe('GenerateRecipePage', () => {
         const regularMember = { id: 'mem-1', name: 'User', role: 'MEMBER' };
 
         mockUseAppValues.members = [regularMember, adminMember];
-        mockUseAppValues.activeDiners = []; 
+        mockUseAppValues.activeDiners = [];
 
         render(<GenerateRecipePage />);
 
@@ -82,15 +86,15 @@ describe('GenerateRecipePage', () => {
     });
 
     it('does not change selection if someone is already active', async () => {
-         const adminMember = { id: 'admin-1', name: 'Chef', role: 'ADMIN' };
-         
-         mockUseAppValues.members = [adminMember];
-         mockUseAppValues.activeDiners = ['some-other-id']; // Already selected
+        const adminMember = { id: 'admin-1', name: 'Chef', role: 'ADMIN' };
 
-         render(<GenerateRecipePage />);
+        mockUseAppValues.members = [adminMember];
+        mockUseAppValues.activeDiners = ['some-other-id']; // Already selected
 
-         await waitFor(() => {
-             expect(mockSetActiveDiners).not.toHaveBeenCalled();
-         });
+        render(<GenerateRecipePage />);
+
+        await waitFor(() => {
+            expect(mockSetActiveDiners).not.toHaveBeenCalled();
+        });
     });
 });
