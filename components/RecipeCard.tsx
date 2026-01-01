@@ -343,7 +343,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                   </div>
                 </div>
 
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {recipe.shopping_list.map((rawIng, idx) => {
                     const ing = (() => {
                       let item = typeof rawIng === 'string' ? (() => {
@@ -369,7 +369,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                     })();
 
                     return (
-                      <li key={idx} className="flex items-center justify-between text-orange-950 text-sm font-bold bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-orange-100 shadow-sm hover:shadow-md hover:bg-white transition-all group/item">
+                      <li key={idx} className="flex items-center justify-between text-orange-950 text-sm font-bold bg-white/80 backdrop-blur-sm py-2 px-3 rounded-xl border border-orange-100 shadow-sm hover:shadow-md hover:bg-white transition-all group/item">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           {!isGuest && (
                             <button
@@ -386,7 +386,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                                 {ing.quantity} {ing.unit}
                               </span>
                             )}
-                            <span className="leading-tight truncate pr-2">
+                            <span className="leading-tight pr-2">
                               {ing.name}
                             </span>
                           </div>

@@ -71,7 +71,7 @@ export async function POST(
         };
 
         // 5. Call AI
-        const translated = await translateRecipe(generatedFormat, targetLanguage);
+        const translated = await translateRecipe(generatedFormat, targetLanguage, { kitchenId: recipe.kitchenId });
 
         // 6. Create Linked Records in Transaction
         const newRecipe = await prisma.$transaction(async (tx) => {
