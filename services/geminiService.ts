@@ -91,7 +91,8 @@ export const generateRecipe = async (
  */
 export const translateRecipe = async (
   recipe: GeneratedRecipe,
-  targetLanguage: string
+  targetLanguage: string,
+  context?: { userId?: string; kitchenId?: string }
 ): Promise<GeneratedRecipe> => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   
@@ -148,6 +149,25 @@ export const translateRecipe = async (
   });
 
   if (!response.text) throw new Error("Translation failed");
+
+  // Log Usage
+  try {
+    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
+    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
+
+    await prisma.geminiUsage.create({
+      data: {
+        prompt,
+        response: response.text,
+        inputTokens,
+        outputTokens,
+        userId: context?.userId,
+        kitchenId: context?.kitchenId
+      }
+    });
+  } catch (err) {
+    console.error("Failed to log Gemini usage:", err);
+  }
 
   return JSON.parse(response.text) as GeneratedRecipe;
 };
