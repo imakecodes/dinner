@@ -13,7 +13,7 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const { t } = useTranslation();
-    const { setLanguage: setGlobalLanguage } = useApp();
+    const { setLanguage: setGlobalLanguage, language: globalLanguage } = useApp();
 
     // Form State
     const [name, setName] = useState('');
@@ -46,6 +46,13 @@ export default function SettingsPage() {
     useEffect(() => {
         loadUser();
     }, [loadUser]);
+
+    // Sync from Global State -> Local Form State
+    useEffect(() => {
+        if (globalLanguage && globalLanguage !== language) {
+            setLanguage(globalLanguage);
+        }
+    }, [globalLanguage, language]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -163,7 +170,10 @@ export default function SettingsPage() {
                         <div className="flex gap-4">
                             <button
                                 type="button"
-                                onClick={() => setLanguage('en')}
+                                onClick={() => {
+                                    setLanguage('en');
+                                    setGlobalLanguage('en');
+                                }}
                                 className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${language === 'en'
                                     ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                                     : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
@@ -174,7 +184,10 @@ export default function SettingsPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setLanguage('pt-BR')}
+                                onClick={() => {
+                                    setLanguage('pt-BR');
+                                    setGlobalLanguage('pt-BR');
+                                }}
                                 className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${language === 'pt-BR'
                                     ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                                     : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
