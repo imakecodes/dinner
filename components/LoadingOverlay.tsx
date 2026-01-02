@@ -40,7 +40,7 @@ export const LoadingOverlay: React.FC<Props> = ({ isVisible }) => {
       <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-md w-full mx-4 text-center space-y-8 animate-in zoom-in-95 duration-300 border border-white/20 relative overflow-hidden">
         
         {/* Animated Background Blob */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-rose-100 rounded-full mix-blend-multiply blur-3xl opacity-50 animate-pulse"></div>
         
         <div className="relative">
             {/* Animated Icon */}
