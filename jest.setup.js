@@ -221,6 +221,13 @@ const translations = {
       profile: 'Profile',
       preferences: 'Preferences',
       security: 'Security'
+    },
+    loading: {
+      title: 'Cooking up something special...',
+      step1: 'Selecting the best ingredients...',
+      step2: 'Consulting our AI Chef...',
+      step3: 'Plating your dish...',
+      warning: 'Please do not close your browser. This may take a moment.'
     }
   }
 };
