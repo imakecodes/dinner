@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { LoadingOverlay } from '../../components/LoadingOverlay';
 
 describe('LoadingOverlay', () => {
