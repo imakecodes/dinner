@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 
+import { LoadingOverlay } from '../../components/LoadingOverlay';
+
 export default function GenerateRecipePage() {
     const router = useRouter();
     const { t } = useTranslation();
@@ -198,6 +200,8 @@ export default function GenerateRecipePage() {
 
                 {error && <div className="p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-center border border-red-100">{error}</div>}
             </main>
+
+            <LoadingOverlay isVisible={isGenerating} />
         </div>
     );
 }

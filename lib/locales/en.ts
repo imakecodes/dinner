@@ -282,5 +282,12 @@ export const en = {
         createManually: "Create Manually",
         selectDinersError: "Please select who is eating first! (Check 'Members')",
         generateError: "Failed to generate recipe. Please try again."
+    },
+    loading: {
+        title: "Cooking up something special...",
+        step1: "Selecting the best ingredients...",
+        step2: "Consulting our AI Chef...",
+        step3: "Plating your dish...",
+        warning: "Please do not close your browser. This may take a moment."
     }
 };

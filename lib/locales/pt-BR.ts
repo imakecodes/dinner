@@ -283,5 +283,12 @@ export const ptBR = {
         createManually: "Criar Manualmente",
         selectDinersError: "Selecione quem vai comer primeiro! (Verifique 'Membros')",
         generateError: "Falha ao gerar receita. Tente novamente."
+    },
+    loading: {
+        title: "Cozinhando algo especial...",
+        step1: "Selecionando os melhores ingredientes...",
+        step2: "Consultando nosso Chef IA...",
+        step3: "Empratando seu prato...",
+        warning: "Por favor, não feche seu navegador. Isso pode levar um momento."
     }
 };
