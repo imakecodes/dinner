@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { storageService } from '@/services/storageService';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ShareButtons } from '@/components/ShareButtons';
 
 export default function KitchensPage() {
     const { t } = useTranslation();
@@ -258,17 +259,24 @@ export default function KitchensPage() {
                                                 <span className="font-mono font-bold text-slate-800 tracking-wider text-base select-all">{m.kitchen.inviteCode || 'N/A'}</span>
                                             </div>
                                             <div className="flex gap-2">
-                                                <button
+                                                <button 
                                                     onClick={() => {
-                                                        navigator.clipboard.writeText(m.kitchen.inviteCode || '');
-                                                        setCopiedId(m.kitchenId);
+                                                        navigator.clipboard.writeText(m.kitchen.inviteCode);
+                                                        setCopiedId(m.id);
                                                         setTimeout(() => setCopiedId(null), 2000);
                                                     }}
-                                                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm flex items-center gap-2"
+                                                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm active:scale-95"
                                                 >
-                                                    <i className={`fas ${copiedId === m.kitchenId ? 'fa-check text-green-500' : 'fa-copy'}`}></i>
-                                                    {copiedId === m.kitchenId ? t('members.copied') : t('members.clickToCopy')}
+                                                    <i className={`fas ${copiedId === m.id ? 'fa-check text-green-500' : 'fa-copy'}`}></i>
+                                                    <span className="text-xs font-bold">{copiedId === m.id ? t('common.saved') : t('members.clickToCopy')}</span>
                                                 </button>
+                                                
+                                                {/* Social Share Buttons */}
+                                                <ShareButtons 
+                                                    text={`${t('members.shareCode')} ${m.kitchen.inviteCode}`} 
+                                                    url="https://dinner.app"
+                                                />
+
                                                 {m.role === 'ADMIN' && (
                                                     <button
                                                         onClick={async () => {
@@ -289,6 +297,19 @@ export default function KitchensPage() {
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* Member Management Shortcut (Active Kitchen Only) */}
+                                        {m.kitchenId === user.currentKitchenId && (
+                                            <div className="flex justify-end pt-2 border-t border-slate-100">
+                                                <a 
+                                                    href="/members" 
+                                                    className="flex items-center gap-2 text-rose-500 hover:text-rose-600 text-sm font-bold transition-colors group"
+                                                >
+                                                    <span className="group-hover:underline">{t('nav.members')}</span>
+                                                    <i className="fas fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
