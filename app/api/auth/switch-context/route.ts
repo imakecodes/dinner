@@ -35,10 +35,13 @@ export async function POST(request: NextRequest) {
                     userId,
                     kitchenId: targetId
                 }
+            },
+            include: {
+                kitchen: true
             }
         });
 
-        if (!membership) {
+        if (!membership || membership.kitchen.deletedAt) {
             return NextResponse.json({ message: 'User is not a member of this kitchen' }, { status: 403 });
         }
 

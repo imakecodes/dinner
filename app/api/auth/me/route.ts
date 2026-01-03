@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
                 measurementSystem: true,
                 language: true,
                 kitchenMemberships: {
+                    where: {
+                        kitchen: {
+                            deletedAt: null
+                        }
+                    },
                     include: {
                         kitchen: true
                     }

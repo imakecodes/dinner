@@ -28,7 +28,7 @@ export async function joinKitchen(inviteCode: string) {
     where: { inviteCode },
   });
 
-  if (!kitchen) {
+  if (!kitchen || kitchen.deletedAt) {
     return { error: 'Invalid invitation code' };
   }
 

@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
     const kitchenId = payload.kitchenId as string;
 
     const members = await prisma.kitchenMember.findMany({
-      where: { kitchenId },
+      where: { 
+        kitchenId,
+        kitchen: { deletedAt: null }
+      },
       include: {
         restrictions: true,
         likes: true,

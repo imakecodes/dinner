@@ -38,6 +38,8 @@ export default function KitchensPage() {
             await loadData(); // Reload list
         } catch (err) {
             console.error("Failed to create kitchen", err);
+        } finally {
+            window.dispatchEvent(new Event('kitchens-updated'));
         }
     };
 
@@ -67,6 +69,7 @@ export default function KitchensPage() {
             await storageService.updateKitchen(kitchenId, editName);
             setEditingKitchenId(null);
             await loadData();
+            window.dispatchEvent(new Event('kitchens-updated'));
         } catch (err) {
             console.error("Failed to update kitchen", err);
             setErrorMessage(t('common.error') || "Failed to update kitchen");
@@ -84,6 +87,7 @@ export default function KitchensPage() {
         try {
             await storageService.deleteKitchen(deleteTargetId);
             await loadData();
+            window.dispatchEvent(new Event('kitchens-updated'));
             if (user?.currentKitchenId === deleteTargetId) {
                 window.location.reload();
             }

@@ -23,13 +23,19 @@ export const UserMenu: React.FC = () => {
     useEffect(() => {
         loadUser();
 
+        const handleKitchensUpdated = () => loadUser();
+        window.addEventListener('kitchens-updated', handleKitchensUpdated);
+
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('kitchens-updated', handleKitchensUpdated);
+        };
     }, []);
 
     const loadUser = async () => {
