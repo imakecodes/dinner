@@ -104,8 +104,9 @@ export default function MembersPage() {
             setRestrictionsTags([]);
 
             await loadMembers();
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to save member", err);
+            alert(err.message || t('common.error'));
         } finally {
             setIsAdding(false);
         }
@@ -268,6 +269,7 @@ export default function MembersPage() {
                                                 onChange={(e) => setNewMemberName(e.target.value)}
                                                 name="name" // Added name attribute
                                                 required
+                                                maxLength={50}
                                             />
                                         </div>
 
@@ -281,6 +283,7 @@ export default function MembersPage() {
                                                 name="email"
                                                 value={newMemberEmail} // Controlled by state
                                                 onChange={(e) => setNewMemberEmail(e.target.value)} // Update state
+                                                maxLength={100}
                                             />
                                         </div>
                                     </div>

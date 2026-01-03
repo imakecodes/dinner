@@ -31,6 +31,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
 
     const addTag = (val: string) => {
         const trimmed = val.trim();
+        if (trimmed.length > 50) return; // Silent fail or could add alert
         if (trimmed && !tags.includes(trimmed)) {
             setTags([...tags, trimmed]);
             setInput('');
@@ -91,6 +92,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
                     }}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setShowSuggestions(true)}
+                    maxLength={50}
                 />
             </div>
 

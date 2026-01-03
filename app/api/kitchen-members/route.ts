@@ -48,6 +48,14 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json();
 
+    // Validation
+    if (!data.name || data.name.length > 50) {
+      return NextResponse.json({ message: 'Name is required and must be under 50 characters.' }, { status: 400 });
+    }
+    if (data.email && data.email.length > 100) {
+      return NextResponse.json({ message: 'Email must be under 100 characters.' }, { status: 400 });
+    }
+
     const processTags = (tags: string[]) => {
       if (!Array.isArray(tags)) return undefined;
       // Simplistic approach: Delete existing tags for this member and create new ones.
@@ -99,6 +107,37 @@ export async function POST(request: NextRequest) {
     }
 
     if (data.id && !data.id.startsWith('h-') && !data.id.startsWith('g-') && !data.id.startsWith('temp-')) {
+      // Security Check: Ensure member belongs to this kitchen
+      const existingRecord = await prisma.kitchenMember.findUnique({
+        where: { id: data.id },
+        select: { kitchenId: true }
+      });
+      
+      if (!existingRecord) {
+        return NextResponse.json({ message: 'Member not found' }, { status: 404 });
+      }
+      
+      if (existingRecord.kitchenId !== kitchenId) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      }
+
+      // Check for User Link Collision (e.g. changing email to one that belongs to another member)
+      if (userIdToLink) {
+        const collision = await prisma.kitchenMember.findFirst({
+          where: {
+            kitchenId,
+            userId: userIdToLink,
+            id: { not: data.id }
+          }
+        });
+        if (collision) {
+          return NextResponse.json(
+            { message: 'A member with this email address already exists in this kitchen.' }, 
+            { status: 409 }
+          );
+        }
+      }
+
       // Update existing
       member = await prisma.kitchenMember.update({
         where: { id: data.id },
@@ -126,6 +165,23 @@ export async function POST(request: NextRequest) {
 
     } else {
       // Create new
+      
+      // Check for User Link Collision
+      if (userIdToLink) {
+        const collision = await prisma.kitchenMember.findFirst({
+          where: {
+            kitchenId,
+            userId: userIdToLink
+          }
+        });
+        if (collision) {
+          return NextResponse.json(
+            { message: 'A member with this email address already exists in this kitchen.' }, 
+            { status: 409 }
+          );
+        }
+      }
+
       member = await prisma.kitchenMember.create({
         data: {
           name: data.name,
