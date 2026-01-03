@@ -22,6 +22,7 @@ export const en = {
         logout: "Log Out",
         recipes: "Recipes",
         kitchens: "Manage Kitchens",
+        language: 'Language',
         account: "Account",
         switchKitchen: "Switch Kitchen",
         newKitchen: "New Kitchen"

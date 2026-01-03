@@ -1,8 +1,5 @@
 import React from 'react';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useApp } from './Providers';
-import { storageService } from '@/services/storageService';
-import { Language } from '@/types';
+import { UserMenu } from './UserMenu';
 
 interface Props {
   onMenuClick?: () => void;
@@ -10,9 +7,6 @@ interface Props {
 }
 
 const Header: React.FC<Props> = ({ onMenuClick, onHomeClick }) => {
-  const { lang } = useTranslation();
-  const { setLanguage } = useApp();
-
   return (
     <header className="bg-white text-slate-900 shadow-sm p-5 sticky top-0 z-50 border-b border-slate-100 backdrop-blur-md bg-white/80">
       <div className="max-w-4xl mx-auto flex justify-between items-center">
@@ -37,25 +31,9 @@ const Header: React.FC<Props> = ({ onMenuClick, onHomeClick }) => {
           </div>
         </div>
 
-        {/* Right Section: Language Selector */}
-        <div className="flex items-center">
-          <select
-            value={lang}
-            onChange={(e) => {
-              const newLang = e.target.value as Language;
-              setLanguage(newLang);
-              storageService.getCurrentUser().then(user => {
-                if (user && user.user) {
-                  const { name, surname, measurementSystem } = user.user;
-                  storageService.updateProfile({ name, surname, measurementSystem, language: newLang });
-                }
-              }).catch(err => console.error("Failed to persist language change", err));
-            }}
-            className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-rose-500 hover:border-slate-300 transition-colors cursor-pointer"
-          >
-            <option value="en">🇺🇸 EN</option>
-            <option value="pt-BR">🇧🇷 PT</option>
-          </select>
+        {/* Right Section: User Menu */}
+        <div className="flex items-center gap-4">
+          <UserMenu />
         </div>
       </div>
     </header>
