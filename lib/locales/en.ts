@@ -292,5 +292,17 @@ export const en = {
         step2: "Consulting our AI Chef...",
         step3: "Plating your dish...",
         warning: "Please do not close your browser. This may take a moment."
+    },
+    email: {
+        passwordChanged: {
+            title: "Password Changed",
+            greeting: "Hello {name},",
+            alert: "Security Alert:",
+            message: "The password for your Dinner App account was just changed.",
+            ignore: "If you made this change, you can safely ignore this email.",
+            action: "If you did not change your password, please contact support immediately and reset your password.",
+            button: "Reset Password",
+            footer: "If you have any questions, reply to this email."
+        }
     }
 };

@@ -3,6 +3,7 @@ import { kitchenJoinRequestTemplate } from './email/templates/kitchen-join-reque
 import { verificationEmailTemplate } from './email/templates/verification';
 import { invitationEmailTemplate } from './email/templates/invitation';
 import { passwordResetEmailTemplate } from './email/templates/password-reset';
+import { passwordChangedEmailTemplate } from './email/templates/password-changed';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.resend.com',
@@ -123,6 +124,38 @@ export async function sendInvitationEmail(
     console.log(`[Email Service] Invitation email sent to ${email}: ${info.messageId}`);
   } catch (error) {
     console.error('[Email Service] Error sending invitation email:', error);
+  }
+}
+
+export async function sendPasswordChangedEmail(email: string, name: string, language: string = 'en') {
+  if (!process.env.SMTP_PASSWORD) {
+    console.warn('[Email Service] SMTP_PASSWORD not set. Skipping password changed email.');
+    return;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const fromName = process.env.SMTP_EMAIL_FROM_NAME || 'Dinner Chef AI';
+  const fromEmail = process.env.SMTP_EMAIL_FROM || 'onboarding@resend.dev';
+
+  const isPt = language.toLowerCase().startsWith('pt');
+  const subject = isPt ? 'Alerta de Segurança: Senha Alterada' : 'Security Alert: Password Changed';
+  const text = isPt 
+    ? `Olá ${name},\n\nA senha da sua conta no Dinner App foi alterada recentemente.\n\nSe você não fez essa alteração, entre em contato com o suporte imediatamente.`
+    : `Hello ${name},\n\nThe password for your Dinner App account was just changed.\n\nIf you did not make this change, please contact support immediately.`;
+
+  try {
+    const html = passwordChangedEmailTemplate(name, appUrl, language);
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject: subject,
+      text: text,
+      html,
+    });
+
+    console.log(`[Email Service] Password changed email sent: ${info.messageId}`);
+  } catch (error) {
+    console.error('[Email Service] Error sending password changed email:', error);
   }
 }
 

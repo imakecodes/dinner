@@ -293,5 +293,17 @@ export const ptBR = {
         step2: "Consultando nosso Chef IA...",
         step3: "Empratando seu prato...",
         warning: "Por favor, não feche seu navegador. Isso pode levar um momento."
+    },
+    email: {
+        passwordChanged: {
+            title: "Senha Alterada",
+            greeting: "Olá {name},",
+            alert: "Alerta de Segurança:",
+            message: "A senha da sua conta no Dinner App foi alterada recentemente.",
+            ignore: "Se foi você quem fez essa alteração, pode ignorar este email com segurança.",
+            action: "Se você não alterou sua senha, entre em contato com o suporte imediatamente e redefina sua senha.",
+            button: "Redefinir Senha",
+            footer: "Se tiver dúvidas, responda a este email."
+        }
     }
 };
