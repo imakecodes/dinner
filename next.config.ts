@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    // Force restart timestamp: 2026-01-03
     output: "standalone",
     experimental: {
         serverActions: {

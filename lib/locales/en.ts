@@ -112,7 +112,9 @@ export const en = {
         createTitle: "Create New Kitchen",
         createPlaceholder: "e.g. MasterChef Villa",
         create: "Create",
-        regenerateConfirm: "Regenerate invite code? Old code will stop working."
+        regenerateConfirm: "Regenerate invite code? Old code will stop working.",
+        deleteConfirm: "Are you sure you want to delete this kitchen?",
+        deleteTitle: "Delete Kitchen?"
     },
     recipeDetails: {
         notFound: "Recipe not found!",

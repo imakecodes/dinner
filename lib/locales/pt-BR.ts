@@ -112,7 +112,9 @@ export const ptBR = {
         createTitle: "Criar Nova Cozinha",
         createPlaceholder: "ex: Villa MasterChef",
         create: "Criar",
-        regenerateConfirm: "Regenerar código de convite? O código antigo deixará de funcionar."
+        regenerateConfirm: "Regenerar código de convite? O código antigo deixará de funcionar.",
+        deleteConfirm: "Tem certeza de que deseja excluir esta cozinha?",
+        deleteTitle: "Excluir Cozinha?"
     },
     recipeDetails: {
         notFound: "Receita não encontrada!",

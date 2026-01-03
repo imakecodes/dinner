@@ -36,6 +36,7 @@ model Kitchen {
   name       String   @default("My Kitchen")
   inviteCode String   @unique
   createdAt  DateTime @default(now())
+  deletedAt  DateTime?
 
   // Relations
   members        KitchenMember[]

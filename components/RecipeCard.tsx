@@ -8,6 +8,7 @@ import { storageService } from '../services/storageService';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApp } from './Providers';
+import { ShareButtons } from './ShareButtons';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
@@ -329,15 +330,11 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
 
                     {showShareMenu && (
                       <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-100 shadow-2xl rounded-2xl p-2 z-30 animate-in fade-in zoom-in-95 duration-200">
-                        <button onClick={() => handleShare('whatsapp')} className="w-full flex items-center gap-3 p-4 hover:bg-emerald-50 rounded-xl text-xs font-black text-slate-700 transition-colors">
-                          <i className="fab fa-whatsapp text-emerald-500 text-lg"></i> {t('recipeCard.whatsapp')}
-                        </button>
-                        <button onClick={() => handleShare('telegram')} className="w-full flex items-center gap-3 p-4 hover:bg-sky-50 rounded-xl text-xs font-black text-slate-700 transition-colors">
-                          <i className="fab fa-telegram text-sky-500 text-lg"></i> {t('recipeCard.telegram')}
-                        </button>
-                        <button onClick={() => handleShare('copy')} className="w-full flex items-center gap-3 p-4 hover:bg-rose-50 rounded-xl text-xs font-black text-rose-600 transition-colors">
-                          <i className="fas fa-copy text-lg"></i> {copyFeedback ? t('recipeCard.copied') : t('recipeCard.copyClipboard')}
-                        </button>
+                        <ShareButtons 
+                            layout="menu-items"
+                            text={`*${t('recipeCard.shoppingListFor').replace('{title}', recipe.recipe_title)}*\n\n- ${recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ')}`}
+                            url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://dinner.app'}/recipes/${recipe.id}`}
+                        />
                       </div>
                     )}
                   </div>
