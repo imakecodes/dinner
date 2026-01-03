@@ -50,6 +50,53 @@ export default function KitchensPage() {
         }
     };
 
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const [editingKitchenId, setEditingKitchenId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+
+    const handleEditStart = (kitchen: any) => {
+        setEditingKitchenId(kitchen.id);
+        setEditName(kitchen.name);
+    };
+
+    const handleEditSave = async (kitchenId: string) => {
+        try {
+            await storageService.updateKitchen(kitchenId, editName);
+            setEditingKitchenId(null);
+            await loadData();
+        } catch (err) {
+            console.error("Failed to update kitchen", err);
+            setErrorMessage(t('common.error') || "Failed to update kitchen");
+            setTimeout(() => setErrorMessage(null), 3000);
+        }
+    };
+
+    const handleDeleteClick = (kitchenId: string) => {
+        setDeleteTargetId(kitchenId);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTargetId) return;
+        setIsDeleting(true);
+        try {
+            await storageService.deleteKitchen(deleteTargetId);
+            await loadData();
+            if (user?.currentKitchenId === deleteTargetId) {
+                window.location.reload();
+            }
+            setDeleteTargetId(null);
+        } catch (err) {
+             console.error("Failed to delete kitchen", err);
+             setErrorMessage(t('common.error') || "Failed to delete kitchen");
+             setTimeout(() => setErrorMessage(null), 3000);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-rose-100">
             <Sidebar
@@ -61,6 +108,45 @@ export default function KitchensPage() {
                     }
                 }}
             />
+
+            {/* Error Toast */}
+            {errorMessage && (
+                <div className="fixed top-4 right-4 z-50 bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg animate-in slide-in-from-top-2 fade-in duration-300 flex items-center gap-2">
+                    <i className="fas fa-exclamation-circle"></i>
+                    {errorMessage}
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteTargetId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xl mx-auto">
+                            <i className="fas fa-trash-alt"></i>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-bold text-slate-900">{t('kitchens.deleteTitle')}</h3>
+                            <p className="text-sm text-slate-500">{t('kitchens.deleteConfirm')}</p>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => setDeleteTargetId(null)}
+                                className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={isDeleting}
+                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isDeleting && <i className="fas fa-spinner fa-spin"></i>}
+                                {t('common.delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
@@ -86,38 +172,98 @@ export default function KitchensPage() {
                         <section className="space-y-4">
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">{t('kitchens.yourKitchens')}</h2>
                             <div className="grid gap-4">
-                                {user?.kitchenMemberships?.map((m: any) => (
-                                    <div key={m.id} className={`bg-white p-4 rounded-3xl shadow-sm border-2 flex flex-col md:flex-row items-start md:items-center justify-between transition-all gap-4 ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${m.kitchenId === user.currentKitchenId ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                <i className="fas fa-utensils"></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-lg text-slate-900">{m.kitchen.name}</h3>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    {m.kitchenId === user.currentKitchenId && <span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 text-[10px] uppercase font-bold rounded-full tracking-wide">{t('kitchens.active')}</span>}
-                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] uppercase font-bold rounded-full tracking-wide">{m.role || 'MEMBER'}</span>
+                                {user?.kitchenMemberships?.filter((m: any) => !m.kitchen.deletedAt).map((m: any) => (
+                                    <div key={m.id} className={`bg-white p-4 rounded-3xl shadow-sm border-2 flex flex-col gap-4 transition-all ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                                        
+                                        {/* Row 1: Header (Icon + Info + Actions) */}
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner flex-shrink-0 ${m.kitchenId === user.currentKitchenId ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                    <i className="fas fa-utensils"></i>
                                                 </div>
+                                                <div className="flex-1">
+                                                    {editingKitchenId === m.kitchen.id ? (
+                                                        <div className="flex flex-col gap-2 min-w-[200px]">
+                                                            <input 
+                                                                className="bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900 text-base w-full focus:border-rose-500 focus:outline-none transition-colors"
+                                                                value={editName}
+                                                                onChange={(e) => setEditName(e.target.value)}
+                                                                autoFocus
+                                                                onKeyDown={(e) => {
+                                                                    if(e.key === 'Enter') handleEditSave(m.kitchen.id);
+                                                                    if(e.key === 'Escape') setEditingKitchenId(null);
+                                                                }}
+                                                            />
+                                                            <div className="flex gap-2">
+                                                                <button onClick={() => handleEditSave(m.kitchen.id)} className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg text-xs font-bold transition-colors">
+                                                                    <i className="fas fa-check mr-1"></i> {t('common.save')}
+                                                                </button>
+                                                                <button onClick={() => setEditingKitchenId(null)} className="px-3 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg text-xs font-bold transition-colors">
+                                                                    <i className="fas fa-times mr-1"></i> {t('common.cancel')}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <h3 className="font-bold text-lg text-slate-900 leading-tight">{m.kitchen.name}</h3>
+                                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                                {m.kitchenId === user.currentKitchenId && <span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 text-[10px] uppercase font-bold rounded-full tracking-wide">{t('kitchens.active')}</span>}
+                                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] uppercase font-bold rounded-full tracking-wide">{m.role || 'MEMBER'}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Actions (Switch, Edit, Delete) - Grouped to right */}
+                                            <div className="flex items-center gap-2">
+                                                 {m.role === 'ADMIN' && !editingKitchenId && (
+                                                    <>
+                                                        <button 
+                                                            onClick={() => handleEditStart(m.kitchen)}
+                                                            className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
+                                                            title="Edit Kitchen"
+                                                        >
+                                                            <i className="fas fa-pen"></i>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteClick(m.kitchen.id)}
+                                                            className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors"
+                                                            title="Delete Kitchen"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {m.kitchenId !== user.currentKitchenId && !editingKitchenId && (
+                                                    <button
+                                                        onClick={() => handleSwitchKitchen(m.kitchenId)}
+                                                        className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-colors whitespace-nowrap"
+                                                    >
+                                                        {t('kitchens.switch')}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3 w-full md:w-auto">
-                                            {/* Invite Code Section */}
-                                            <div className="flex-1 md:flex-none flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{t('kitchens.inviteCode')}</span>
-                                                    <span className="font-mono font-bold text-slate-700 tracking-wider text-sm">{m.kitchen.inviteCode || 'N/A'}</span>
-                                                </div>
+                                        {/* Row 2: Invite Code (Full Width or block) */}
+                                        {/* Only showing for Admins or everyone? Previously everyone. */}
+                                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                                             <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">{t('kitchens.inviteCode')}</span>
+                                                <span className="font-mono font-bold text-slate-800 tracking-wider text-base select-all">{m.kitchen.inviteCode || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex gap-2">
                                                 <button
                                                     onClick={() => {
                                                         navigator.clipboard.writeText(m.kitchen.inviteCode || '');
                                                         setCopiedId(m.kitchenId);
                                                         setTimeout(() => setCopiedId(null), 2000);
                                                     }}
-                                                    className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
-                                                    title={t('members.clickToCopy')}
+                                                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm flex items-center gap-2"
                                                 >
-                                                    <i className={`fas ${copiedId === m.kitchenId ? 'fa-check text-green-500' : 'fa-copy'} transition-all`}></i>
+                                                    <i className={`fas ${copiedId === m.kitchenId ? 'fa-check text-green-500' : 'fa-copy'}`}></i>
+                                                    {copiedId === m.kitchenId ? t('members.copied') : t('members.clickToCopy')}
                                                 </button>
                                                 {m.role === 'ADMIN' && (
                                                     <button
@@ -131,22 +277,13 @@ export default function KitchensPage() {
                                                                 console.error(result.error);
                                                             }
                                                         }}
-                                                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors"
+                                                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-sm"
                                                         title="Regenerate Code"
                                                     >
                                                         <i className="fas fa-sync-alt"></i>
                                                     </button>
                                                 )}
                                             </div>
-
-                                            {m.kitchenId !== user.currentKitchenId && (
-                                                <button
-                                                    onClick={() => handleSwitchKitchen(m.kitchenId)}
-                                                    className="px-4 py-3 md:py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-sm transition-colors whitespace-nowrap"
-                                                >
-                                                    {t('kitchens.switch')}
-                                                </button>
-                                            )}
                                         </div>
                                     </div>
                                 ))}

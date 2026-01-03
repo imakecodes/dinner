@@ -5,7 +5,15 @@ import { verifyToken, signToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
     try {
-        const { houseId, kitchenId } = await request.json(); // Accept either
+        let body;
+        try {
+            const text = await request.text();
+            body = text ? JSON.parse(text) : {};
+        } catch (e) {
+            return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+        }
+        
+        const { houseId, kitchenId } = body;
         const targetId = kitchenId || houseId;
 
         if (!targetId) {

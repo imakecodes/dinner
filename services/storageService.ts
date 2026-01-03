@@ -180,5 +180,22 @@ export const storageService = {
       method: 'POST',
       body: JSON.stringify({ kitchenId })
     });
-  }
+  },
+    async updateKitchen(id: string, name: string) {
+        const res = await fetch(`/api/kitchens/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (!res.ok) throw new Error('Failed to update kitchen');
+        return await res.json();
+    },
+
+    async deleteKitchen(id: string) {
+        const res = await fetch(`/api/kitchens/${id}`, {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Failed to delete kitchen');
+        return await res.json();
+    }
 };
