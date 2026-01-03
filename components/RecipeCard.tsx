@@ -333,7 +333,7 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                         <ShareButtons 
                             layout="menu-items"
                             text={`*${t('recipeCard.shoppingListFor').replace('{title}', recipe.recipe_title)}*\n\n- ${recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ')}`}
-                            url={`https://dinner.app/recipes/${recipe.id}`}
+                            url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://dinner.app'}/recipes/${recipe.id}`}
                         />
                       </div>
                     )}

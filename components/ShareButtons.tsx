@@ -9,7 +9,7 @@ interface ShareButtonsProps {
 
 export const ShareButtons: React.FC<ShareButtonsProps> = ({ 
     text, 
-    url = 'https://dinner.app', 
+    url = process.env.NEXT_PUBLIC_APP_URL || 'https://dinner.app', 
     layout = 'icons'
 }) => {
     const { t } = useTranslation();

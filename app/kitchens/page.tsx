@@ -274,7 +274,6 @@ export default function KitchensPage() {
                                                 {/* Social Share Buttons */}
                                                 <ShareButtons 
                                                     text={`${t('members.shareCode')} ${m.kitchen.inviteCode}`} 
-                                                    url="https://dinner.app"
                                                 />
 
                                                 {m.role === 'ADMIN' && (
