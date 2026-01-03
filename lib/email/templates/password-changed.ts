@@ -1,7 +1,13 @@
 import { translations } from '@/lib/translations';
 
 export const passwordChangedEmailTemplate = (name: string, appUrl: string, language: string = 'en') => {
-  const t = (translations[language as keyof typeof translations] || translations['en']).email.passwordChanged;
+  // Normalize language key
+  let langKey = language;
+  if (language.toLowerCase().startsWith('pt')) {
+    langKey = 'pt-BR';
+  }
+  
+  const t = (translations[langKey as keyof typeof translations] || translations['en']).email.passwordChanged;
   
   // Replace {name} placeholder
   const greeting = t.greeting.replace('{name}', name);

@@ -295,6 +295,8 @@ export const en = {
     },
     email: {
         passwordChanged: {
+            subject: "Security Alert: Password Changed",
+            text: "Hello {name},\n\nThe password for your Dinner App account was just changed.\n\nIf you did not make this change, please contact support immediately.",
             title: "Password Changed",
             greeting: "Hello {name},",
             alert: "Security Alert:",
@@ -303,6 +305,15 @@ export const en = {
             action: "If you did not change your password, please contact support immediately and reset your password.",
             button: "Reset Password",
             footer: "If you have any questions, reply to this email."
+        },
+        passwordReset: {
+            subject: "Reset your password",
+            text: "You requested a password reset.\n\nClick the link below to reset your password:\n{resetUrl}\n\nThis link will expire in 1 hour. If you did not request this, please ignore this email.",
+            heading: "Password Reset Request",
+            message: "We received a request to reset your password. Click the button below to create a new password.",
+            button: "Reset Password",
+            backupAction: "If the button above doesn't work, copy and paste this link into your browser:",
+            expiryMessage: "This link will expire in 1 hour. If you did not request a password reset, please ignore this email."
         }
     }
 };
