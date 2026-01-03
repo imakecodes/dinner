@@ -40,7 +40,7 @@ export const en = {
         admin: "Admin",
         guest: "Guest",
         remove: "Remove",
-        shareCode: "Share this code to invite others to your kitchen",
+        shareCode: "I invited you to join my kitchen! Join using the code",
         editMember: "Edit Member",
         addMember: "Add Guest / Member",
         name: "Name",

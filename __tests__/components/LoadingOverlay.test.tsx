@@ -8,7 +8,9 @@ describe('LoadingOverlay', () => {
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => {
+        jest.runOnlyPendingTimers();
+    });
     jest.useRealTimers();
     jest.clearAllMocks();
   });
