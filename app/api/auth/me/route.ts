@@ -111,6 +111,11 @@ export async function PUT(request: NextRequest) {
             }
         });
 
+        if (data.password && data.password.trim() !== '') {
+            const { sendPasswordChangedEmail } = await import('@/lib/email-service');
+            sendPasswordChangedEmail(updatedUser.email, updatedUser.name || 'User', updatedUser.language || 'en').catch(console.error);
+        }
+
         return NextResponse.json({ user: updatedUser });
 
     } catch (error) {

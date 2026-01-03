@@ -293,5 +293,28 @@ export const ptBR = {
         step2: "Consultando nosso Chef IA...",
         step3: "Empratando seu prato...",
         warning: "Por favor, não feche seu navegador. Isso pode levar um momento."
+    },
+    email: {
+        passwordChanged: {
+            subject: "Alerta de Segurança: Senha Alterada",
+            text: "Olá {name},\n\nA senha da sua conta no Dinner App foi alterada recentemente.\n\nSe você não fez essa alteração, entre em contato com o suporte imediatamente.",
+            title: "Senha Alterada",
+            greeting: "Olá {name},",
+            alert: "Alerta de Segurança:",
+            message: "A senha da sua conta no Dinner App foi alterada recentemente.",
+            ignore: "Se foi você quem fez essa alteração, pode ignorar este email com segurança.",
+            action: "Se você não alterou sua senha, entre em contato com o suporte imediatamente e redefina sua senha.",
+            button: "Redefinir Senha",
+            footer: "Se tiver dúvidas, responda a este email."
+        },
+        passwordReset: {
+            subject: "Redefina sua senha",
+            text: "Você solicitou uma redefinição de senha.\n\nClique no link abaixo para redefinir sua senha:\n{resetUrl}\n\nEste link expirará em 1 hora. Se você não solicitou, ignore este email.",
+            heading: "Solicitação de Redefinição de Senha",
+            message: "Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo para criar uma nova senha.",
+            button: "Redefinir Senha",
+            backupAction: "Se o botão acima não funcionar, copie e cole este link no seu navegador:",
+            expiryMessage: "Este link expirará em 1 hora. Se você não solicitou uma redefinição de senha, ignore este email."
+        }
     }
 };

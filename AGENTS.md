@@ -72,3 +72,10 @@ The logic is distributed across specialized "Agents" (Simulated in `geminiServic
 ### Terminology
 - Use **"Kitchen"** instead of "House".
 - Use **"Member"** instead of "User" (unless referring to Auth User).
+
+### Localization (I18n)
+- **Strict Rule**: ALL user-facing text, including **emails** and **API error messages**, MUST be localized based on the user's preferred language.
+- **Implementation**:
+    - Use `next-intl` or the custom `server-i18n` helper.
+    - Pass `language` context to all service functions (email service, notification service).
+    - NEVER default to English without attempting to resolve the user's preference first.

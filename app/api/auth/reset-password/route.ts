@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
             },
         });
 
+        const { sendPasswordChangedEmail } = await import('@/lib/email-service');
+        await sendPasswordChangedEmail(user.email, user.name || 'User', user.language || 'en');
+
         return NextResponse.json({
             success: true,
             message: 'Password has been reset successfully'
