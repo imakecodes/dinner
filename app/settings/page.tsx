@@ -77,8 +77,6 @@ export default function SettingsPage() {
             await storageService.updateProfile(updates);
             setGlobalLanguage(language); // Update app state immediately
 
-            await storageService.updateProfile(updates);
-
             setMessage({ type: 'success', text: t('settings.updateSuccess') });
             setPassword('');
             setConfirmPassword('');
