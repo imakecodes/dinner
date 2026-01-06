@@ -28,6 +28,7 @@ function RegisterForm() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,6 +60,7 @@ function RegisterForm() {
             }
 
             // Show success message
+            setRegisteredEmail(formData.email);
             setSuccess(true);
             setFormData({ name: '', surname: '', email: '', password: '', confirmPassword: '' });
         } catch (err: any) {
@@ -80,7 +82,7 @@ function RegisterForm() {
                         </div>
                         <h1 className="text-2xl font-black text-slate-900 mb-2">{t('auth.checkEmailTitle')}</h1>
                         <p className="text-slate-600">
-                            {t('auth.checkEmailSent').replace('{email}', formData.email)}
+                            {t('auth.checkEmailSent').replace('{email}', registeredEmail)}
                         </p>
                     </div>
                     <div className="space-y-4">
