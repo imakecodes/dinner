@@ -16,7 +16,7 @@ export const UserMenu: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const filteredKitchens = user?.kitchenMemberships?.filter((m: any) => 
+    const filteredKitchens = user?.kitchenMemberships?.filter((m: any) =>
         m.kitchen.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -92,8 +92,8 @@ export const UserMenu: React.FC = () => {
                 <div className="absolute top-full right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 zoom-in-95 z-50">
                     {/* User Info Header (Mobile/Extra) */}
                     <div className="p-4 bg-slate-50 border-b border-slate-100 block sm:hidden">
-                         <p className="font-bold text-slate-900">{user.name} {user.surname}</p>
-                         <p className="text-xs text-slate-500">{user.email}</p>
+                        <p className="font-bold text-slate-900">{user.name} {user.surname}</p>
+                        <p className="text-xs text-slate-500">{user.email}</p>
                     </div>
 
                     {/* Kitchen Switcher */}
@@ -110,23 +110,23 @@ export const UserMenu: React.FC = () => {
                         </div>
                         {/* Search Input */}
                         <div className="relative">
-                             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                             <input 
+                            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input
                                 type="text"
-                                placeholder="Search kitchens..."
+                                placeholder={t('nav.searchKitchens')}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 pl-8 pr-3 text-xs font-bold text-slate-700 outline-none focus:border-rose-500 transition-colors"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
-                             />
+                            />
                         </div>
                     </div>
 
-                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
                         {filteredKitchens?.length === 0 ? (
-                             <div className="p-4 text-center text-xs text-slate-400 font-medium italic">
+                            <div className="p-4 text-center text-xs text-slate-400 font-medium italic">
                                 No kitchens found
-                             </div>
+                            </div>
                         ) : (
                             // Limit to 10 results to avoid overwhelming the user
                             filteredKitchens?.slice(0, 10).map((m: any) => (
@@ -151,8 +151,8 @@ export const UserMenu: React.FC = () => {
 
                     {/* Actions */}
                     <div className="p-2 space-y-1">
-                         {/* Language Selector */}
-                         <div className="px-4 py-2 flex items-center justify-between">
+                        {/* Language Selector */}
+                        <div className="px-4 py-2 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-500">{t('nav.language') || 'Language'}</span>
                             <select
                                 value={lang}
@@ -170,7 +170,7 @@ export const UserMenu: React.FC = () => {
                                 <option value="en">🇺🇸 English</option>
                                 <option value="pt-BR">🇧🇷 Português</option>
                             </select>
-                         </div>
+                        </div>
 
                         <button
                             onClick={() => { setIsDropdownOpen(false); router.push('/settings'); }}

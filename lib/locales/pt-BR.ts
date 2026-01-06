@@ -25,7 +25,8 @@ export const ptBR = {
         account: "Conta",
         switchKitchen: "Alternar Cozinha",
         newKitchen: "Nova Cozinha",
-        language: "Idioma"
+        language: "Idioma",
+        searchKitchens: "Buscar cozinhas..."
     },
     home: {
         welcome: "Bem-vindo de volta",
