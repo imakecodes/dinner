@@ -27,11 +27,13 @@ function ResetPasswordForm() {
         e.preventDefault();
 
         if (password !== confirmPassword) {
+            setStatus('error');
             setMessage(t('auth.passwordMismatch') || 'Passwords do not match.');
             return;
         }
 
         if (password.length < 6) {
+            setStatus('error');
             setMessage(t('auth.passwordTooShort') || 'Password must be at least 6 characters.');
             return;
         }
