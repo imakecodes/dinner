@@ -23,6 +23,7 @@ export default function SettingsPage() {
     const [language, setLanguage] = useState<Language>('en');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
     const loadUser = useCallback(async () => {
         try {
@@ -57,9 +58,13 @@ export default function SettingsPage() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage(null);
+        setPasswordError(null);
         setSaving(true);
 
         if (password && password !== confirmPassword) {
+            setPasswordError(t('settings.passwordsMismatch'));
+            // Still show global error for accessibility/visibility if scrolled up, or just rely on inline?
+            // Let's keep global but maybe not strictly necessary. Actually the user complaint "nao aparece nenhuma mensagem" implies they missed the global one.
             setMessage({ type: 'error', text: t('settings.passwordsMismatch') });
             setSaving(false);
             return;
@@ -255,6 +260,12 @@ export default function SettingsPage() {
                             />
                         </div>
                     </div>
+                    {passwordError && (
+                        <div className="p-3 bg-red-50 text-red-600 text-sm font-bold rounded-xl flex items-center gap-2 border border-red-100">
+                            <i className="fas fa-exclamation-circle"></i>
+                            {passwordError}
+                        </div>
+                    )}
                 </section>
 
                 <div className="flex justify-end pt-4">
