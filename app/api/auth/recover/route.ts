@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
             // Send password reset email
             // Use user's language preference if available, otherwise fall back to request language or 'en'
             const emailLanguage = user.language || language || 'en';
-            await sendPasswordResetEmail(user.email, resetToken, emailLanguage);
+            await sendPasswordResetEmail(user.email, user.name || 'User', resetToken, emailLanguage);
         }
 
         return NextResponse.json({
