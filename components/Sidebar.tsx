@@ -59,7 +59,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
             >
               <i className="fas fa-book-open w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.recipes')} ({t('nav.history')})
+              {t('nav.recipes')}
             </button>
             <button
               onClick={() => onNavigate('/shopping-list')}

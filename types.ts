@@ -42,6 +42,8 @@ export interface PantryItem {
 export interface ShoppingItem {
   id: string;
   name: string;
+  quantity?: string; // from DB
+  unit?: string;     // from DB
   checked: boolean;
   pantryItemId?: string;
   recipeItems?: any[];

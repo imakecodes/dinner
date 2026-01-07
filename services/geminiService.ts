@@ -16,14 +16,13 @@ export const generateRecipe = async (
   const isChefMode = session_context.difficulty_preference === 'chef';
   const obs = session_context.observation ? `\n\nUSER OBSERVATIONS (CRITICAL): ${session_context.observation}` : '';
   const chefInstructionEn = isChefMode ? "CHEF MODE ACTIVATED: User wants to cook from scratch (doughs, sauces, stocks). Complex and technical recipe." : `Requested difficulty: ${session_context.difficulty_preference}.`;
-  
+
   // Language Instruction
   const langInstruction = session_context.language ? `\nIMPORTANT: OUTPUT MUST BE IN "${session_context.language}" LANGUAGE.` : '';
 
   const systemInstruction = RECIPE_GENERATION_SYSTEM_INSTRUCTION(session_context, chefInstructionEn, obs) + langInstruction;
 
   const prompt = JSON.stringify({ household_db, session_context });
-
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
@@ -95,19 +94,19 @@ export const translateRecipe = async (
   context?: { userId?: string; kitchenId?: string }
 ): Promise<GeneratedRecipe> => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  
+
   const getLanguageName = (code: string) => {
     const map: Record<string, string> = {
-        'pt-BR': 'Brazilian Portuguese',
-        'en': 'English',
-        'es': 'Spanish',
-        'fr': 'French',
-        'de': 'German',
-        'it': 'Italian'
+      'pt-BR': 'Brazilian Portuguese',
+      'en': 'English',
+      'es': 'Spanish',
+      'fr': 'French',
+      'de': 'German',
+      'it': 'Italian'
     };
     return map[code] || code;
   };
-  
+
   const fullLanguage = getLanguageName(targetLanguage);
 
   const systemInstruction = `
@@ -124,7 +123,7 @@ export const translateRecipe = async (
   const prompt = JSON.stringify(recipe);
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp', // Flash is faster/cheaper for translation
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: {
       systemInstruction,
@@ -132,16 +131,16 @@ export const translateRecipe = async (
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-            analysis_log: { type: Type.STRING },
-            recipe_title: { type: Type.STRING },
-            match_reasoning: { type: Type.STRING },
-            ingredients_from_pantry: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, quantity: { type: Type.STRING }, unit: { type: Type.STRING } } } },
-            shopping_list: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, quantity: { type: Type.STRING }, unit: { type: Type.STRING } } } },
-            step_by_step: { type: Type.ARRAY, items: { type: Type.STRING } },
-            safety_badge: { type: Type.BOOLEAN },
-            meal_type: { type: Type.STRING },
-            difficulty: { type: Type.STRING },
-            prep_time: { type: Type.STRING }
+          analysis_log: { type: Type.STRING },
+          recipe_title: { type: Type.STRING },
+          match_reasoning: { type: Type.STRING },
+          ingredients_from_pantry: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, quantity: { type: Type.STRING }, unit: { type: Type.STRING } } } },
+          shopping_list: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, quantity: { type: Type.STRING }, unit: { type: Type.STRING } } } },
+          step_by_step: { type: Type.ARRAY, items: { type: Type.STRING } },
+          safety_badge: { type: Type.BOOLEAN },
+          meal_type: { type: Type.STRING },
+          difficulty: { type: Type.STRING },
+          prep_time: { type: Type.STRING }
         },
         required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time"]
       }

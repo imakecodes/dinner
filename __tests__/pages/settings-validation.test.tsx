@@ -57,11 +57,26 @@ describe('SettingsPage Validation', () => {
         // "New Password" label -> input
         // "Confirm Password" label -> input
         const confirmInputs = screen.getAllByPlaceholderText('••••••••');
-        const newPasswordInput = confirmInputs[0] as HTMLInputElement;
-        const confirmPasswordInput = confirmInputs[1] as HTMLInputElement;
+        // PasswordFields renders 2 inputs with placeholder '••••••••'.
+        // SettingsPage also renders 1 PasswordInput with placeholder '••••••••' before it.
+        // So we should have 3 inputs with '••••••••'.
+        // Index 0: Current
+        // Index 1: New
+        // Index 2: Confirm
         
+        const inputs = screen.getAllByPlaceholderText('••••••••');
+        expect(inputs).toHaveLength(3);
+        
+        const currentInput = inputs[0];
+        const newPasswordInput = inputs[1];
+        const confirmInput = inputs[2];
+
+        // Fill current password
+        fireEvent.change(currentInput, { target: { value: 'oldpassword' } });
+
+        // Set mismatch
         fireEvent.change(newPasswordInput, { target: { value: 'password123' } });
-        fireEvent.change(confirmPasswordInput, { target: { value: 'passwordXYZ' } });
+        fireEvent.change(confirmInput, { target: { value: 'passwordXYZ' } });
 
         // Wait for real-time validation error to appear
         await waitFor(() => {
@@ -80,9 +95,11 @@ describe('SettingsPage Validation', () => {
         render(<SettingsPage />);
         await waitFor(() => expect(screen.queryByText('settings.title')).toBeInTheDocument());
 
-        const confirmInputs = screen.getAllByPlaceholderText('••••••••');
-        const newPasswordInput = confirmInputs[0] as HTMLInputElement;
-        
+        const inputs = screen.getAllByPlaceholderText('••••••••');
+        const currentInput = inputs[0];
+        const newPasswordInput = inputs[1];
+
+        fireEvent.change(currentInput, { target: { value: 'oldpass' } });
         fireEvent.change(newPasswordInput, { target: { value: '123' } });
 
         // Component validates in real-time now
@@ -93,8 +110,27 @@ describe('SettingsPage Validation', () => {
         // Check if button is disabled
         const saveButton = screen.getByText('common.save');
         expect(saveButton).toBeDisabled();
+    });
 
-        // Ensure API was NOT called if we tried to click (though disabled prevents click usually, check state)
-        // fireEvent.click(saveButton); // FireEvent can bypass disabled attribute if not careful, but check attribute first.
+    it('disables save button if current password is missing', async () => {
+        render(<SettingsPage />);
+        // Wait for loading to complete
+        await waitFor(() => expect(screen.queryByText('settings.title')).toBeInTheDocument());
+        
+        const inputs = screen.getAllByPlaceholderText('••••••••');
+        const newPasswordInput = inputs[1];
+        const confirmInput = inputs[2];
+
+        // Set valid new password
+        fireEvent.change(newPasswordInput, { target: { value: 'newpassword123' } });
+        fireEvent.change(confirmInput, { target: { value: 'newpassword123' } });
+
+        // Current password empty (default)
+        const saveButton = screen.getByText('common.save');
+        expect(saveButton).toBeDisabled();
+        
+        // Fill current
+        fireEvent.change(inputs[0], { target: { value: 'currentpass' } });
+        expect(saveButton).not.toBeDisabled();
     });
 });

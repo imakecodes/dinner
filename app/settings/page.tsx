@@ -7,6 +7,7 @@ import { MeasurementSystem, Language } from '../../types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApp } from '@/components/Providers';
 import { PasswordFields } from '@/components/PasswordFields';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function SettingsPage() {
     const [, setUser] = useState<any>(null);
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>('METRIC');
     const [language, setLanguage] = useState<Language>('en');
     const [password, setPassword] = useState('');
+    const [currentPassword, setCurrentPassword] = useState('');
     const [isPasswordValid, setIsPasswordValid] = useState(true); 
     const [formResetKey, setFormResetKey] = useState(0); // Default true because empty is valid for settings
 
@@ -82,7 +84,8 @@ export default function SettingsPage() {
                 surname,
                 measurementSystem,
                 language,
-                password: password || undefined
+                password: password || undefined,
+                currentPassword: password ? currentPassword : undefined
             };
 
             await storageService.updateProfile(updates);
@@ -90,6 +93,7 @@ export default function SettingsPage() {
 
             setMessage({ type: 'success', text: t('settings.updateSuccess') });
             setPassword('');
+            setCurrentPassword('');
             setFormResetKey(prev => prev + 1);
             
             // Reload to ensure sync
@@ -244,6 +248,17 @@ export default function SettingsPage() {
                         {t('settings.security')}
                     </h2>
 
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.currentPassword')}</label>
+                        <PasswordInput 
+                             value={currentPassword}
+                             onChange={(e) => setCurrentPassword(e.target.value)}
+                             placeholder="••••••••"
+                             className="bg-slate-50"
+                        />
+                        <p className="text-[10px] text-slate-400 font-bold">{t('settings.currentPasswordNote')}</p>
+                    </div>
+
                     <PasswordFields 
                         key={formResetKey}
                         showLabels={true}
@@ -257,7 +272,7 @@ export default function SettingsPage() {
                 <div className="flex justify-end pt-4">
                     <button
                         type="submit"
-                        disabled={saving || (password.length > 0 && !isPasswordValid)}
+                        disabled={saving || (password.length > 0 && (!isPasswordValid || currentPassword.length === 0))}
                         className="px-8 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition-colors shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
                     >
                         {saving && <i className="fas fa-circle-notch fa-spin"></i>}

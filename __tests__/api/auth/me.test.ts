@@ -24,6 +24,7 @@ jest.mock('@/lib/auth', () => ({
 
 jest.mock('bcryptjs', () => ({
     hash: jest.fn().mockResolvedValue('hashed_new_password'),
+    compare: jest.fn().mockResolvedValue(true),
 }));
 
 describe('PUT /api/auth/me', () => {
@@ -40,14 +41,21 @@ describe('PUT /api/auth/me', () => {
             body: JSON.stringify({
                 name: 'John',
                 surname: 'Doe',
-                password: 'new-password'
+                password: 'new-password',
+                currentPassword: 'current-password'
             }),
             headers: {
                 cookie: 'auth_token=valid-token'
             }
         });
 
-        // Mock DB
+        // Mock DB findUnique for current password verification
+        (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+            id: 'user-1',
+            password: 'hashed_old_password'
+        });
+
+        // Mock DB update
         (prisma.user.update as jest.Mock).mockResolvedValue({
             id: 'user-1',
             name: 'John',

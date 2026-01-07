@@ -21,7 +21,7 @@ export const ptBR = {
         settings: "Configurações",
         logout: "Sair",
         recipes: "Receitas",
-        kitchens: "Gerenciar Cozinhas",
+        kitchens: "Cozinhas",
         account: "Conta",
         switchKitchen: "Alternar Cozinha",
         newKitchen: "Nova Cozinha",
@@ -101,7 +101,14 @@ export const ptBR = {
         forRecipes: "Para {n} Receita(s)",
         clearAll: "Limpar Lista",
         clearConfirmTitle: "Limpar Lista de Compras?",
-        clearConfirmDesc: "Isso removerá todos os itens manuais. Ingredientes de receitas serão marcados como comprados."
+        clearConfirmDesc: "Isso removerá todos os itens manuais. Ingredientes de receitas serão marcados como comprados.",
+        searchPlaceholder: 'Buscar itens...',
+        shareTooltip: 'Copiar lista',
+        filterAll: 'Tudo',
+        filterMyList: 'Minha Lista',
+        filterRecipes: 'Receitas',
+        allRecipes: 'Todas as Receitas',
+        noResults: 'Nenhum item encontrado'
     },
     kitchens: {
         title: "Gerenciar Cozinhas",
