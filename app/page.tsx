@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../components/Providers';
 import Footer from '../components/Footer';
-import { RecipeRecord, Kitchen } from '../types';
+import { RecipeRecord, Kitchen, ShoppingItem } from '../types';
 import { storageService } from '../services/storageService';
 import Link from 'next/link';
 import { CodeInput } from '../components/ui/CodeInput';
@@ -21,6 +21,7 @@ export default function Home() {
 
   const [history, setHistory] = useState<RecipeRecord[]>([]);
   const [kitchen, setKitchen] = useState<Kitchen | null>(null);
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [errorDialog, setErrorDialog] = useState({ isOpen: false, message: '', title: '' });
@@ -28,11 +29,13 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       storageService.getAllRecipes(),
-      storageService.getCurrentKitchen()
+      storageService.getCurrentKitchen(),
+      storageService.getShoppingList()
     ])
-      .then(([recipes, kitchenData]) => {
+      .then(([recipes, kitchenData, shoppingData]) => {
         setHistory(recipes);
         setKitchen(kitchenData);
+        setShoppingList(shoppingData);
       })
       .catch(err => {
         if (err.message.includes('Unauthorized') || err.message.includes('401')) {
@@ -46,7 +49,7 @@ export default function Home() {
 
   // Stats
   const activeCount = members.length;
-  const pantryCount = pantry.filter(i => i.inStock).length;
+  const shoppingCount = shoppingList.filter(i => !i.checked).length;
   const recipesCount = history.length;
 
   return (
@@ -72,9 +75,9 @@ export default function Home() {
               <div className="text-2xl font-black text-rose-600">{activeCount}</div>
               <div className="text-xs font-bold text-rose-400 uppercase tracking-wider">{t('nav.members')}</div>
             </Link>
-            <Link href="/pantry" className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 text-center hover:bg-emerald-50 transition-colors block">
-              <div className="text-2xl font-black text-emerald-600">{pantryCount}</div>
-              <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{t('nav.pantry')}</div>
+            <Link href="/shopping-list" className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 text-center hover:bg-emerald-50 transition-colors block">
+              <div className="text-2xl font-black text-emerald-600">{shoppingCount}</div>
+              <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{t('nav.shopping')}</div>
             </Link>
             <Link href="/recipes" className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 text-center hover:bg-indigo-50 transition-colors block">
               <div className="text-2xl font-black text-indigo-600">{recipesCount}</div>
