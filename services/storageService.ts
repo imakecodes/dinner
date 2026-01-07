@@ -168,7 +168,7 @@ export const storageService = {
     return await apiRequest('/auth/me');
   },
 
-  updateProfile: async (data: { name: string; surname: string; measurementSystem: string; password?: string; language?: string }): Promise<any> => {
+  updateProfile: async (data: { name: string; surname: string; measurementSystem: string; password?: string; currentPassword?: string; language?: string }): Promise<any> => {
     return await apiRequest('/auth/me', {
       method: 'PUT',
       body: JSON.stringify(data)

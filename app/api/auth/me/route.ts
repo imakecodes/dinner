@@ -94,7 +94,31 @@ export async function PUT(request: NextRequest) {
         };
 
         if (data.password && data.password.trim() !== '') {
+            if (!data.currentPassword) {
+                 return NextResponse.json({ message: 'Current password is required' }, { status: 400 });
+            }
+
+            const currentUser = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+
+            if (!currentUser) {
+                return NextResponse.json({ message: 'User not found' }, { status: 404 });
+            }
+
             const bcrypt = require('bcryptjs');
+            // If user has a password set, verify it. If not (e.g. OAuth only?), we might need different logic, 
+            // but for now assume they must verify current if they are setting new.
+            // Actually if they don't have a password, they can't provide current. 
+            // Let's assume if currentUser.password is null, we might allow setting it? 
+            // For safety, let's strictly require it if it exists.
+            if (currentUser.password) {
+                const isValid = await bcrypt.compare(data.currentPassword, currentUser.password);
+                if (!isValid) {
+                     return NextResponse.json({ message: 'Invalid current password' }, { status: 400 });
+                }
+            }
+            
             updateData.password = await bcrypt.hash(data.password, 10);
         }
 
