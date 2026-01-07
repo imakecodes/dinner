@@ -35,11 +35,10 @@ describe('ResetPasswordPage Validation', () => {
         fireEvent.change(confirmInputs[0], { target: { value: 'password123' } });
         fireEvent.change(confirmInput, { target: { value: 'passwordXYZ' } });
 
-        fireEvent.click(submitButton);
+        expect(submitButton).toBeDisabled();
 
-        await waitFor(() => {
-            expect(screen.getByText('Passwords do not match.')).toBeInTheDocument();
-        });
+        // Ensure it enables when valid (we need to match mismatch first test flow, or just check disabled here)
+        // The test above sets mismatch passwords.
     });
 
     it('shows error when password is too short', async () => {
