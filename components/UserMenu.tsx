@@ -122,28 +122,68 @@ export const UserMenu: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                    <div className="max-h-64 overflow-y-auto custom-scrollbar">
                         {filteredKitchens?.length === 0 ? (
                             <div className="p-4 text-center text-xs text-slate-400 font-medium italic">
                                 No kitchens found
                             </div>
                         ) : (
-                            // Limit to 10 results to avoid overwhelming the user
-                            filteredKitchens?.slice(0, 10).map((m: any) => (
-                                <button
-                                    key={m.id}
-                                    onClick={() => handleSwitchKitchen(m.kitchenId)}
-                                    className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-rose-50 transition-colors flex items-center justify-between ${m.kitchenId === user.currentKitchenId ? 'text-rose-600 bg-rose-50/50' : 'text-slate-600'}`}
-                                >
-                                    <span className="truncate mr-2">{m.kitchen.name}</span>
-                                    {m.kitchenId === user.currentKitchenId && <i className="fas fa-check text-rose-500 text-xs"></i>}
-                                </button>
-                            ))
-                        )}
-                        {filteredKitchens?.length > 10 && (
-                            <div className="p-2 text-center text-[10px] text-slate-400 font-medium border-t border-slate-50">
-                                ...and {filteredKitchens.length - 10} more. Search to find.
-                            </div>
+                            <>
+                                {/* Grouping Logic */}
+                                {(() => {
+                                    const myKitchens = filteredKitchens?.filter((m: any) => m.role === 'ADMIN')
+                                        .sort((a: any, b: any) => a.kitchen.name.localeCompare(b.kitchen.name)) || [];
+                                    const otherKitchens = filteredKitchens?.filter((m: any) => m.role !== 'ADMIN')
+                                        .sort((a: any, b: any) => a.kitchen.name.localeCompare(b.kitchen.name)) || [];
+
+                                    return (
+                                        <>
+                                            {/* My Kitchens */}
+                                            {myKitchens.length > 0 && (
+                                                <div className="px-3 py-2">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-1">
+                                                        {t('nav.myKitchens') || 'My Kitchens'}
+                                                    </p>
+                                                    {myKitchens.map((m: any) => (
+                                                        <button
+                                                            key={m.id}
+                                                            onClick={() => handleSwitchKitchen(m.kitchenId)}
+                                                            className={`w-full text-left px-3 py-2.5 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-between ${m.kitchenId === user.currentKitchenId ? 'text-rose-600 bg-rose-50/50 hover:bg-rose-50' : 'text-slate-600'}`}
+                                                        >
+                                                            <span className="truncate mr-2">{m.kitchen.name}</span>
+                                                            {m.kitchenId === user.currentKitchenId && <i className="fas fa-check text-rose-500 text-xs"></i>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Divider if both exist */}
+                                            {myKitchens.length > 0 && otherKitchens.length > 0 && (
+                                                <div className="h-px bg-slate-50 mx-4 my-1"></div>
+                                            )}
+
+                                            {/* Other Kitchens */}
+                                            {otherKitchens.length > 0 && (
+                                                <div className="px-3 py-2">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-1">
+                                                        {t('nav.otherKitchens') || 'Other Kitchens'}
+                                                    </p>
+                                                    {otherKitchens.map((m: any) => (
+                                                        <button
+                                                            key={m.id}
+                                                            onClick={() => handleSwitchKitchen(m.kitchenId)}
+                                                            className={`w-full text-left px-3 py-2.5 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-between ${m.kitchenId === user.currentKitchenId ? 'text-rose-600 bg-rose-50/50 hover:bg-rose-50' : 'text-slate-600'}`}
+                                                        >
+                                                            <span className="truncate mr-2">{m.kitchen.name}</span>
+                                                            {m.kitchenId === user.currentKitchenId && <i className="fas fa-check text-rose-500 text-xs"></i>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </>
                         )}
                     </div>
 

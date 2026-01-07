@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
         } catch (e) {
             return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
         }
-        
+
         const { houseId, kitchenId } = body;
         const targetId = kitchenId || houseId;
 
@@ -44,6 +44,12 @@ export async function POST(request: NextRequest) {
         if (!membership || membership.kitchen.deletedAt) {
             return NextResponse.json({ message: 'User is not a member of this kitchen' }, { status: 403 });
         }
+
+        // Persist the selection
+        await prisma.user.update({
+            where: { id: userId },
+            data: { selectedKitchenId: targetId }
+        });
 
         // Generate new token with updated context
         const newToken = await signToken({

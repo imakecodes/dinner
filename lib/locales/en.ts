@@ -27,7 +27,9 @@ export const en = {
         account: "Account",
         switchKitchen: "Switch Kitchen",
         newKitchen: "New Kitchen",
-        searchKitchens: "Search kitchens..."
+        searchKitchens: "Search kitchens...",
+        myKitchens: "My Kitchens",
+        otherKitchens: "Other Kitchens"
     },
     home: {
         welcome: "Welcome back",

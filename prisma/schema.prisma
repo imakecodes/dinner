@@ -32,10 +32,10 @@ enum MembershipStatus {
 
 // Models
 model Kitchen {
-  id         String   @id @default(cuid())
-  name       String   @default("My Kitchen")
-  inviteCode String   @unique
-  createdAt  DateTime @default(now())
+  id         String    @id @default(cuid())
+  name       String    @default("My Kitchen")
+  inviteCode String    @unique
+  createdAt  DateTime  @default(now())
   deletedAt  DateTime?
 
   // Relations
@@ -58,6 +58,7 @@ model User {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   language          String            @default("en")
+  selectedKitchenId String?
 
   // User can belong to multiple kitchens via memberships
   kitchenMemberships KitchenMember[]

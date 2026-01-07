@@ -35,8 +35,15 @@ export async function POST(req: NextRequest) {
         }
 
         // Use the first house as default for now
-        // TODO: In future allow user to select context
-        const defaultKitchenId = user.kitchenMemberships[0]?.kitchenId;
+        // Determine initial kitchen context
+        let defaultKitchenId = user.kitchenMemberships[0]?.kitchenId;
+
+        if (user.selectedKitchenId) {
+            const isMember = user.kitchenMemberships.some(m => m.kitchenId === user.selectedKitchenId);
+            if (isMember) {
+                defaultKitchenId = user.selectedKitchenId;
+            }
+        }
 
         if (!defaultKitchenId) {
             return NextResponse.json({ error: 'User has no active kitchen' }, { status: 400 });

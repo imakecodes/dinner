@@ -19,8 +19,9 @@ async function apiRequest(path: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: `HTTP Error ${response.status}` }));
-      const error = new Error(errorData.message || 'Request failed');
+      const errorData = await response.json().catch(() => ({ message: `HTTP Error ${response.status}`, error: '' }));
+      const details = errorData.error ? ` (${errorData.error})` : '';
+      const error = new Error((errorData.message || 'Request failed') + details);
       (error as any).status = response.status;
       // Do not log to console here as it might be an expected validation error
       throw error;
