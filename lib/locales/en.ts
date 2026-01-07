@@ -101,7 +101,14 @@ export const en = {
         forRecipes: "For {n} Recipe(s)",
         clearAll: "Clear List",
         clearConfirmTitle: "Clear Shopping List?",
-        clearConfirmDesc: "This will remove all manual items. Recipe ingredients will be marked as bought."
+        clearConfirmDesc: "This will remove all manual items. Recipe ingredients will be marked as bought.",
+        searchPlaceholder: 'Search items...',
+        shareTooltip: 'Copy list',
+        filterAll: 'All',
+        filterMyList: 'My List',
+        filterRecipes: 'Recipes',
+        allRecipes: 'All Recipes',
+        noResults: 'No items found'
     },
     kitchens: {
         title: "Manage Kitchens",

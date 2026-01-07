@@ -6,6 +6,7 @@ import { storageService } from '@/services/storageService';
 import { ShoppingItem } from '@/types';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from '@/hooks/useTranslation';
+import Link from 'next/link';
 
 export default function ShoppingListPage() {
     const { isGuest } = useCurrentMember();
@@ -15,6 +16,17 @@ export default function ShoppingListPage() {
     const [newItemName, setNewItemName] = useState('');
     const [loading, setLoading] = useState(true);
     const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+    // UI State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filter, setFilter] = useState<'all' | 'manual' | 'recipe'>('all');
+    const [selectedRecipeId, setSelectedRecipeId] = useState<string>('all');
+    const [copied, setCopied] = useState(false);
+
+    // Get unique recipes from items
+    const uniqueRecipes = Array.from(new Map(
+        items.flatMap(item => item.recipeItems?.map(ri => [ri.recipe.id, ri.recipe]) || [])
+    ).values());
 
     useEffect(() => {
         loadList();
@@ -88,6 +100,37 @@ export default function ShoppingListPage() {
         }
     };
 
+    const handleShareList = () => {
+        const text = filteredItems.map(i => {
+            let line = `[${i.checked ? 'x' : ' '}] ${i.name}`;
+            return line;
+        }).join('\n');
+
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const filteredItems = items.filter(item => {
+        // Search
+        if (searchQuery) {
+            if (!item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        }
+
+        // Filter tabs
+        if (filter === 'manual') {
+            return (!item.recipeItems || item.recipeItems.length === 0);
+        }
+        if (filter === 'recipe') {
+            if (selectedRecipeId !== 'all') {
+                return item.recipeItems?.some((ri: any) => ri.recipe.id === selectedRecipeId);
+            }
+            return (item.recipeItems && item.recipeItems.length > 0);
+        }
+
+        return true;
+    });
+
 
 
     return (
@@ -129,20 +172,85 @@ export default function ShoppingListPage() {
                     <div className="text-center py-20 text-slate-400 font-bold animate-pulse">{t('shopping.loading')}</div>
                 ) : (
                     <>
-                        {!isGuest && (
-                            <form onSubmit={handleAddItem} className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder={t('shopping.addItem')}
-                                    className="flex-1 bg-transparent px-4 font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none"
-                                    value={newItemName}
-                                    onChange={(e) => setNewItemName(e.target.value)}
-                                />
-                                <button type="submit" disabled={!newItemName.trim()} className="w-10 h-10 bg-rose-600 rounded-xl text-white flex items-center justify-center shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
-                                    <i className="fas fa-plus"></i>
+                        <div className="space-y-4 mb-6">
+                            {/* Search and Share */}
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                    <input
+                                        type="text"
+                                        placeholder={t('shopping.searchPlaceholder') || 'Search items...'}
+                                        className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700 transition-colors"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleShareList}
+                                    className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 transition-colors flex items-center gap-2"
+                                    title={t('shopping.shareTooltip') || "Copy list to clipboard"}
+                                >
+                                    {copied ? <i className="fas fa-check"></i> : <i className="fas fa-share-alt"></i>}
                                 </button>
-                            </form>
-                        )}
+                            </div>
+
+                            {/* Filters */}
+                            <div className="flex p-1 bg-slate-200/50 rounded-xl">
+                                <button
+                                    onClick={() => setFilter('all')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${filter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    {t('shopping.filterAll') || 'All'}
+                                </button>
+                                <button
+                                    onClick={() => setFilter('manual')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${filter === 'manual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    {t('shopping.filterMyList') || 'My List'}
+                                </button>
+                                <button
+                                    onClick={() => setFilter('recipe')}
+                                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${filter === 'recipe' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    {t('shopping.filterRecipes') || 'Recipes'}
+                                </button>
+                            </div>
+
+                            {/* Specific Recipe Filter Dropdown */}
+                            {filter === 'recipe' && uniqueRecipes.length > 0 && (
+                                <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
+                                    <select
+                                        value={selectedRecipeId}
+                                        onChange={(e) => setSelectedRecipeId(e.target.value)}
+                                        className="w-full p-2 bg-indigo-50 border border-indigo-100 rounded-xl text-sm font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                    >
+                                        <option value="all">{t('shopping.allRecipes') || 'All Recipes'}</option>
+                                        {uniqueRecipes.map(recipe => (
+                                            <option key={recipe.id} value={recipe.id}>
+                                                {recipe.recipe_title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Add Item Form (Only show on 'all' or 'manual') */}
+                            {!isGuest && (filter === 'all' || filter === 'manual') && (
+                                <form onSubmit={handleAddItem} className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder={t('shopping.addItem')}
+                                        className="flex-1 bg-transparent px-4 font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                                        value={newItemName}
+                                        onChange={(e) => setNewItemName(e.target.value)}
+                                    />
+                                    <button type="submit" disabled={!newItemName.trim()} className="w-10 h-10 bg-rose-600 rounded-xl text-white flex items-center justify-center shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
+                                        <i className="fas fa-plus"></i>
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+
                         {isGuest && (
                             <div className="text-center mb-4 p-4 bg-slate-100 rounded-2xl text-slate-500 text-sm font-bold">
                                 {t('shopping.readOnly')}
@@ -150,52 +258,60 @@ export default function ShoppingListPage() {
                         )}
 
                         <div className="space-y-4">
-                            {items.length === 0 && (
+                            {filteredItems.length === 0 && (
                                 <div className="text-center py-20 opacity-50">
                                     <i className="fas fa-leaf text-4xl mb-4 text-slate-300"></i>
-                                    <p className="font-bold text-slate-400">{t('shopping.empty')}</p>
+                                    <p className="font-bold text-slate-400">{items.length === 0 ? t('shopping.empty') : (t('shopping.noResults') || 'No items found')}</p>
                                 </div>
                             )}
 
-                            {items.map((item: any) => (
-                                <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group">
-                                    <div className="flex items-center gap-4">
-                                        <div
-                                            onClick={() => !isGuest && handleToggleCheck(item)}
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${!isGuest ? 'cursor-pointer' : 'cursor-default'} ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
-                                        >
-                                            {item.checked && <i className="fas fa-check text-xs"></i>}
-                                        </div>
-                                        <div>
-                                            <div className="flex items-baseline gap-2">
-                                                <p className={`font-bold transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{item.name}</p>
-                                                {(item.quantity || item.unit) && (
-                                                    <span className={`text-xs font-medium ${item.checked ? 'text-slate-300' : 'text-slate-500'}`}>
-                                                        {item.quantity} {item.unit}
-                                                    </span>
-                                                )}
+                            {filteredItems.map((item: any) => (
+                                <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-3 group">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div
+                                                onClick={() => !isGuest && handleToggleCheck(item)}
+                                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${!isGuest ? 'cursor-pointer' : 'cursor-default'} ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
+                                            >
+                                                {item.checked && <i className="fas fa-check text-xs"></i>}
                                             </div>
-                                            <div className="flex gap-2 mt-1">
-                                                {item.pantryItem && (
-                                                    <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                                        {t('shopping.fromPantry')} ({item.pantryItem.replenishmentRule})
-                                                    </span>
-                                                )}
-                                                {item.recipeItems?.length > 0 && (
-                                                    <span className="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                                                        {t('shopping.forRecipes').replace('{n}', item.recipeItems.length.toString())}
-                                                    </span>
-                                                )}
+                                            <div>
+                                                <div className="flex items-baseline gap-2">
+                                                    <p className={`font-bold transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{item.name}</p>
+                                                </div>
                                             </div>
                                         </div>
+                                        {!isGuest && (
+                                            <button
+                                                onClick={() => handleRemove(item.id)}
+                                                className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 px-2"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        )}
                                     </div>
-                                    {!isGuest && (
-                                        <button
-                                            onClick={() => handleRemove(item.id)}
-                                            className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 px-2"
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
+
+                                    {/* Item Badges/Context */}
+                                    {(item.pantryItem || (item.recipeItems && item.recipeItems.length > 0)) && (
+                                        <div className="flex flex-wrap gap-2 pl-10">
+                                            {item.pantryItem && (
+                                                <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                                    <i className="fas fa-box-open mr-1"></i>
+                                                    {t('shopping.fromPantry')}
+                                                </span>
+                                            )}
+                                            {item.recipeItems?.map((ri: any) => (
+                                                <Link
+                                                    key={ri.recipe.id}
+                                                    href={`/recipes/${ri.recipe.id}`}
+                                                    className="text-[10px] lowercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                                                    title={ri.recipe.recipe_title}
+                                                >
+                                                    <i className="fas fa-utensil-spoon mr-1"></i>
+                                                    {ri.recipe.recipe_title.length > 20 ? ri.recipe.recipe_title.substring(0, 20) + '...' : ri.recipe.recipe_title}
+                                                </Link>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             ))}
