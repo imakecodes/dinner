@@ -15,7 +15,8 @@ jest.mock('@/components/Providers', () => ({
 jest.mock('@/hooks/useTranslation', () => ({
     useTranslation: () => ({
         t: (key: string) => {
-            if (key === 'settings.passwordsMismatch') return 'Passwords do not match';
+            if (key === 'auth.passwordMismatch') return 'Passwords do not match';
+            if (key === 'auth.passwordTooShort') return 'Password too short';
             return key;
         },
     }),
@@ -55,21 +56,45 @@ describe('SettingsPage Validation', () => {
         // Find password inputs
         // "New Password" label -> input
         // "Confirm Password" label -> input
-        const newPasswordInput = screen.getByPlaceholderText('settings.passwordPlaceholder') as HTMLInputElement;
-        const confirmPasswordInput = screen.getByPlaceholderText('settings.confirmPlaceholder') as HTMLInputElement;
+        const confirmInputs = screen.getAllByPlaceholderText('••••••••');
+        const newPasswordInput = confirmInputs[0] as HTMLInputElement;
+        const confirmPasswordInput = confirmInputs[1] as HTMLInputElement;
         
         fireEvent.change(newPasswordInput, { target: { value: 'password123' } });
         fireEvent.change(confirmPasswordInput, { target: { value: 'passwordXYZ' } });
 
-        const saveButton = screen.getByText('common.save');
-        fireEvent.click(saveButton);
-
+        // Wait for real-time validation error to appear
         await waitFor(() => {
             expect(screen.getAllByText('Passwords do not match')[0]).toBeInTheDocument();
         });
 
+        const saveButton = screen.getByText('common.save');
+        fireEvent.click(saveButton);
+
 
         // Ensure API was NOT called
         expect(mockUpdateProfile).not.toHaveBeenCalled();
+    });
+
+    it('shows error when password is too short', async () => {
+        render(<SettingsPage />);
+        await waitFor(() => expect(screen.queryByText('settings.title')).toBeInTheDocument());
+
+        const confirmInputs = screen.getAllByPlaceholderText('••••••••');
+        const newPasswordInput = confirmInputs[0] as HTMLInputElement;
+        
+        fireEvent.change(newPasswordInput, { target: { value: '123' } });
+
+        // Component validates in real-time now
+        await waitFor(() => {
+            expect(screen.getByText('Password too short')).toBeInTheDocument();
+        });
+
+        // Check if button is disabled
+        const saveButton = screen.getByText('common.save');
+        expect(saveButton).toBeDisabled();
+
+        // Ensure API was NOT called if we tried to click (though disabled prevents click usually, check state)
+        // fireEvent.click(saveButton); // FireEvent can bypass disabled attribute if not careful, but check attribute first.
     });
 });

@@ -30,23 +30,22 @@ describe('ResetPasswordPage Validation', () => {
         const confirmInputs = screen.getAllByPlaceholderText('••••••••');
         const passwordInput = confirmInputs[0] as HTMLInputElement;
         const confirmInput = confirmInputs[1] as HTMLInputElement;
-        const submitButton = screen.getByRole('button');
+        const submitButton = screen.getByRole('button', { name: 'auth.resetPassword' });
 
         fireEvent.change(confirmInputs[0], { target: { value: 'password123' } });
         fireEvent.change(confirmInput, { target: { value: 'passwordXYZ' } });
 
-        fireEvent.click(submitButton);
+        expect(submitButton).toBeDisabled();
 
-        await waitFor(() => {
-            expect(screen.getByText('Passwords do not match.')).toBeInTheDocument();
-        });
+        // Ensure it enables when valid (we need to match mismatch first test flow, or just check disabled here)
+        // The test above sets mismatch passwords.
     });
 
     it('shows error when password is too short', async () => {
         render(<ResetPasswordPage />);
 
         const confirmInputs = screen.getAllByPlaceholderText('••••••••');
-        const submitButton = screen.getByRole('button');
+        const submitButton = screen.getByRole('button', { name: 'auth.resetPassword' });
 
         fireEvent.change(confirmInputs[0], { target: { value: '123' } });
         fireEvent.change(confirmInputs[1], { target: { value: '123' } });

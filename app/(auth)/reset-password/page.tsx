@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
+import { PasswordFields } from '@/components/PasswordFields';
 
 function ResetPasswordForm() {
     const { t } = useTranslation();
@@ -12,7 +13,7 @@ function ResetPasswordForm() {
     const token = searchParams.get('token');
 
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isPasswordValid, setIsPasswordValid] = useState(false);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
 
@@ -26,17 +27,7 @@ function ResetPasswordForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (password !== confirmPassword) {
-            setStatus('error');
-            setMessage(t('auth.passwordMismatch') || 'Passwords do not match.');
-            return;
-        }
-
-        if (password.length < 6) {
-            setStatus('error');
-            setMessage(t('auth.passwordTooShort') || 'Password must be at least 6 characters.');
-            return;
-        }
+        if (!isPasswordValid) return;
 
         setStatus('loading');
         setMessage('');
@@ -113,31 +104,12 @@ function ResetPasswordForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.newPassword') || 'New Password'}</label>
-                        <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-0 outline-none transition-colors font-medium text-slate-700 bg-slate-50/50"
-                            placeholder="••••••••"
-                            minLength={6}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.confirmPassword') || 'Confirm Password'}</label>
-                        <input
-                            type="password"
-                            required
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-0 outline-none transition-colors font-medium text-slate-700 bg-slate-50/50"
-                            placeholder="••••••••"
-                            minLength={6}
-                        />
-                    </div>
+                    <PasswordFields 
+                        onChange={(isValid, val) => {
+                            setIsPasswordValid(isValid);
+                            setPassword(val);
+                        }} 
+                    />
 
                     {message && status === 'error' && (
                         <p className="text-red-500 text-sm font-medium">{message}</p>
@@ -145,8 +117,8 @@ function ResetPasswordForm() {
 
                     <button
                         type="submit"
-                        disabled={status === 'loading'}
-                        className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black shadow-lg shadow-rose-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        disabled={status === 'loading' || !isPasswordValid}
+                        className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black shadow-lg shadow-rose-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
                     >
                         {status === 'loading' ? <i className="fas fa-circle-notch fa-spin"></i> : (t('auth.resetPassword') || 'Reset Password')}
                     </button>

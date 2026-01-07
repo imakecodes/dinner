@@ -6,6 +6,7 @@ import { storageService } from '../../services/storageService';
 import { MeasurementSystem, Language } from '../../types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApp } from '@/components/Providers';
+import { PasswordFields } from '@/components/PasswordFields';
 
 export default function SettingsPage() {
     const [, setUser] = useState<any>(null);
@@ -22,8 +23,8 @@ export default function SettingsPage() {
     const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>('METRIC');
     const [language, setLanguage] = useState<Language>('en');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [isPasswordValid, setIsPasswordValid] = useState(true); 
+    const [formResetKey, setFormResetKey] = useState(0); // Default true because empty is valid for settings
 
     const loadUser = useCallback(async () => {
         try {
@@ -58,16 +59,21 @@ export default function SettingsPage() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage(null);
-        setPasswordError(null);
         setSaving(true);
 
-        if (password && password !== confirmPassword) {
-            setPasswordError(t('settings.passwordsMismatch'));
-            // Still show global error for accessibility/visibility if scrolled up, or just rely on inline?
-            // Let's keep global but maybe not strictly necessary. Actually the user complaint "nao aparece nenhuma mensagem" implies they missed the global one.
-            setMessage({ type: 'error', text: t('settings.passwordsMismatch') });
-            setSaving(false);
-            return;
+        // Logic: 
+        // 1. If password field is empty, isPasswordValid might be false (default from component if empty?), 
+        //    BUT we want to allow saving if no password change is intended.
+        //    However, our state `password` is updated.
+        //    If `password` is NOT empty, we check `isPasswordValid`.
+        //    If `password` IS empty, we proceed (no password update).
+        
+        if (password && !isPasswordValid) {
+             // If password has content but is invalid (mismatch/short), blocking.
+             // Rely on component to show error, but we also block here.
+             setMessage({ type: 'error', text: t('settings.updateError') || 'Please fix the errors.' });
+             setSaving(false);
+             return;
         }
 
         try {
@@ -84,8 +90,8 @@ export default function SettingsPage() {
 
             setMessage({ type: 'success', text: t('settings.updateSuccess') });
             setPassword('');
-            setConfirmPassword('');
-
+            setFormResetKey(prev => prev + 1);
+            
             // Reload to ensure sync
             loadUser();
         } catch (err: any) {
@@ -238,40 +244,20 @@ export default function SettingsPage() {
                         {t('settings.security')}
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.newPassword')}</label>
-                            <input
-                                type="password"
-                                placeholder={t('settings.passwordPlaceholder')}
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-700"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.confirmPassword')}</label>
-                            <input
-                                type="password"
-                                placeholder={t('settings.confirmPlaceholder')}
-                                value={confirmPassword}
-                                onChange={e => setConfirmPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-700"
-                            />
-                        </div>
-                    </div>
-                    {passwordError && (
-                        <div className="p-3 bg-red-50 text-red-600 text-sm font-bold rounded-xl flex items-center gap-2 border border-red-100">
-                            <i className="fas fa-exclamation-circle"></i>
-                            {passwordError}
-                        </div>
-                    )}
+                    <PasswordFields 
+                        key={formResetKey}
+                        showLabels={true}
+                        onChange={(isValid, val) => {
+                            setPassword(val);
+                            setIsPasswordValid(isValid);
+                        }} 
+                    />
                 </section>
 
                 <div className="flex justify-end pt-4">
                     <button
                         type="submit"
-                        disabled={saving}
+                        disabled={saving || (password.length > 0 && !isPasswordValid)}
                         className="px-8 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition-colors shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
                     >
                         {saving && <i className="fas fa-circle-notch fa-spin"></i>}
