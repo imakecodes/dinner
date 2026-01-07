@@ -94,9 +94,9 @@ export default function KitchensPage() {
             }
             setDeleteTargetId(null);
         } catch (err) {
-             console.error("Failed to delete kitchen", err);
-             setErrorMessage(t('common.error') || "Failed to delete kitchen");
-             setTimeout(() => setErrorMessage(null), 3000);
+            console.error("Failed to delete kitchen", err);
+            setErrorMessage(t('common.error') || "Failed to delete kitchen");
+            setTimeout(() => setErrorMessage(null), 3000);
         } finally {
             setIsDeleting(false);
         }
@@ -179,7 +179,7 @@ export default function KitchensPage() {
                             <div className="grid gap-4">
                                 {user?.kitchenMemberships?.filter((m: any) => !m.kitchen.deletedAt).map((m: any) => (
                                     <div key={m.id} className={`bg-white p-4 rounded-3xl shadow-sm border-2 flex flex-col gap-4 transition-all ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
-                                        
+
                                         {/* Row 1: Header (Icon + Info + Actions) */}
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-4">
@@ -189,14 +189,14 @@ export default function KitchensPage() {
                                                 <div className="flex-1">
                                                     {editingKitchenId === m.kitchen.id ? (
                                                         <div className="flex flex-col gap-2 min-w-[200px]">
-                                                            <input 
+                                                            <input
                                                                 className="bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900 text-base w-full focus:border-rose-500 focus:outline-none transition-colors"
                                                                 value={editName}
                                                                 onChange={(e) => setEditName(e.target.value)}
                                                                 autoFocus
                                                                 onKeyDown={(e) => {
-                                                                    if(e.key === 'Enter') handleEditSave(m.kitchen.id);
-                                                                    if(e.key === 'Escape') setEditingKitchenId(null);
+                                                                    if (e.key === 'Enter') handleEditSave(m.kitchen.id);
+                                                                    if (e.key === 'Escape') setEditingKitchenId(null);
                                                                 }}
                                                             />
                                                             <div className="flex gap-2">
@@ -222,16 +222,16 @@ export default function KitchensPage() {
 
                                             {/* Actions (Switch, Edit, Delete) - Grouped to right */}
                                             <div className="flex items-center gap-2">
-                                                 {m.role === 'ADMIN' && !editingKitchenId && (
+                                                {m.role === 'ADMIN' && !editingKitchenId && (
                                                     <>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleEditStart(m.kitchen)}
                                                             className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
                                                             title="Edit Kitchen"
                                                         >
                                                             <i className="fas fa-pen"></i>
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleDeleteClick(m.kitchen.id)}
                                                             className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors"
                                                             title="Delete Kitchen"
@@ -252,56 +252,58 @@ export default function KitchensPage() {
                                         </div>
 
                                         {/* Row 2: Invite Code (Full Width or block) */}
-                                        {/* Only showing for Admins or everyone? Previously everyone. */}
-                                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                                             <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">{t('kitchens.inviteCode')}</span>
-                                                <span className="font-mono font-bold text-slate-800 tracking-wider text-base select-all">{m.kitchen.inviteCode || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button 
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(m.kitchen.inviteCode);
-                                                        setCopiedId(m.id);
-                                                        setTimeout(() => setCopiedId(null), 2000);
-                                                    }}
-                                                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm active:scale-95"
-                                                >
-                                                    <i className={`fas ${copiedId === m.id ? 'fa-check text-green-500' : 'fa-copy'}`}></i>
-                                                    <span className="text-xs font-bold">{copiedId === m.id ? t('common.saved') : t('members.clickToCopy')}</span>
-                                                </button>
-                                                
-                                                {/* Social Share Buttons */}
-                                                <ShareButtons 
-                                                    text={`${t('members.shareCode')} ${m.kitchen.inviteCode}`} 
-                                                />
-
-                                                {m.role === 'ADMIN' && (
+                                        {/* Hide for guests */}
+                                        {!m.isGuest && (
+                                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">{t('kitchens.inviteCode')}</span>
+                                                    <span className="font-mono font-bold text-slate-800 tracking-wider text-base select-all">{m.kitchen.inviteCode || 'N/A'}</span>
+                                                </div>
+                                                <div className="flex gap-2">
                                                     <button
-                                                        onClick={async () => {
-                                                            if (!confirm(t('kitchens.regenerateConfirm'))) return;
-                                                            const { refreshKitchenCode } = await import('@/app/actions');
-                                                            const result = await refreshKitchenCode(m.kitchenId);
-                                                            if (result.success) {
-                                                                await loadData();
-                                                            } else {
-                                                                console.error(result.error);
-                                                            }
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(m.kitchen.inviteCode);
+                                                            setCopiedId(m.id);
+                                                            setTimeout(() => setCopiedId(null), 2000);
                                                         }}
-                                                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-sm"
-                                                        title="Regenerate Code"
+                                                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm active:scale-95"
                                                     >
-                                                        <i className="fas fa-sync-alt"></i>
+                                                        <i className={`fas ${copiedId === m.id ? 'fa-check text-green-500' : 'fa-copy'}`}></i>
+                                                        <span className="text-xs font-bold">{copiedId === m.id ? t('common.saved') : t('members.clickToCopy')}</span>
                                                     </button>
-                                                )}
+
+                                                    {/* Social Share Buttons */}
+                                                    <ShareButtons
+                                                        text={`${t('members.shareCode')} ${m.kitchen.inviteCode}`}
+                                                    />
+
+                                                    {m.role === 'ADMIN' && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (!confirm(t('kitchens.regenerateConfirm'))) return;
+                                                                const { refreshKitchenCode } = await import('@/app/actions');
+                                                                const result = await refreshKitchenCode(m.kitchenId);
+                                                                if (result.success) {
+                                                                    await loadData();
+                                                                } else {
+                                                                    console.error(result.error);
+                                                                }
+                                                            }}
+                                                            className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-sm"
+                                                            title="Regenerate Code"
+                                                        >
+                                                            <i className="fas fa-sync-alt"></i>
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
 
                                         {/* Member Management Shortcut (Active Kitchen Only) */}
                                         {m.kitchenId === user.currentKitchenId && (
                                             <div className="flex justify-end pt-2 border-t border-slate-100">
-                                                <a 
-                                                    href="/members" 
+                                                <a
+                                                    href="/members"
                                                     className="flex items-center gap-2 text-rose-500 hover:text-rose-600 text-sm font-bold transition-colors group"
                                                 >
                                                     <span className="group-hover:underline">{t('nav.members')}</span>

@@ -202,7 +202,7 @@ export default function MembersPage() {
 
 
             <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
-                {kitchen?.inviteCode && !currentUserMember?.isGuest && (
+                {kitchen?.inviteCode && currentUserMember && !currentUserMember.isGuest && (
                     <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 text-center space-y-2 mb-6">
                         <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">{t('kitchens.inviteCode')}</h3>
                         <div
