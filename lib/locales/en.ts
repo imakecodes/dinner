@@ -124,7 +124,7 @@ export const en = {
         createPlaceholder: "e.g. MasterChef Villa",
         create: "Create",
         regenerateConfirm: "Regenerate invite code? Old code will stop working.",
-        deleteConfirm: "Are you sure you want to delete this kitchen?",
+        deleteConfirm: "Are you sure you want to delete this kitchen? ALL RECIPES will be lost permanently!",
         deleteTitle: "Delete Kitchen?"
     },
     recipeDetails: {

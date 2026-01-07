@@ -115,4 +115,18 @@ describe('KitchensPage', () => {
             expect(storageService.createKitchen).toHaveBeenCalledWith('New Kitchen');
         });
     });
+
+    it('shows warning about data loss when deleting', async () => {
+        render(<KitchensPage />);
+
+        await waitFor(() => screen.queryByText('kitchens.loading') === null);
+
+        // Find delete button for Admin Kitchen
+        const deleteButtons = screen.getAllByTitle('Delete Kitchen');
+        fireEvent.click(deleteButtons[0]);
+
+        await waitFor(() => {
+            expect(screen.getByText('kitchens.deleteConfirm')).toBeInTheDocument();
+        });
+    });
 });
