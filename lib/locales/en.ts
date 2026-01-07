@@ -10,7 +10,8 @@ export const en = {
         back: "Back",
         menu: "Menu",
         slogan: "Smart & Safe Culinary Intelligence",
-        confirm: "Confirm"
+        confirm: "Confirm",
+        ok: "OK"
     },
     nav: {
         home: "Home",
@@ -323,5 +324,14 @@ export const en = {
             backupAction: "If the button above doesn't work, copy and paste this link into your browser:",
             expiryMessage: "This link will expire in 1 hour. If you did not request a password reset, please ignore this email."
         }
+    },
+    api: {
+        inviteRequired: "Invite code is required",
+        unauthorized: "Unauthorized",
+        kitchenNotFound: "Kitchen not found or invalid code",
+        kitchenDeleted: "This kitchen has been deleted",
+        alreadyMember: "Already a member",
+        joinSuccess: "Joined kitchen successfully",
+        joinError: "Error joining kitchen"
     }
 };
