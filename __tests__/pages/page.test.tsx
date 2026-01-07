@@ -10,15 +10,14 @@ jest.mock('next/link', () => {
     };
     MockLink.displayName = 'MockLink';
     return MockLink;
-    return MockLink;
-    return MockLink;
 });
 
 // Mock Providers
 jest.mock('../../components/Providers', () => ({
     useApp: () => ({
         members: [{ id: '1' }],
-        pantry: [{ id: 'p1', inStock: true }, { id: 'p2', inStock: false }]
+        pantry: [{ id: 'p1', inStock: true }, { id: 'p2', inStock: false }],
+        language: 'en'
     })
 }));
 
@@ -26,8 +25,11 @@ jest.mock('../../services/storageService', () => ({
     storageService: {
         getAllRecipes: jest.fn(),
         getCurrentKitchen: jest.fn(),
+        getShoppingList: jest.fn(),
         getCurrentUser: jest.fn().mockResolvedValue({ user: { id: 'u1' } }),
         getKitchenMembers: jest.fn().mockResolvedValue([{ userId: 'u1', isGuest: false }]),
+        switchKitchen: jest.fn(),
+        joinKitchen: jest.fn()
     }
 }));
 
@@ -35,35 +37,44 @@ describe('HomePage', () => {
     const mockRecipes = [
         { id: '1', recipe_title: 'Recent Recipe', createdAt: Date.now(), meal_type: 'dinner' }
     ];
+    const mockShopping = [
+        { id: 's1', name: 'Item 1', checked: false },
+        { id: 's2', name: 'Item 2', checked: true }
+    ];
 
     beforeEach(() => {
+        jest.clearAllMocks();
         (storageService.getAllRecipes as jest.Mock).mockResolvedValue(mockRecipes);
         (storageService.getCurrentKitchen as jest.Mock).mockResolvedValue({ id: 'k1', name: 'Test Kitchen' });
+        (storageService.getShoppingList as jest.Mock).mockResolvedValue(mockShopping);
     });
 
     it('renders dashboard stats correctly', async () => {
         render(<Home />);
 
         expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
-        // Members count
-        expect(screen.getAllByText('1')[0]).toBeInTheDocument();
-        // Pantry in-stock count
-        expect(screen.getAllByText('1')[1]).toBeInTheDocument();
 
-        // Wait for the effect to settle to avoid act() warnings
-        await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
+        await waitFor(() => {
+            // Member count '1'
+            // Shopping count '1'
+            // We expect at least one '1' for members and one '1' for shopping.
+            // Using a more specific query if possible, but getAllByText('1') is what we had.
+            const ones = screen.queryAllByText('1');
+            expect(ones.length).toBeGreaterThanOrEqual(2);
+        });
     });
 
     it('fetches and displays recent history', async () => {
         render(<Home />);
-        await waitFor(() => expect(storageService.getAllRecipes).toHaveBeenCalled());
 
-        expect(screen.getByText('Recent Recipes')).toBeInTheDocument();
-        expect(screen.getByText('Recent Recipe')).toBeInTheDocument();
+        await waitFor(() => {
+            // Be specific to avoid matching "Recent Recipe"
+            expect(screen.getByText('Recent Recipes')).toBeInTheDocument();
+            expect(screen.getByText('Recent Recipe')).toBeInTheDocument();
+        });
     });
 
     it('logs error on fetch failure', async () => {
-        // Mock error
         const error = new Error('Network Error');
         (storageService.getAllRecipes as jest.Mock).mockRejectedValue(error);
 

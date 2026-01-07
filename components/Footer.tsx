@@ -17,9 +17,12 @@ const Footer: React.FC = () => {
         </p>
 
         <div className="mt-8 flex justify-center gap-6 text-slate-300">
-          <i className="fab fa-instagram hover:text-rose-400 cursor-pointer transition-colors"></i>
-          <i className="fab fa-twitter hover:text-rose-400 cursor-pointer transition-colors"></i>
-          <i className="fab fa-github hover:text-rose-400 cursor-pointer transition-colors"></i>
+          <a href="https://x.com/DinnerAIApp" target="_blank" rel="noopener noreferrer" aria-label="DinnerAIApp">
+            <i className="fab fa-x hover:text-rose-400 cursor-pointer transition-colors"></i>
+          </a>
+          <a href="https://github.com/imakecodes/dinner" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <i className="fab fa-github hover:text-rose-400 cursor-pointer transition-colors"></i>
+          </a>
         </div>
       </div>
     </footer>
