@@ -30,7 +30,7 @@ describe('ResetPasswordPage Validation', () => {
         const confirmInputs = screen.getAllByPlaceholderText('••••••••');
         const passwordInput = confirmInputs[0] as HTMLInputElement;
         const confirmInput = confirmInputs[1] as HTMLInputElement;
-        const submitButton = screen.getByRole('button');
+        const submitButton = screen.getByRole('button', { name: 'auth.resetPassword' });
 
         fireEvent.change(confirmInputs[0], { target: { value: 'password123' } });
         fireEvent.change(confirmInput, { target: { value: 'passwordXYZ' } });
@@ -45,7 +45,7 @@ describe('ResetPasswordPage Validation', () => {
         render(<ResetPasswordPage />);
 
         const confirmInputs = screen.getAllByPlaceholderText('••••••••');
-        const submitButton = screen.getByRole('button');
+        const submitButton = screen.getByRole('button', { name: 'auth.resetPassword' });
 
         fireEvent.change(confirmInputs[0], { target: { value: '123' } });
         fireEvent.change(confirmInputs[1], { target: { value: '123' } });

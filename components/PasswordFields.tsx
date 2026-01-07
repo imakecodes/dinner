@@ -14,6 +14,8 @@ export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLa
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
 
+    const [showPassword, setShowPassword] = useState(false);
+
     useEffect(() => {
         let isValid = false;
         let errorMessage: string | null = null;
@@ -36,28 +38,46 @@ export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLa
         <div className="space-y-4">
             <div className="space-y-2">
                 {showLabels && <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.newPassword') || 'New Password'}</label>}
-                <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700 transition-colors"
-                    placeholder="••••••••"
-                    minLength={6}
-                />
+                <div className="relative">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700 transition-colors pr-12"
+                        placeholder="••••••••"
+                        minLength={6}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                        <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    </button>
+                </div>
             </div>
 
             <div className="space-y-2">
                 {showLabels && <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.confirmPassword') || 'Confirm Password'}</label>}
-                <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700 transition-colors"
-                    placeholder="••••••••"
-                    minLength={6}
-                />
+                 <div className="relative">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700 transition-colors pr-12"
+                        placeholder="••••••••"
+                        minLength={6}
+                    />
+                     <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                        <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    </button>
+                </div>
             </div>
 
             {error && (
