@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { CodeInput } from '../components/ui/CodeInput';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from '@/hooks/useTranslation';
+import { MessageDialog } from '../components/MessageDialog';
 
 export default function Home() {
   const { isGuest } = useCurrentMember();
@@ -22,6 +23,7 @@ export default function Home() {
   const [kitchen, setKitchen] = useState<Kitchen | null>(null);
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
+  const [errorDialog, setErrorDialog] = useState({ isOpen: false, message: '', title: '' });
 
   useEffect(() => {
     Promise.all([
@@ -135,13 +137,19 @@ export default function Home() {
                 setJoining(true);
                 try {
                   const res = await storageService.joinKitchen(joinCode);
+                  if (!res || !res.kitchenId) {
+                    throw new Error(t('actions.failedJoin'));
+                  }
                   // Automatically switch context
                   await storageService.switchKitchen(res.kitchenId);
                   // Refresh page to load new context
                   window.location.reload();
-                } catch (err) {
-                  console.error("Failed to join", err);
-                  alert(t('actions.failedJoin'));
+                } catch (err: any) {
+                  setErrorDialog({
+                    isOpen: true,
+                    title: t('common.error'),
+                    message: t(err.message)
+                  });
                 } finally {
                   setJoining(false);
                 }
@@ -174,6 +182,13 @@ export default function Home() {
 
       </main>
       <Footer />
+      <MessageDialog
+        isOpen={errorDialog.isOpen}
+        onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        type="error"
+      />
     </div>
   );
 }

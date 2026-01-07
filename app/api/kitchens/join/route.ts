@@ -7,17 +7,17 @@ export async function POST(request: NextRequest) {
         const { code } = await request.json();
 
         if (!code) {
-            return NextResponse.json({ message: 'Invite code is required' }, { status: 400 });
+            return NextResponse.json({ message: 'api.inviteRequired' }, { status: 400 });
         }
 
         const token = request.cookies.get('auth_token')?.value;
         if (!token) {
-            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ message: 'api.unauthorized' }, { status: 401 });
         }
 
         const payload = await verifyToken(token);
         if (!payload || !payload.userId) {
-            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ message: 'api.unauthorized' }, { status: 401 });
         }
         const userId = payload.userId as string;
 
@@ -27,7 +27,11 @@ export async function POST(request: NextRequest) {
         });
 
         if (!kitchen) {
-            return NextResponse.json({ message: 'Kitchen not found or invalid code' }, { status: 404 });
+            return NextResponse.json({ message: 'api.kitchenNotFound' }, { status: 404 });
+        }
+
+        if (kitchen.deletedAt) {
+            return NextResponse.json({ message: 'api.kitchenDeleted' }, { status: 410 }); // 410 Gone
         }
 
         // Check if already a member
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest) {
         if (existingMember) {
             // Already a member, just return success/kitchenId so we can switch
             return NextResponse.json({
-                message: 'Already a member',
+                message: 'api.alreadyMember',
                 kitchenId: kitchen.id,
                 name: kitchen.name
             });
@@ -66,13 +70,13 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({
-            message: 'Joined kitchen successfully',
+            message: 'api.joinSuccess',
             kitchenId: kitchen.id,
             name: kitchen.name
         });
 
     } catch (error) {
         console.error('POST /api/kitchens/join error:', error);
-        return NextResponse.json({ message: 'Error joining kitchen', error: String(error) }, { status: 500 });
+        return NextResponse.json({ message: 'api.joinError', error: String(error) }, { status: 500 });
     }
 }

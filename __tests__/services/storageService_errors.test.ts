@@ -18,14 +18,10 @@ describe('storageService Error Handling', () => {
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: false,
             status: 404,
-            json: async () => ({})
+            json: async () => ({ message: 'Not Found' })
         });
 
-        const result = await storageService.getAllRecipes();
-        // Since 404 might return null or empty based on implementation choice in apiRequest?
-        // Looking at apiRequest code: if (status === 404) return null;
-        // getAllRecipes returns data || []. So null || [] = [].
-        expect(result).toEqual([]);
+        await expect(storageService.getAllRecipes()).rejects.toThrow('Not Found');
     });
 
     it('handles 500 error', async () => {

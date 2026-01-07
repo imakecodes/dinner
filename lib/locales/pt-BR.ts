@@ -10,7 +10,8 @@ export const ptBR = {
         back: "Voltar",
         menu: "Menu",
         slogan: "Culinária Inteligente e Segura",
-        confirm: "Confirmar"
+        confirm: "Confirmar",
+        ok: "OK"
     },
     nav: {
         home: "Início",
@@ -326,5 +327,14 @@ export const ptBR = {
             backupAction: "Se o botão acima não funcionar, copie e cole este link no seu navegador:",
             expiryMessage: "Este link expirará em 1 hora. Se você não solicitou uma redefinição de senha, ignore este email."
         }
+    },
+    api: {
+        inviteRequired: "Código de convite é obrigatório",
+        unauthorized: "Não autorizado",
+        kitchenNotFound: "Cozinha não encontrada ou código inválido",
+        kitchenDeleted: "Esta cozinha foi excluída",
+        alreadyMember: "Você já é um membro desta cozinha",
+        joinSuccess: "Entrou na cozinha com sucesso",
+        joinError: "Erro ao entrar na cozinha"
     }
 };

@@ -19,17 +19,15 @@ async function apiRequest(path: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`Endpoint ${path} not found.`);
-        return null;
-      }
       const errorData = await response.json().catch(() => ({ message: `HTTP Error ${response.status}` }));
-      throw new Error(errorData.message || 'Request failed');
+      const error = new Error(errorData.message || 'Request failed');
+      (error as any).status = response.status;
+      // Do not log to console here as it might be an expected validation error
+      throw error;
     }
 
     return await response.json();
   } catch (error) {
-    console.error(`API Call failed [${path}]:`, error);
     throw error;
   }
 }
@@ -62,8 +60,13 @@ export const storageService = {
   },
 
   getRecipeById: async (id: string): Promise<RecipeRecord | null> => {
-    const data = await apiRequest(`/recipes/${id}`);
-    return data || null;
+    try {
+      const data = await apiRequest(`/recipes/${id}`);
+      return data || null;
+    } catch (error: any) {
+      if (error.status === 404) return null;
+      throw error;
+    }
   },
 
   deleteRecipe: async (id: string): Promise<void> => {
@@ -181,21 +184,21 @@ export const storageService = {
       body: JSON.stringify({ kitchenId })
     });
   },
-    async updateKitchen(id: string, name: string) {
-        const res = await fetch(`/api/kitchens/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-        });
-        if (!res.ok) throw new Error('Failed to update kitchen');
-        return await res.json();
-    },
+  async updateKitchen(id: string, name: string) {
+    const res = await fetch(`/api/kitchens/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    if (!res.ok) throw new Error('Failed to update kitchen');
+    return await res.json();
+  },
 
-    async deleteKitchen(id: string) {
-        const res = await fetch(`/api/kitchens/${id}`, {
-            method: 'DELETE'
-        });
-        if (!res.ok) throw new Error('Failed to delete kitchen');
-        return await res.json();
-    }
+  async deleteKitchen(id: string) {
+    const res = await fetch(`/api/kitchens/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to delete kitchen');
+    return await res.json();
+  }
 };
