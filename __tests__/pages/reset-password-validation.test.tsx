@@ -24,28 +24,65 @@ jest.mock('@/hooks/useTranslation', () => ({
 }));
 
 describe('ResetPasswordPage Validation', () => {
+    beforeEach(() => {
+        // Mock global.fetch for the token verification call
+        global.fetch = jest.fn().mockImplementation((url: string) => {
+            if (url.includes('/api/auth/verify-token')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ valid: true }),
+                    status: 200
+                });
+            }
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ success: true }),
+                status: 200
+            });
+        });
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it('shows error when passwords do not match', async () => {
         render(<ResetPasswordPage />);
 
-        const confirmInputs = screen.getAllByPlaceholderText('••••••••');
+        // Wait for the form to appear after verification
+        const confirmInputs = await screen.findAllByPlaceholderText('••••••••');
         const passwordInput = confirmInputs[0] as HTMLInputElement;
         const confirmInput = confirmInputs[1] as HTMLInputElement;
         const submitButton = screen.getByRole('button', { name: 'auth.resetPassword' });
 
-        fireEvent.change(confirmInputs[0], { target: { value: 'password123' } });
+        fireEvent.change(passwordInput, { target: { value: 'password123' } });
         fireEvent.change(confirmInput, { target: { value: 'passwordXYZ' } });
 
         expect(submitButton).toBeDisabled();
-
-        // Ensure it enables when valid (we need to match mismatch first test flow, or just check disabled here)
-        // The test above sets mismatch passwords.
     });
 
     it('shows error when password is too short', async () => {
         render(<ResetPasswordPage />);
 
-        const confirmInputs = screen.getAllByPlaceholderText('••••••••');
+        // Wait for the form to appear
+        const confirmInputs = await screen.findAllByPlaceholderText('••••••••');
         const submitButton = screen.getByRole('button', { name: 'auth.resetPassword' });
+
+        // Mock the submit API call to return an error
+        (global.fetch as jest.Mock).mockImplementationOnce((url: string) => {
+            if (url.includes('/api/auth/verify-token')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ valid: true }),
+                    status: 200
+                });
+            }
+            return Promise.resolve({
+                ok: false,
+                status: 400,
+                json: () => Promise.resolve({ error: 'Password must be at least 6 characters.' })
+            });
+        });
 
         fireEvent.change(confirmInputs[0], { target: { value: '123' } });
         fireEvent.change(confirmInputs[1], { target: { value: '123' } });

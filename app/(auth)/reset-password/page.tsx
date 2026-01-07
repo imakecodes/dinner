@@ -14,14 +14,39 @@ function ResetPasswordForm() {
 
     const [password, setPassword] = useState('');
     const [isPasswordValid, setIsPasswordValid] = useState(false);
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'verifying'>('verifying'); // Start in verifying
     const [message, setMessage] = useState('');
 
     useEffect(() => {
         if (!token) {
             setStatus('error');
             setMessage(t('auth.invalidResetLink') || 'Invalid or missing reset token.');
+            return;
         }
+
+        // Verify token immediately
+        const verifyToken = async () => {
+            try {
+                const res = await fetch(`/api/auth/verify-token?token=${token}`);
+                const data = await res.json();
+
+                if (!res.ok || !data.valid) {
+                    if (res.status === 410 || data.error?.includes('expired')) {
+                        setMessage(t('auth.tokenExpired') || 'This reset link has expired.');
+                    } else {
+                        setMessage(t('auth.invalidResetLink') || 'Invalid or missing reset token.');
+                    }
+                    setStatus('error');
+                } else {
+                    setStatus('idle'); // Valid, show form
+                }
+            } catch (err) {
+                setStatus('error');
+                setMessage(t('common.error'));
+            }
+        };
+
+        verifyToken();
     }, [token, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +103,7 @@ function ResetPasswordForm() {
         );
     }
 
-    if (status === 'error' && !token) {
+    if (status === 'error') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
                 <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 border border-slate-100 text-center">
@@ -95,6 +120,17 @@ function ResetPasswordForm() {
         );
     }
 
+    if (status === 'verifying') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 border border-slate-100 text-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="font-bold text-slate-500 animate-pulse">{t('auth.verifyingToken') || 'Verifying link...'}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
             <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 border border-slate-100">
@@ -104,16 +140,14 @@ function ResetPasswordForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <PasswordFields 
+                    <PasswordFields
                         onChange={(isValid, val) => {
                             setIsPasswordValid(isValid);
                             setPassword(val);
-                        }} 
+                        }}
                     />
 
-                    {message && status === 'error' && (
-                        <p className="text-red-500 text-sm font-medium">{message}</p>
-                    )}
+
 
                     <button
                         type="submit"

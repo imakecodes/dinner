@@ -272,13 +272,15 @@ export const ptBR = {
         passwordMismatch: "As senhas não conferem",
         passwordTooShort: "A senha deve ter pelo menos 6 caracteres",
         passwordResetSuccess: "Senha redefinida com sucesso!",
+        tokenExpired: "Este link de redefinição expirou.",
+        verifyingToken: "Verificando link...",
         invalidResetLink: "Link inválido ou expirado",
         requestNewLink: "Solicitar Novo Link",
         defaultKitchenName: "Cozinha de {name}",
         unverifiedError: "Conta não verificada. Verifique seu email.",
-        resendVerification: "Reenviar Email de Verificação",
-        verificationResent: "Email de verificação reenviado!",
-        resendError: "Falha ao reenviar email."
+        resendVerification: "Reenviar Email",
+        emailSent: "Email enviado! Verifique sua caixa de entrada.",
+        emailError: "Falha ao enviar email."
     },
     generate: {
         title: "Nova Receita",
