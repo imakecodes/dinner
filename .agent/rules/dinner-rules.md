@@ -1,4 +1,13 @@
+---
+trigger: always_on
+glob:
+description:
+---
+
 # Agent Rules
+
+> [!IMPORTANT]
+> **Always read and follow the instructions in @AGENTS.md in addition to these rules.**
 
 ## Code Quality & Testing
 - **Test Coverage**: Maintain a minimum of **85% code coverage** for the project.

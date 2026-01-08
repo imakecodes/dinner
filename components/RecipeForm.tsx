@@ -31,7 +31,10 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
     });
 
     const [newIngredient, setNewIngredient] = useState({ name: '', quantity: '', unit: 'unit' });
+    const [editingIngredientIndex, setEditingIngredientIndex] = useState<number | null>(null);
+
     const [newShoppingItem, setNewShoppingItem] = useState({ name: '', quantity: '', unit: 'unit' });
+    const [editingShoppingIndex, setEditingShoppingIndex] = useState<number | null>(null);
 
     // Unit definitions
     const commonUnits = ['unit', 'can', 'package', 'cup', 'tbsp', 'tsp', 'pinch'];
@@ -51,35 +54,97 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
     // Ingredient Handlers
     const addIngredient = () => {
         if (!newIngredient.name.trim()) return;
-        setFormData(prev => ({
-            ...prev,
-            ingredients_from_pantry: [...prev.ingredients_from_pantry, { ...newIngredient }]
-        }));
+
+        if (editingIngredientIndex !== null) {
+            // Update existing
+            setFormData(prev => {
+                const newList = [...prev.ingredients_from_pantry];
+                newList[editingIngredientIndex] = { ...newIngredient };
+                return { ...prev, ingredients_from_pantry: newList };
+            });
+            setEditingIngredientIndex(null);
+        } else {
+            // Add new
+            setFormData(prev => ({
+                ...prev,
+                ingredients_from_pantry: [...prev.ingredients_from_pantry, { ...newIngredient }]
+            }));
+        }
         setNewIngredient({ name: '', quantity: '', unit: 'unit' });
     };
 
     const removeIngredient = (idx: number) => {
+        if (editingIngredientIndex === idx) {
+            setEditingIngredientIndex(null);
+            setNewIngredient({ name: '', quantity: '', unit: 'unit' });
+        }
         setFormData(prev => ({
             ...prev,
             ingredients_from_pantry: prev.ingredients_from_pantry.filter((_, i) => i !== idx)
         }));
     };
 
+    const editIngredient = (idx: number) => {
+        const item = formData.ingredients_from_pantry[idx];
+        setEditingIngredientIndex(idx);
+        if (typeof item === 'string') {
+            setNewIngredient({ name: item, quantity: '', unit: 'unit' });
+        } else {
+            setNewIngredient({ name: item.name, quantity: item.quantity || '', unit: item.unit || 'unit' });
+        }
+    };
+
+    const cancelEditIngredient = () => {
+        setEditingIngredientIndex(null);
+        setNewIngredient({ name: '', quantity: '', unit: 'unit' });
+    };
+
     // Shopping List Handlers
     const addShoppingItem = () => {
         if (!newShoppingItem.name.trim()) return;
-        setFormData(prev => ({
-            ...prev,
-            shopping_list: [...prev.shopping_list, { ...newShoppingItem }]
-        }));
+
+        if (editingShoppingIndex !== null) {
+            // Update existing
+            setFormData(prev => {
+                const newList = [...prev.shopping_list];
+                newList[editingShoppingIndex] = { ...newShoppingItem };
+                return { ...prev, shopping_list: newList };
+            });
+            setEditingShoppingIndex(null);
+        } else {
+            // Add new
+            setFormData(prev => ({
+                ...prev,
+                shopping_list: [...prev.shopping_list, { ...newShoppingItem }]
+            }));
+        }
         setNewShoppingItem({ name: '', quantity: '', unit: 'unit' });
     };
 
     const removeShoppingItem = (idx: number) => {
+        if (editingShoppingIndex === idx) {
+            setEditingShoppingIndex(null);
+            setNewShoppingItem({ name: '', quantity: '', unit: 'unit' });
+        }
         setFormData(prev => ({
             ...prev,
             shopping_list: prev.shopping_list.filter((_, i) => i !== idx)
         }));
+    };
+
+    const editShoppingItem = (idx: number) => {
+        const item = formData.shopping_list[idx];
+        setEditingShoppingIndex(idx);
+        if (typeof item === 'string') {
+            setNewShoppingItem({ name: item, quantity: '', unit: 'unit' });
+        } else {
+            setNewShoppingItem({ name: item.name, quantity: item.quantity || '', unit: item.unit || 'unit' });
+        }
+    };
+
+    const cancelEditShoppingItem = () => {
+        setEditingShoppingIndex(null);
+        setNewShoppingItem({ name: '', quantity: '', unit: 'unit' });
     };
 
     // Step Handlers
@@ -110,6 +175,16 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
             step_by_step: formData.step_by_step.map(s => s.text)
         };
         onSubmit(finalData);
+    };
+
+    const getUnitLabel = (unit: string) => {
+        // Strip off "units." prefix if it somehow got saved in the DB
+        const cleanUnit = unit.replace(/^units\./, '');
+        const key = `units.${cleanUnit}`;
+        const translated = t(key);
+        // If translation returns the key itself, it means missing translation.
+        // Fallback to the clean unit name.
+        return translated === key ? cleanUnit : translated;
     };
 
     return (
@@ -171,13 +246,15 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                     {/* Ingredients */}
                     <div className="space-y-4">
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">{t('recipeForm.ingredients')}</label>
-                        <div className="grid grid-cols-12 gap-2">
+
+
+                        <div className="grid grid-cols-12 gap-3">
                             <input
                                 type="text"
                                 placeholder={t('recipeForm.qty')}
                                 value={newIngredient.quantity}
                                 onChange={e => setNewIngredient(prev => ({ ...prev, quantity: e.target.value }))}
-                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-center"
                             />
                             <select
                                 value={newIngredient.unit}
@@ -195,21 +272,41 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                 value={newIngredient.name}
                                 onChange={e => setNewIngredient(prev => ({ ...prev, name: e.target.value }))}
                                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
-                                className="col-span-6 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className={editingIngredientIndex !== null ? "col-span-5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" : "col-span-6 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"}
                             />
-                            <button type="button" onClick={addIngredient} className="col-span-1 bg-emerald-100 text-emerald-600 rounded-xl font-bold hover:bg-emerald-200 flex items-center justify-center aspect-square" title={t('recipeForm.add')}>
-                                <i className="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <ul className="space-y-2">
-                            {formData.ingredients_from_pantry.map((ing: any, i) => (
-                                <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
-                                    <span className="font-medium text-slate-700">
-                                        {typeof ing === 'string' ? ing : `${ing.quantity} ${t(`units.${ing.unit}`) || ing.unit} ${ing.name}`}
-                                    </span>
-                                    <button type="button" onClick={() => removeIngredient(i)} className="text-red-400 hover:text-red-600">
+                            {editingIngredientIndex !== null ? (
+                                <div className="col-span-2 flex gap-2">
+                                    <button type="button" onClick={addIngredient} className="flex-1 bg-emerald-100 text-emerald-600 rounded-xl font-bold hover:bg-emerald-200 flex items-center justify-center aspect-square" title={t('recipeForm.save')}>
+                                        <i className="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" onClick={cancelEditIngredient} className="flex-1 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 flex items-center justify-center aspect-square" title={t('common.cancel')}>
                                         <i className="fas fa-times"></i>
                                     </button>
+                                </div>
+                            ) : (
+                                <button type="button" onClick={addIngredient} className="col-span-1 bg-emerald-100 text-emerald-600 rounded-xl font-bold hover:bg-emerald-200 flex items-center justify-center aspect-square" title={t('recipeForm.add')}>
+                                    <i className="fas fa-plus"></i>
+                                </button>
+                            )}
+                        </div>
+
+                        <ul className="space-y-2">
+                            {formData.ingredients_from_pantry.map((ing: any, i) => (
+                                <li key={i}
+                                    onClick={() => editIngredient(i)}
+                                    className={`flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm cursor-pointer transition-colors group ${editingIngredientIndex === i ? 'ring-2 ring-rose-200 bg-rose-50' : 'hover:bg-slate-50'}`}
+                                    title="Click to edit"
+                                >
+                                    {typeof ing === 'string' ? ing : (ing.quantity ? `${ing.quantity} ${getUnitLabel(ing.unit)} ${ing.name}` : ing.name)}
+                                    {editingIngredientIndex !== i && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); removeIngredient(i); }}
+                                            className="text-red-400 hover:text-red-600 p-2"
+                                        >
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -218,13 +315,13 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                     {/* Shopping List */}
                     <div className="space-y-4">
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">{t('recipeForm.shoppingList')}</label>
-                        <div className="grid grid-cols-12 gap-2">
+                        <div className="grid grid-cols-12 gap-3">
                             <input
                                 type="text"
                                 placeholder={t('recipeForm.qty')}
                                 value={newShoppingItem.quantity}
                                 onChange={e => setNewShoppingItem(prev => ({ ...prev, quantity: e.target.value }))}
-                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-center"
                             />
                             <select
                                 value={newShoppingItem.unit}
@@ -242,21 +339,40 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                 value={newShoppingItem.name}
                                 onChange={e => setNewShoppingItem(prev => ({ ...prev, name: e.target.value }))}
                                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addShoppingItem())}
-                                className="col-span-6 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className={editingShoppingIndex !== null ? "col-span-5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" : "col-span-6 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"}
                             />
-                            <button type="button" onClick={addShoppingItem} className="col-span-1 bg-orange-100 text-orange-600 rounded-xl font-bold hover:bg-orange-200 flex items-center justify-center aspect-square" title={t('recipeForm.add')}>
-                                <i className="fas fa-plus"></i>
-                            </button>
+                            {editingShoppingIndex !== null ? (
+                                <div className="col-span-2 flex gap-2">
+                                    <button type="button" onClick={addShoppingItem} className="flex-1 bg-orange-100 text-orange-600 rounded-xl font-bold hover:bg-orange-200 flex items-center justify-center aspect-square" title={t('recipeForm.save')}>
+                                        <i className="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" onClick={cancelEditShoppingItem} className="flex-1 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 flex items-center justify-center aspect-square" title={t('common.cancel')}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            ) : (
+                                <button type="button" onClick={addShoppingItem} className="col-span-1 bg-orange-100 text-orange-600 rounded-xl font-bold hover:bg-orange-200 flex items-center justify-center aspect-square" title={t('recipeForm.add')}>
+                                    <i className="fas fa-plus"></i>
+                                </button>
+                            )}
                         </div>
                         <ul className="space-y-2">
                             {formData.shopping_list.map((item: any, i) => (
-                                <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
-                                    <span className="font-medium text-slate-700">
-                                        {typeof item === 'string' ? item : `${item.quantity} ${t(`units.${item.unit}`) || item.unit} ${item.name}`}
-                                    </span>
-                                    <button type="button" onClick={() => removeShoppingItem(i)} className="text-red-400 hover:text-red-600">
-                                        <i className="fas fa-times"></i>
-                                    </button>
+                                <li key={i}
+                                    onClick={() => editShoppingItem(i)}
+                                    className={`flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm cursor-pointer transition-colors group ${editingShoppingIndex === i ? 'ring-2 ring-orange-200 bg-orange-50' : 'hover:bg-slate-50'}`}
+                                    title="Click to edit"
+                                >
+                                    {typeof item === 'string' ? item : (item.quantity ? `${item.quantity} ${getUnitLabel(item.unit)} ${item.name}` : item.name)}
+                                    {editingShoppingIndex !== i && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); removeShoppingItem(i); }}
+                                            className="text-red-400 hover:text-red-600 p-2"
+                                        >
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -279,7 +395,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                         value={step.text}
                                         onChange={e => handleStepChange(i, e.target.value)}
                                         placeholder={t('recipeForm.stepPlaceholder').replace('{n}', (i + 1).toString())}
-                                        className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none h-20"
+                                        className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-y min-h-[5rem]"
                                     />
                                     <button type="button" onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`} className="self-center text-red-400 hover:text-red-600 px-2">
                                         <i className="fas fa-trash"></i>
