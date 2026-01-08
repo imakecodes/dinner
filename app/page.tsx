@@ -57,7 +57,7 @@ export default function Home() {
 
       {/* Dashboard Header */}
       <header className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-3">
             {t('home.welcome')}, Chef! <span className="text-rose-500">👨‍🍳</span>
             {kitchen && (
@@ -87,7 +87,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 mt-4 space-y-4">
+      <main className="max-w-7xl mx-auto px-4 mt-4 space-y-4">
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

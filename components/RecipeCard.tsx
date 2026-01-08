@@ -262,8 +262,8 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-16">
-          <div className="md:col-span-5 space-y-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+          <div className="lg:col-span-4 space-y-12">
             <div>
               <h4 className="text-xl font-black text-slate-900 flex items-center gap-3 mb-6">
                 <i className="fas fa-shopping-basket text-amber-500"></i>
@@ -330,10 +330,10 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
 
                     {showShareMenu && (
                       <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-100 shadow-2xl rounded-2xl p-2 z-30 animate-in fade-in zoom-in-95 duration-200">
-                        <ShareButtons 
-                            layout="menu-items"
-                            text={`*${t('recipeCard.shoppingListFor').replace('{title}', recipe.recipe_title)}*\n\n- ${recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ')}`}
-                            url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://dinner.app'}/recipes/${recipe.id}`}
+                        <ShareButtons
+                          layout="menu-items"
+                          text={`*${t('recipeCard.shoppingListFor').replace('{title}', recipe.recipe_title)}*\n\n- ${recipe.shopping_list.map(item => `${item.quantity} ${item.unit} ${item.name}`).join('\n- ')}`}
+                          url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://dinner.app'}/recipes/${recipe.id}`}
                         />
                       </div>
                     )}
@@ -396,8 +396,8 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
             )}
           </div>
 
-          <div className="md:col-span-7">
-            <h4 className="text-xl font-black text-slate-900 flex items-center gap-3 mb-10">
+          <div className="lg:col-span-8">
+            <h4 className="text-xl font-black text-slate-900 flex items-center gap-3 mb-8 lg:mb-10">
               <i className="fas fa-list-ol text-rose-500"></i>
               {t('recipeCard.stepByStep')}
             </h4>

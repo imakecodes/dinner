@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
                     create: {
                         name: name,
                         isGuest: false,
+                        role: 'ADMIN',
                         kitchen: {
                             create: {
                                 name: kitchenName,
@@ -58,6 +59,13 @@ export async function POST(req: NextRequest) {
                     include: { kitchen: true }
                 }
             }
+        });
+
+        // Update selectedKitchenId
+        const createdKitchenId = user.kitchenMemberships[0].kitchenId;
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { selectedKitchenId: createdKitchenId }
         });
 
         // Send verification email

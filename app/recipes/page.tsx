@@ -48,7 +48,7 @@ export default function HistoryPage() {
     });
 
     return (
-        <div className="max-w-4xl mx-auto px-4 mt-4 space-y-4">
+        <main className="max-w-7xl mx-auto px-4 pt-24 pb-32 space-y-6 animate-in fade-in duration-500">
 
             {/* Search Bar */}
             <div className="relative">
@@ -88,6 +88,6 @@ export default function HistoryPage() {
                     )}
                 </div>
             )}
-        </div>
+        </main>
     );
 }

@@ -42,8 +42,8 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
         {t('nav.recipes')}
       </h2>
 
-      {/* Grid: 1 col on mobile, max 2 cols on larger screens */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Grid: 1 col on mobile, 3 cols on larger screens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {history.map(recipe => (
           <div
             key={recipe.id}

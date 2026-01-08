@@ -10,6 +10,7 @@ jest.mock('@/lib/prisma', () => ({
         user: {
             findUnique: jest.fn(),
             create: jest.fn(),
+            update: jest.fn(),
         },
         kitchen: {
             create: jest.fn(),
@@ -56,9 +57,9 @@ describe('Registration API', () => {
         (prisma.user.create as jest.Mock).mockResolvedValue({
             id: 'user-1',
             email: 'test@example.com',
-            // emailVerified is not passed to create, it defaults to null in DB.
-            // So we should check that it is NOT defined in the data passed to create, or explicitly set to null if logic dictates.
-            // In our code logic, we don't set it, so it's undefined in the call arguments.
+            kitchenMemberships: [
+                { kitchenId: 'kitchen-1', kitchen: { id: 'kitchen-1' } }
+            ],
             language: 'en'
         });
         (prisma.kitchen.create as jest.Mock).mockResolvedValue({ id: 'kitchen-1' });
@@ -110,7 +111,10 @@ describe('Registration API', () => {
         (prisma.user.create as jest.Mock).mockResolvedValue({
             id: 'user-pt',
             email: 'pt@example.com',
-            name: 'Maria'
+            name: 'Maria',
+            kitchenMemberships: [
+                { kitchenId: 'kitchen-pt', kitchen: { id: 'kitchen-pt' } }
+            ]
         });
 
         await POST(req);
@@ -127,6 +131,55 @@ describe('Registration API', () => {
                     })
                 })
             })
+        }));
+    });
+
+    it('should assign ADMIN role and set selectedKitchenId', async () => {
+        const req = new NextRequest(new URL('http://localhost/api/auth/register'), {
+            method: 'POST',
+            body: JSON.stringify({
+                email: 'admin@example.com',
+                password: 'password123',
+                name: 'Admin',
+                surname: 'User'
+            })
+        });
+
+        (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+        
+        // Mock create to return a user with a membership
+        const mockCreatedUser = {
+            id: 'new-user-id',
+            email: 'admin@example.com',
+            kitchenMemberships: [
+                {
+                    kitchenId: 'kitchen-1',
+                    role: 'ADMIN',
+                    kitchen: { id: 'kitchen-1', name: 'Kitchen' }
+                }
+            ]
+        };
+        (prisma.user.create as jest.Mock).mockResolvedValue(mockCreatedUser);
+        (prisma.user.update as jest.Mock).mockResolvedValue({ ...mockCreatedUser, selectedKitchenId: 'kitchen-1' });
+
+        await POST(req);
+
+        // Verify ADMIN role
+        expect(prisma.user.create).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({
+                kitchenMemberships: {
+                    create: expect.objectContaining({
+                        role: 'ADMIN',
+                        isGuest: false
+                    })
+                }
+            })
+        }));
+
+        // Verify selectedKitchenId update
+        expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+            where: { id: 'new-user-id' },
+            data: { selectedKitchenId: 'kitchen-1' }
         }));
     });
 });
