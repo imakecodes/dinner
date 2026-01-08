@@ -62,6 +62,15 @@ export default function HistoryPage() {
                 />
             </div>
 
+            <div className="flex justify-end">
+                <button
+                    onClick={() => router.push('/recipes/create')}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-xl font-bold transition-colors"
+                >
+                    <i className="fas fa-plus"></i> {t('recipes.createCustom')}
+                </button>
+            </div>
+
             {filteredHistory.length > 0 ? (
                 <HistorySection
                     history={filteredHistory}

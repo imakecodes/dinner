@@ -140,7 +140,12 @@ export const ptBR = {
         view: "Ver Receita",
         delete: "Excluir",
         deleteTitle: "Excluir Receita?",
-        deleteDesc: "Esta ação não pode ser desfeita. Tem certeza de que deseja excluir esta receita?"
+        empty: "Você ainda não salvou nenhuma receita. Crie uma para começar!",
+        view: "Ver Receita",
+        delete: "Excluir",
+        deleteTitle: "Excluir Receita?",
+        deleteDesc: "Esta ação não pode ser desfeita. Tem certeza de que deseja excluir esta receita?",
+        createCustom: "Criar Receita Manual"
     },
     actions: {
         generateTitle: "Gerar Receita",
@@ -338,5 +343,21 @@ export const ptBR = {
         alreadyMember: "Você já é um membro desta cozinha",
         joinSuccess: "Entrou na cozinha com sucesso",
         joinError: "Erro ao entrar na cozinha"
+    },
+    units: {
+        unit: "Unidade",
+        tbsp: "Colher de Sopa",
+        tsp: "Colher de Chá",
+        cup: "Xícara",
+        can: "Lata",
+        package: "Pacote",
+        pinch: "Pitada",
+        g: "Grama (g)",
+        kg: "Quilograma (kg)",
+        ml: "Mililitro (ml)",
+        l: "Litro (l)",
+        oz: "Onça (oz)",
+        lb: "Libra (lb)",
+        fl_oz: "Onça Líquida (fl oz)"
     }
 };

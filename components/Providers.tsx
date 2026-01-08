@@ -21,6 +21,8 @@ interface AppContextType {
     setPrepTime: React.Dispatch<React.SetStateAction<PrepTimePreference>>;
     language: Language;
     setLanguage: React.Dispatch<React.SetStateAction<Language>>;
+    measurementSystem: 'METRIC' | 'IMPERIAL';
+    setMeasurementSystem: React.Dispatch<React.SetStateAction<'METRIC' | 'IMPERIAL'>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -36,6 +38,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [mealType, setMealType] = useState<MealType>('main');
     const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
     const [prepTime, setPrepTime] = useState<PrepTimePreference>('quick');
+    const [measurementSystem, setMeasurementSystem] = useState<'METRIC' | 'IMPERIAL'>('METRIC');
 
     const [language, setLanguage] = useState<Language>('en');
 
@@ -62,6 +65,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 const storedUser = await storageService.getCurrentUser();
                 if (storedUser && storedUser.user && storedUser.user.language) {
                     setLanguage(storedUser.user.language as Language);
+                }
+                if (storedUser && storedUser.user && storedUser.user.measurementSystem) {
+                    setMeasurementSystem(storedUser.user.measurementSystem as 'METRIC' | 'IMPERIAL');
                 }
 
                 const storedPantry = await storageService.getPantry();
@@ -95,7 +101,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             mealType, setMealType,
             difficulty, setDifficulty,
             prepTime, setPrepTime,
-            language, setLanguage
+            prepTime, setPrepTime,
+            language, setLanguage,
+            measurementSystem, setMeasurementSystem
         }}>
 
             {children}
