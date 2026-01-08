@@ -18,6 +18,9 @@ export async function GET(request: NextRequest) {
         name: true,
         inStock: true,
         replenishmentRule: true,
+        quantity: true,
+        unit: true,
+        unitDetails: true,
         shoppingItemId: true
       }
     });
@@ -30,7 +33,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, replenishmentRule, inStock } = await request.json();
+    const { name, replenishmentRule, inStock, quantity, unit, unitDetails } = await request.json();
     if (!name) return NextResponse.json({ message: 'Name is required' }, { status: 400 });
 
     const token = request.cookies.get('auth_token')?.value;
@@ -53,12 +56,18 @@ export async function POST(request: NextRequest) {
         },
         update: {
           replenishmentRule: rule,
-          inStock: initialStock
+          inStock: initialStock,
+          quantity: quantity || null,
+          unit: unit || null,
+          unitDetails: unitDetails || null
         },
         create: {
           name,
           kitchenId,
           inStock: initialStock,
+          quantity: quantity || null,
+          unit: unit || null,
+          unitDetails: unitDetails || null,
           replenishmentRule: rule
         }
       });

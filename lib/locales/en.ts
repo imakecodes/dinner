@@ -91,6 +91,7 @@ export const en = {
         removeTitle: "Remove Ingredient?",
         removeMsg: "Are you sure you want to remove {item} from your pantry?",
         addItem: "Add Item",
+        details: "Details / Size",
         inStock: "In Stock",
         outOfStock: "Out of Stock"
     },
@@ -340,6 +341,7 @@ export const en = {
     },
     units: {
         unit: "Unit",
+        un: "Unit",
         tbsp: "Tablespoon",
         tsp: "Teaspoon",
         cup: "Cup",
@@ -352,6 +354,8 @@ export const en = {
         l: "Liter (l)",
         oz: "Ounce (oz)",
         lb: "Pound (lb)",
-        fl_oz: "Fluid Ounce (fl oz)"
+        fl_oz: "Fluid Ounce (fl oz)",
+        gal: "Gallon (gal)",
+        pt: "Pint (pt)"
     }
 };

@@ -118,6 +118,9 @@ model PantryItem {
   id                String            @id @default(cuid())
   name              String
   inStock           Boolean           @default(true)
+  quantity          String?
+  unit              String?
+  unitDetails       String?
   replenishmentRule ReplenishmentRule @default(NEVER)
 
   kitchenId String
