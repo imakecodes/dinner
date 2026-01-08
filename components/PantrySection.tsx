@@ -2,6 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { PantryItem } from '../types';
 import { storageService } from '../services/storageService';
 import { ConfirmDialog } from './ConfirmDialog';
+import CustomUnitSelect from './CustomUnitSelect';
+import PantryEditDialog from './PantryEditDialog';
+import PantryItemCard from './PantryItemCard';
 
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,12 +15,16 @@ interface Props {
 }
 
 const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
-  const { isGuest } = useCurrentMember();
+  const { isGuest, member } = useCurrentMember();
   const { t } = useTranslation();
   const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('1');
+  const [newItemUnit, setNewItemUnit] = useState('un');
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
+
+  // Edit Dialog State
+  const [editingItem, setEditingItem] = useState<PantryItem | null>(null);
 
   // Confim Dialog State
   const [itemToDelete, setItemToDelete] = useState<PantryItem | null>(null);
@@ -35,11 +42,20 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
     try {
       // Optimistic Update
       const tempId = Date.now().toString();
-      const tempItem: PantryItem = { id: tempId, name: newItemName, inStock: true, replenishmentRule: 'ONE_SHOT' };
+      const tempItem: PantryItem = {
+        id: tempId,
+        name: newItemName,
+        inStock: true,
+        replenishmentRule: 'ONE_SHOT',
+        quantity: newItemQuantity,
+        unit: newItemUnit
+      };
       setPantry(prev => [...prev, tempItem]);
       setNewItemName('');
+      setNewItemQuantity('1');
+      setNewItemUnit('un');
 
-      const created = await storageService.addPantryItem(newItemName);
+      const created = await storageService.addPantryItem(newItemName, undefined, undefined, newItemQuantity, newItemUnit);
       if (created) {
         // Replace temp with real
         setPantry(prev => prev.map(i => i.id === tempId ? created : i));
@@ -63,30 +79,29 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
     }
   };
 
-  const startEditing = (item: PantryItem) => {
-    setEditingId(item.id);
-    setEditName(item.name);
+  const openEdit = (item: PantryItem) => {
+    setEditingItem(item);
   };
 
-  const saveEdit = async (item: PantryItem) => {
-    if (!editName.trim() || editName === item.name) {
-      setEditingId(null);
-      return;
-    }
-    // Optimistic
-    setPantry(prev => prev.map(i => i.id === item.id ? { ...i, name: editName } : i));
-    setEditingId(null);
+  const handleSaveEdit = async (updates: Partial<PantryItem>) => {
+    if (!editingItem) return;
+
+    // Optimistic Update
+    setPantry(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...updates } : i));
 
     try {
-      await storageService.editPantryItem(item.name, { name: editName });
+      await storageService.editPantryItem(editingItem.name, updates);
     } catch (error) {
-      console.error("Failed to edit name", error);
-      setPantry(prev => prev.map(i => i.id === item.id ? { ...i, name: item.name } : i));
+      console.error("Failed to edit item", error);
+      // Revert? For now keeping it simple as optimistic usually works unless offline
     }
   };
 
-  const deleteItem = (item: PantryItem) => {
-    setItemToDelete(item);
+  const handleDeleteFromDialog = () => {
+    if (editingItem) {
+      setItemToDelete(editingItem);
+      setEditingItem(null);
+    }
   };
 
   const confirmDelete = async () => {
@@ -118,14 +133,29 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
 
         {/* Add New Bar */}
         {!isGuest && (
-          <div className="flex gap-2">
-            <input
-              placeholder={t('pantry.placeholder')}
-              className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-amber-500"
-              value={newItemName}
-              onKeyPress={e => e.key === 'Enter' && handleAdd()}
-              onChange={e => setNewItemName(e.target.value)}
-            />
+          <div className="flex gap-2 flex-col md:flex-row">
+            <div className="flex-1 flex gap-2">
+              <input
+                placeholder={t('pantry.placeholder')}
+                className="flex-[2] px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                value={newItemName}
+                onKeyPress={e => e.key === 'Enter' && handleAdd()}
+                onChange={e => setNewItemName(e.target.value)}
+              />
+              <input
+                placeholder="Qty"
+                className="w-20 px-3 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                value={newItemQuantity}
+                onKeyPress={e => e.key === 'Enter' && handleAdd()}
+                onChange={e => setNewItemQuantity(e.target.value)}
+              />
+              <CustomUnitSelect
+                value={newItemUnit}
+                onChange={setNewItemUnit}
+                measurementSystem={member?.kitchen?.id ? 'METRIC' : 'METRIC'} // TODO: Fetch from user profile properly if available
+                className="w-32"
+              />
+            </div>
             <button
               onClick={handleAdd}
               disabled={!newItemName.trim()}
@@ -134,6 +164,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
                 : 'bg-amber-500 text-white shadow-amber-100 hover:bg-amber-600'
                 }`}
             >
+              <i className="fas fa-plus mr-2 md:hidden"></i>
               {t('pantry.include')}
             </button>
           </div>
@@ -163,54 +194,18 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredPantry.map(item => (
-                  <div key={item.id} className="group bg-slate-50 hover:bg-white p-4 rounded-2xl border border-slate-100 hover:border-amber-200 hover:shadow-md transition-all flex flex-col gap-3 relative">
-                    
-                    {/* Actions Top Right (Hidden unless hover/mobile) */}
-                    {!isGuest && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                        <button onClick={() => startEditing(item)} className="p-2 w-8 h-8 flex items-center justify-center rounded-lg bg-white text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100" title="Edit">
-                          <i className="fas fa-pen text-xs"></i>
-                        </button>
-                        <button onClick={() => deleteItem(item)} className="p-2 w-8 h-8 flex items-center justify-center rounded-lg bg-white text-slate-400 hover:text-red-600 shadow-sm border border-slate-100" title="Delete">
-                          <i className="fas fa-trash text-xs"></i>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    <div className="flex-1">
-                        {editingId === item.id ? (
-                        <input
-                          autoFocus
-                          className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-bold"
-                          value={editName}
-                          onChange={e => setEditName(e.target.value)}
-                          onBlur={() => saveEdit(item)}
-                          onKeyDown={e => e.key === 'Enter' && saveEdit(item)}
-                        />
-                      ) : (
-                        <h3 
-                          className={`font-bold text-slate-700 text-lg leading-tight break-words pr-8 ${!item.inStock && 'opacity-50 line-through'} ${!isGuest ? 'cursor-pointer hover:text-amber-600' : ''}`}
-                          onClick={() => !isGuest && startEditing(item)}
-                        >
-                          {item.name}
-                        </h3>
-                      )}
-                    </div>
-
-                    {/* Stock Toggle */}
-                    <div className="flex items-center justify-between mt-auto">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.inStock ? t('pantry.inStock') : t('pantry.outOfStock')}</span>
-                        <button
-                            onClick={() => !isGuest && handleToggleStock(item)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${item.inStock ? 'bg-emerald-500' : 'bg-slate-200'} ${isGuest ? 'cursor-default opacity-50' : ''}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.inStock ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-                  </div>
-                ))}
+              {filteredPantry.map(item => (
+                <PantryItemCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => openEdit(item)}
+                  onToggleStock={(e) => {
+                    e.stopPropagation();
+                    handleToggleStock(item);
+                  }}
+                  isGuest={isGuest}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -222,6 +217,14 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
         message={t('pantry.removeMsg').replace('{item}', itemToDelete?.name || '')}
         onClose={() => setItemToDelete(null)}
         onConfirm={confirmDelete}
+      />
+
+      <PantryEditDialog
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        item={editingItem}
+        onSave={handleSaveEdit}
+        onDelete={handleDeleteFromDialog}
       />
     </section>
   );

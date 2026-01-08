@@ -91,6 +91,7 @@ export const ptBR = {
         removeTitle: "Remover Ingrediente?",
         removeMsg: "Tem certeza de que deseja remover {item} da sua despensa?",
         addItem: "Adicionar Item",
+        details: "Detalhes / Tamanho",
         inStock: "Em Estoque",
         outOfStock: "Sem Estoque"
     },
@@ -343,6 +344,7 @@ export const ptBR = {
     },
     units: {
         unit: "Unidade",
+        un: "Unidade",
         tbsp: "Colher de Sopa",
         tsp: "Colher de Chá",
         cup: "Xícara",
@@ -355,6 +357,8 @@ export const ptBR = {
         l: "Litro (l)",
         oz: "Onça (oz)",
         lb: "Libra (lb)",
-        fl_oz: "Onça Líquida (fl oz)"
+        fl_oz: "Onça Líquida (fl oz)",
+        gal: "Galão (gal)",
+        pt: "Pinta (pt)"
     }
 };
