@@ -140,7 +140,9 @@ export const en = {
         view: "View Recipe",
         delete: "Delete",
         deleteTitle: "Delete Recipe?",
-        deleteDesc: "This action cannot be undone. Are you sure you want to delete this recipe?"
+
+        deleteDesc: "This action cannot be undone. Are you sure you want to delete this recipe?",
+        createCustom: "Create Custom Recipe"
     },
     actions: {
         generateTitle: "Generate Recipe",
@@ -335,5 +337,21 @@ export const en = {
         alreadyMember: "Already a member",
         joinSuccess: "Joined kitchen successfully",
         joinError: "Error joining kitchen"
+    },
+    units: {
+        unit: "Unit",
+        tbsp: "Tablespoon",
+        tsp: "Teaspoon",
+        cup: "Cup",
+        can: "Can",
+        package: "Package",
+        pinch: "Pinch",
+        g: "Gram (g)",
+        kg: "Kilogram (kg)",
+        ml: "Milliliter (ml)",
+        l: "Liter (l)",
+        oz: "Ounce (oz)",
+        lb: "Pound (lb)",
+        fl_oz: "Fluid Ounce (fl oz)"
     }
 };

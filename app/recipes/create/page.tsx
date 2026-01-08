@@ -40,7 +40,7 @@ export default function CreateRecipePage() {
     return (
         <div className="min-h-screen bg-slate-50 selection:bg-rose-100 pb-20">
             <header className="bg-white border-b border-slate-200 mb-8">
-                <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
                     <Link href="/" className="text-slate-400 hover:text-slate-600 transition-colors">
                         <i className="fas fa-arrow-left text-xl"></i>
                     </Link>
@@ -50,7 +50,7 @@ export default function CreateRecipePage() {
                 </div>
             </header>
 
-            <main className="max-w-3xl mx-auto px-4">
+            <main className="max-w-7xl mx-auto px-4">
                 <RecipeForm
                     title={t('recipeForm.titleCreate')}
                     onSubmit={handleSubmit}

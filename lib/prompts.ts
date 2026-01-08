@@ -9,7 +9,7 @@ OBJECTIVES:
 6. Ensure 100% SAFETY against food restrictions.
 ${obs}
 OUTPUT:
-Localize the output to ENGLISH and respond ONLY with JSON.
+Respond ONLY with JSON.
 The "ingredients_from_pantry" must be an array of objects: { "name": string, "quantity": string, "unit": string }.
 The "shopping_list" must be an array of objects: { "name": string, "quantity": string, "unit": string }.
 Example: [{ "name": "Baking Powder", "quantity": "1", "unit": "tsp" }]`;

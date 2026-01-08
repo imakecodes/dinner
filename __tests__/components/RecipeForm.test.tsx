@@ -12,6 +12,13 @@ const mockRecipe: any = {
     step_by_step: ['Step 1'],
 };
 
+// Mock the useApp hook
+jest.mock('../../components/Providers', () => ({
+    useApp: () => ({
+        measurementSystem: 'METRIC',
+    }),
+}));
+
 describe('RecipeForm', () => {
     const mockSubmit = jest.fn();
 
@@ -51,13 +58,13 @@ describe('RecipeForm', () => {
         const nameInput = screen.getByPlaceholderText('Ingredient Name');
         fireEvent.change(nameInput, { target: { value: 'New Ingredient' } });
         fireEvent.change(screen.getAllByPlaceholderText('Qty')[0], { target: { value: '2' } });
-        fireEvent.change(screen.getAllByPlaceholderText('Unit')[0], { target: { value: 'kg' } });
+        fireEvent.change(screen.getAllByLabelText('Unit')[0], { target: { value: 'kg' } });
 
         // Find the specific add button for ingredients (the first one)
-        const addButtons = screen.getAllByText('Add');
+        const addButtons = screen.getAllByTitle('Add');
         fireEvent.click(addButtons[0]);
 
-        expect(screen.getByText(/2 kg New Ingredient/)).toBeInTheDocument();
+        expect(screen.getByText(/2 units.kg New Ingredient/)).toBeInTheDocument();
     });
 
     it('adds a step', () => {
@@ -76,16 +83,16 @@ describe('RecipeForm', () => {
         const nameInput = screen.getByPlaceholderText('Ingredient Name');
         fireEvent.change(nameInput, { target: { value: 'To Remove' } });
         fireEvent.change(screen.getAllByPlaceholderText('Qty')[0], { target: { value: '1' } });
-        fireEvent.change(screen.getAllByPlaceholderText('Unit')[0], { target: { value: 'cup' } });
-        fireEvent.click(screen.getAllByText('Add')[0]);
+        fireEvent.change(screen.getAllByLabelText('Unit')[0], { target: { value: 'cup' } });
+        fireEvent.click(screen.getAllByTitle('Add')[0]);
 
-        expect(screen.getByText(/1 cup To Remove/)).toBeInTheDocument();
+        expect(screen.getByText(/1 units.cup To Remove/)).toBeInTheDocument();
 
         // Find remove button (red X)
         const removeBtn = screen.getByText(/To Remove/).closest('li')?.querySelector('button');
         if (removeBtn) {
             fireEvent.click(removeBtn);
-            expect(screen.queryByText(/1 cup To Remove/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/1 units.cup To Remove/)).not.toBeInTheDocument();
         } else {
             throw new Error('Remove button not found');
         }
@@ -115,30 +122,24 @@ describe('RecipeForm', () => {
         // Since there are multiple Qty/Unit inputs (one set for ingredients, one for shopping), use index or container
         // Shopping list is the second section.
         const qtyInputs = screen.getAllByPlaceholderText('Qty');
-        const unitInputs = screen.getAllByPlaceholderText('Unit');
+        const unitInputs = screen.getAllByLabelText('Unit');
         const nameInputs = screen.getAllByPlaceholderText('Item Name');
 
         // Index 1 is for shopping list (Index 0 is ingredients)
         fireEvent.change(qtyInputs[1], { target: { value: '1' } });
-        fireEvent.change(unitInputs[1], { target: { value: 'box' } });
-
-        // Item Name is unique to Shopping List (Ingredients use "Ingredient Name")
-        // So nameInputs will have only 1 element (or more if list has items?)
-        // The list rendering doesn't use input for display, it uses <span>.
-        // So only the "Add new" row has input.
-        // So nameInputs has length 1.
+        fireEvent.change(unitInputs[1], { target: { value: 'package' } });
         fireEvent.change(nameInputs[0], { target: { value: 'Pasta' } }); // Use index 0
 
-        const addBtns = screen.getAllByText('Add');
+        const addBtns = screen.getAllByTitle('Add');
         fireEvent.click(addBtns[1]); // Second Add button
 
-        expect(screen.getByText(/1 box Pasta/)).toBeInTheDocument();
+        expect(screen.getByText(/1 units.package Pasta/)).toBeInTheDocument();
 
         // Remove it
-        const removeBtn = screen.getByText(/1 box Pasta/).closest('li')?.querySelector('button');
+        const removeBtn = screen.getByText(/1 units.package Pasta/).closest('li')?.querySelector('button');
         if (removeBtn) {
             fireEvent.click(removeBtn);
-            expect(screen.queryByText(/1 box Pasta/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/1 units.package Pasta/)).not.toBeInTheDocument();
         }
     });
 
