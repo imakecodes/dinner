@@ -65,6 +65,17 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
         }));
     };
 
+    const editIngredient = (idx: number) => {
+        const item = formData.ingredients_from_pantry[idx];
+        // If it's a string (legacy), just put name. If object, fill all fields.
+        if (typeof item === 'string') {
+            setNewIngredient({ name: item, quantity: '', unit: 'unit' });
+        } else {
+            setNewIngredient({ name: item.name, quantity: item.quantity || '', unit: item.unit || 'unit' });
+        }
+        removeIngredient(idx);
+    };
+
     // Shopping List Handlers
     const addShoppingItem = () => {
         if (!newShoppingItem.name.trim()) return;
@@ -80,6 +91,16 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
             ...prev,
             shopping_list: prev.shopping_list.filter((_, i) => i !== idx)
         }));
+    };
+
+    const editShoppingItem = (idx: number) => {
+        const item = formData.shopping_list[idx];
+        if (typeof item === 'string') {
+            setNewShoppingItem({ name: item, quantity: '', unit: 'unit' });
+        } else {
+            setNewShoppingItem({ name: item.name, quantity: item.quantity || '', unit: item.unit || 'unit' });
+        }
+        removeShoppingItem(idx);
     };
 
     // Step Handlers
@@ -213,11 +234,19 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                         </div>
                         <ul className="space-y-2">
                             {formData.ingredients_from_pantry.map((ing: any, i) => (
-                                <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                                <li key={i}
+                                    onClick={() => editIngredient(i)}
+                                    className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm cursor-pointer hover:bg-slate-50 transition-colors group"
+                                    title="Click to edit"
+                                >
                                     <span className="font-medium text-slate-700">
                                         {typeof ing === 'string' ? ing : `${ing.quantity} ${getUnitLabel(ing.unit)} ${ing.name}`}
                                     </span>
-                                    <button type="button" onClick={() => removeIngredient(i)} className="text-red-400 hover:text-red-600">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); removeIngredient(i); }}
+                                        className="text-red-400 hover:text-red-600 p-2"
+                                    >
                                         <i className="fas fa-times"></i>
                                     </button>
                                 </li>
@@ -260,11 +289,19 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                         </div>
                         <ul className="space-y-2">
                             {formData.shopping_list.map((item: any, i) => (
-                                <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                                <li key={i}
+                                    onClick={() => editShoppingItem(i)}
+                                    className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm cursor-pointer hover:bg-slate-50 transition-colors group"
+                                    title="Click to edit"
+                                >
                                     <span className="font-medium text-slate-700">
                                         {typeof item === 'string' ? item : `${item.quantity} ${getUnitLabel(item.unit)} ${item.name}`}
                                     </span>
-                                    <button type="button" onClick={() => removeShoppingItem(i)} className="text-red-400 hover:text-red-600">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); removeShoppingItem(i); }}
+                                        className="text-red-400 hover:text-red-600 p-2"
+                                    >
                                         <i className="fas fa-times"></i>
                                     </button>
                                 </li>
