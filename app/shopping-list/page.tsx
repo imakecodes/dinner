@@ -167,7 +167,7 @@ export default function ShoppingListPage() {
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
+            <main className="max-w-7xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
                 {loading ? (
                     <div className="text-center py-20 text-slate-400 font-bold animate-pulse">{t('shopping.loading')}</div>
                 ) : (
@@ -257,9 +257,9 @@ export default function ShoppingListPage() {
                             </div>
                         )}
 
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredItems.length === 0 && (
-                                <div className="text-center py-20 opacity-50">
+                                <div className="col-span-full text-center py-20 opacity-50">
                                     <i className="fas fa-leaf text-4xl mb-4 text-slate-300"></i>
                                     <p className="font-bold text-slate-400">{items.length === 0 ? t('shopping.empty') : (t('shopping.noResults') || 'No items found')}</p>
                                 </div>

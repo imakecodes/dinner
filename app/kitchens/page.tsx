@@ -168,17 +168,41 @@ export default function KitchensPage() {
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
+            <main className="max-w-7xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
                 {loading ? (
                     <div className="text-center py-20 text-slate-400 font-bold animate-pulse">{t('kitchens.loading')}</div>
                 ) : (
                     <>
+                        {/* Create New Kitchen */}
+                        <section className="max-w-3xl mx-auto bg-white p-4 rounded-3xl shadow-xl border border-slate-100 mb-8 w-full">
+                            <h2 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                                <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-sm"><i className="fas fa-plus"></i></span>
+                                {t('kitchens.createTitle')}
+                            </h2>
+                            <form onSubmit={handleCreateKitchen} className="flex gap-3">
+                                <input
+                                    type="text"
+                                    placeholder={t('kitchens.createPlaceholder')}
+                                    className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                                    value={newKitchenName}
+                                    onChange={(e) => setNewKitchenName(e.target.value)}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newKitchenName.trim()}
+                                    className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all"
+                                >
+                                    {t('kitchens.create')}
+                                </button>
+                            </form>
+                        </section>
+
                         {/* Current Membership List */}
                         <section className="space-y-4">
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">{t('kitchens.yourKitchens')}</h2>
-                            <div className="grid gap-4">
+                            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
                                 {user?.kitchenMemberships?.filter((m: any) => !m.kitchen.deletedAt).map((m: any) => (
-                                    <div key={m.id} className={`bg-white p-4 rounded-3xl shadow-sm border-2 flex flex-col gap-4 transition-all ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                                    <div key={m.id} className={`bg-white p-6 rounded-3xl shadow-sm border-2 flex flex-col gap-6 transition-all ${m.kitchenId === user.currentKitchenId ? 'border-rose-500 ring-4 ring-rose-50' : 'border-slate-100 hover:border-slate-200'}`}>
 
                                         {/* Row 1: Header (Icon + Info + Actions) */}
                                         <div className="flex items-start justify-between gap-4">
@@ -254,22 +278,22 @@ export default function KitchensPage() {
                                         {/* Row 2: Invite Code (Full Width or block) */}
                                         {/* Hide for guests */}
                                         {!m.isGuest && (
-                                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                                            <div className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">{t('kitchens.inviteCode')}</span>
                                                     <span className="font-mono font-bold text-slate-800 tracking-wider text-base select-all">{m.kitchen.inviteCode || 'N/A'}</span>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-1">
                                                     <button
                                                         onClick={() => {
                                                             navigator.clipboard.writeText(m.kitchen.inviteCode);
                                                             setCopiedId(m.id);
                                                             setTimeout(() => setCopiedId(null), 2000);
                                                         }}
-                                                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm active:scale-95"
+                                                        className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm active:scale-95"
+                                                        title={t('members.clickToCopy')}
                                                     >
                                                         <i className={`fas ${copiedId === m.id ? 'fa-check text-green-500' : 'fa-copy'}`}></i>
-                                                        <span className="text-xs font-bold">{copiedId === m.id ? t('common.saved') : t('members.clickToCopy')}</span>
                                                     </button>
 
                                                     {/* Social Share Buttons */}
@@ -316,29 +340,7 @@ export default function KitchensPage() {
                             </div>
                         </section>
 
-                        {/* Create New Kitchen */}
-                        <section className="bg-white p-4 rounded-3xl shadow-xl border border-slate-100 mt-4">
-                            <h2 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                                <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-sm"><i className="fas fa-plus"></i></span>
-                                {t('kitchens.createTitle')}
-                            </h2>
-                            <form onSubmit={handleCreateKitchen} className="flex gap-3">
-                                <input
-                                    type="text"
-                                    placeholder={t('kitchens.createPlaceholder')}
-                                    className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-slate-300 placeholder:font-medium"
-                                    value={newKitchenName}
-                                    onChange={(e) => setNewKitchenName(e.target.value)}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!newKitchenName.trim()}
-                                    className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all"
-                                >
-                                    {t('kitchens.create')}
-                                </button>
-                            </form>
-                        </section>
+
                     </>
                 )}
             </main>

@@ -201,7 +201,7 @@ export default function MembersPage() {
 
 
 
-            <main className="max-w-2xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
+            <main className="max-w-7xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
                 {kitchen?.inviteCode && currentUserMember && !currentUserMember.isGuest && (
                     <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 text-center space-y-2 mb-6">
                         <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">{t('kitchens.inviteCode')}</h3>
@@ -380,7 +380,7 @@ export default function MembersPage() {
                         )}
 
                         {/* Member List */}
-                        <section className="space-y-4">
+                        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">{t('members.whoIs')}</h2>
                             <div className="grid gap-4">
                                 {members.length === 0 && <div className="text-slate-500 font-medium text-center py-4 bg-white rounded-3xl border border-slate-100 italic">{t('members.noMembers')}</div>}

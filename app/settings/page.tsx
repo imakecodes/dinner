@@ -25,7 +25,7 @@ export default function SettingsPage() {
     const [language, setLanguage] = useState<Language>('en');
     const [password, setPassword] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
-    const [isPasswordValid, setIsPasswordValid] = useState(true); 
+    const [isPasswordValid, setIsPasswordValid] = useState(true);
     const [formResetKey, setFormResetKey] = useState(0); // Default true because empty is valid for settings
 
     const loadUser = useCallback(async () => {
@@ -69,13 +69,13 @@ export default function SettingsPage() {
         //    However, our state `password` is updated.
         //    If `password` is NOT empty, we check `isPasswordValid`.
         //    If `password` IS empty, we proceed (no password update).
-        
+
         if (password && !isPasswordValid) {
-             // If password has content but is invalid (mismatch/short), blocking.
-             // Rely on component to show error, but we also block here.
-             setMessage({ type: 'error', text: t('settings.updateError') || 'Please fix the errors.' });
-             setSaving(false);
-             return;
+            // If password has content but is invalid (mismatch/short), blocking.
+            // Rely on component to show error, but we also block here.
+            setMessage({ type: 'error', text: t('settings.updateError') || 'Please fix the errors.' });
+            setSaving(false);
+            return;
         }
 
         try {
@@ -95,7 +95,7 @@ export default function SettingsPage() {
             setPassword('');
             setCurrentPassword('');
             setFormResetKey(prev => prev + 1);
-            
+
             // Reload to ensure sync
             loadUser();
         } catch (err: any) {
@@ -114,7 +114,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto px-4 mt-8 pb-20 space-y-8 animate-in fade-in duration-500">
+        <div className="max-w-7xl mx-auto px-4 mt-8 pb-20 space-y-8 animate-in fade-in duration-500">
             <header>
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{t('settings.title')}</h1>
                 <p className="text-slate-500 font-medium">{t('settings.subtitle')}</p>
@@ -129,147 +129,152 @@ export default function SettingsPage() {
                 </div>
             )}
 
-            <form onSubmit={handleSave} className="space-y-8">
+            <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-                {/* Personal Information */}
-                <section className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
-                    <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                        <i className="fas fa-user-circle text-rose-500"></i>
-                        {t('settings.profile')}
-                    </h2>
+                {/* Main Column: Profile & Security */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Personal Information */}
+                    <section className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
+                        <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                            <i className="fas fa-user-circle text-rose-500"></i>
+                            {t('settings.profile')}
+                        </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.firstName')}</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.lastName')}</label>
+                                <input
+                                    type="text"
+                                    value={surname}
+                                    onChange={e => setSurname(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700"
+                                />
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.firstName')}</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.email')}</label>
                             <input
-                                type="text"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700"
+                                type="email"
+                                value={email}
+                                disabled
+                                className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 font-bold cursor-not-allowed"
                             />
+                            <p className="text-[10px] text-slate-400 font-bold">{t('settings.emailNote')}</p>
                         </div>
+                    </section>
+
+                    {/* Security */}
+                    <section className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
+                        <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                            <i className="fas fa-lock text-emerald-500"></i>
+                            {t('settings.security')}
+                        </h2>
+
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.lastName')}</label>
-                            <input
-                                type="text"
-                                value={surname}
-                                onChange={e => setSurname(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-700"
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.currentPassword')}</label>
+                            <PasswordInput
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="bg-slate-50"
                             />
+                            <p className="text-[10px] text-slate-400 font-bold">{t('settings.currentPasswordNote')}</p>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.email')}</label>
-                        <input
-                            type="email"
-                            value={email}
-                            disabled
-                            className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 font-bold cursor-not-allowed"
+                        <PasswordFields
+                            key={formResetKey}
+                            showLabels={true}
+                            onChange={(isValid, val) => {
+                                setPassword(val);
+                                setIsPasswordValid(isValid);
+                            }}
                         />
-                        <p className="text-[10px] text-slate-400 font-bold">{t('settings.emailNote')}</p>
-                    </div>
-                </section>
+                    </section>
+                </div>
 
-                {/* Preferences */}
-                <section className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
-                    <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                        <i className="fas fa-sliders-h text-indigo-500"></i>
-                        {t('settings.preferences')}
-                    </h2>
+                {/* Sidebar Column: Preferences */}
+                <div className="space-y-8">
+                    <section className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
+                        <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                            <i className="fas fa-sliders-h text-indigo-500"></i>
+                            {t('settings.preferences')}
+                        </h2>
 
-                    <div className="space-y-4">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.language')}</label>
-                        <div className="flex gap-4">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setLanguage('en');
-                                    setGlobalLanguage('en');
-                                }}
-                                className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${language === 'en'
-                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
-                                    }`}
-                            >
-                                <span className="text-2xl">🇺🇸</span>
-                                English
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setLanguage('pt-BR');
-                                    setGlobalLanguage('pt-BR');
-                                }}
-                                className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${language === 'pt-BR'
-                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
-                                    }`}
-                            >
-                                <span className="text-2xl">🇧🇷</span>
-                                Português
-                            </button>
+                        <div className="space-y-4">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.language')}</label>
+                            <div className="flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLanguage('en');
+                                        setGlobalLanguage('en');
+                                    }}
+                                    className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${language === 'en'
+                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
+                                        }`}
+                                >
+                                    <span className="text-2xl">🇺🇸</span>
+                                    English
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLanguage('pt-BR');
+                                        setGlobalLanguage('pt-BR');
+                                    }}
+                                    className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${language === 'pt-BR'
+                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
+                                        }`}
+                                >
+                                    <span className="text-2xl">🇧🇷</span>
+                                    Português
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-4">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.measurement')}</label>
-                        <div className="flex gap-4">
-                            <button
-                                type="button"
-                                onClick={() => setMeasurementSystem('METRIC')}
-                                className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${measurementSystem === 'METRIC'
-                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
-                                    }`}
-                            >
-                                <span className="text-2xl">⚖️</span>
-                                Metric (g, ml)
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMeasurementSystem('IMPERIAL')}
-                                className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${measurementSystem === 'IMPERIAL'
-                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
-                                    }`}
-                            >
-                                <span className="text-2xl">lbs</span>
-                                Imperial (oz, lbs)
-                            </button>
+                        <div className="space-y-4">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.measurement')}</label>
+                            <div className="flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setMeasurementSystem('METRIC')}
+                                    className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${measurementSystem === 'METRIC'
+                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
+                                        }`}
+                                >
+                                    <span className="text-2xl">⚖️</span>
+                                    Metric (g, ml)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMeasurementSystem('IMPERIAL')}
+                                    className={`flex-1 p-4 rounded-xl border-2 transition-all font-black flex flex-col items-center gap-2 ${measurementSystem === 'IMPERIAL'
+                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300'
+                                        }`}
+                                >
+                                    <span className="text-2xl">lbs</span>
+                                    Imperial (oz, lbs)
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                </div>
 
-                {/* Security */}
-                <section className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
-                    <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                        <i className="fas fa-lock text-emerald-500"></i>
-                        {t('settings.security')}
-                    </h2>
-
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('settings.currentPassword')}</label>
-                        <PasswordInput 
-                             value={currentPassword}
-                             onChange={(e) => setCurrentPassword(e.target.value)}
-                             placeholder="••••••••"
-                             className="bg-slate-50"
-                        />
-                        <p className="text-[10px] text-slate-400 font-bold">{t('settings.currentPasswordNote')}</p>
-                    </div>
-
-                    <PasswordFields 
-                        key={formResetKey}
-                        showLabels={true}
-                        onChange={(isValid, val) => {
-                            setPassword(val);
-                            setIsPasswordValid(isValid);
-                        }} 
-                    />
-                </section>
-
-                <div className="flex justify-end pt-4">
+                <div className="col-span-full flex justify-end pt-4">
                     <button
                         type="submit"
                         disabled={saving || (password.length > 0 && (!isPasswordValid || currentPassword.length === 0))}
