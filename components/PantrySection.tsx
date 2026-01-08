@@ -22,6 +22,7 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
   const [newItemUnit, setNewItemUnit] = useState('un');
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterRule, setFilterRule] = useState('ALL');
 
   // Edit Dialog State
   const [editingItem, setEditingItem] = useState<PantryItem | null>(null);
@@ -31,10 +32,12 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
 
   // FILTERED LIST
   const filteredPantry = useMemo(() => {
-    return pantry.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ).sort((a, b) => a.name.localeCompare(b.name));
-  }, [pantry, searchQuery]);
+    return pantry.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter = filterRule === 'ALL' || item.replenishmentRule === filterRule;
+      return matchesSearch && matchesFilter;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [pantry, searchQuery, filterRule]);
 
   // ACTIONS
   const handleAdd = async () => {
@@ -173,8 +176,8 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
 
       {/* Search & List */}
       <div className="p-0">
-        <div className="p-4 border-b border-slate-100">
-          <div className="relative">
+        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
             <i className="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
             <input
               type="text"
@@ -184,6 +187,16 @@ const PantrySection: React.FC<Props> = ({ pantry, setPantry }) => {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
+          <select
+            className="px-4 py-3 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-slate-200 text-slate-600 font-bold"
+            value={filterRule}
+            onChange={e => setFilterRule(e.target.value)}
+          >
+            <option value="ALL">{t('shopping.filterAll')}</option>
+            <option value="ALWAYS">{t('recipeCard.alwaysReplenish')}</option>
+            <option value="ONE_SHOT">{t('recipeCard.oneShot')}</option>
+            <option value="NEVER">{t('recipeCard.justTrack')}</option>
+          </select>
         </div>
 
         <div className="p-6 max-h-[calc(100vh-250px)] overflow-y-auto">

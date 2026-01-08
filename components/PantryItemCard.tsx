@@ -43,9 +43,18 @@ const PantryItemCard: React.FC<Props> = ({ item, onClick, onToggleStock, isGuest
             {/* Actually, keeping the toggle on the card is nice for quick interactions without opening the modal */}
             <div className="mt-2 pt-3 border-t border-slate-50 flex justify-between items-center">
 
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${item.inStock ? 'text-emerald-500' : 'text-slate-400'}`}>
-                    {item.inStock ? t('pantry.inStock') : t('pantry.outOfStock')}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${item.inStock ? 'text-emerald-500' : 'text-slate-400'}`}>
+                        {item.inStock ? t('pantry.inStock') : t('pantry.outOfStock')}
+                    </span>
+                    {/* Replenishment Badge */}
+                    {item.replenishmentRule === 'ALWAYS' && (
+                        <i className="fas fa-sync-alt text-blue-400 text-xs" title={t('recipeCard.alwaysReplenish')}></i>
+                    )}
+                    {item.replenishmentRule === 'ONE_SHOT' && (
+                        <i className="fas fa-bullseye text-amber-400 text-xs" title={t('recipeCard.oneShot')}></i>
+                    )}
+                </div>
 
                 {!isGuest && (
                     <button

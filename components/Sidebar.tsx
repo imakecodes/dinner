@@ -1,19 +1,39 @@
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
-
-import { storageService } from '../services/storageService';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (view: any) => void;
+  onNavigate?: (path: string) => void;
 }
 
 const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
-  const router = useRouter();
   const { t } = useTranslation();
+
+  const handleLinkClick = () => {
+    // Only close if we are on mobile (where isOpen drives visibility)
+    // Actually, onClose logic is handled by parent usually for overlay.
+    // But here we want to ensure sidebar closes on mobile selection.
+    if (window.innerWidth < 1024) { // lg breakpoint
+      onClose();
+    }
+  };
+
+  const NavItem = ({ href, icon, label }: { href: string; icon: string; label: string }) => (
+    <Link
+      href={href}
+      onClick={onClose} // Always close on navigation (mobile drawer behavior). Desktop ignores it via CSS persistent state but logic might flicker state? 
+      // Actually, on Desktop, 'isOpen' state only affects the mobile drawer class toggle 'translate-x-0'. 
+      // But we added 'lg:translate-x-0' so it's always open on desktop regardless of 'isOpen'.
+      // So calling onClose() changes isOpen to false, but CSS keeps it open on desktop. This is SAFE.
+      className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
+    >
+      <i className={`${icon} w-6 group-hover:scale-110 transition-transform`}></i>
+      {label}
+    </Link>
+  );
 
   return (
     <>
@@ -39,56 +59,13 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
           </div>
 
           <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
-            <button
-              onClick={() => onNavigate('/')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-home w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.home')}
-            </button>
-
-            <button
-              onClick={() => onNavigate('/pantry')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-box-open w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.pantry')}
-            </button>
-            <button
-              onClick={() => onNavigate('/recipes')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-book-open w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.recipes')}
-            </button>
-            <button
-              onClick={() => onNavigate('/shopping-list')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-shopping-basket w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.shopping')}
-            </button>
-            <button
-              onClick={() => onNavigate('/members')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-users w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.members')}
-            </button>
-            <button
-              onClick={() => onNavigate('/kitchens')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-home w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.kitchens')}
-            </button>
-            <button
-              onClick={() => onNavigate('/settings')}
-              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 hover:text-rose-600 transition-all group"
-            >
-              <i className="fas fa-cog w-6 group-hover:scale-110 transition-transform"></i>
-              {t('nav.settings')}
-            </button>
+            <NavItem href="/" icon="fas fa-home" label={t('nav.home')} />
+            <NavItem href="/pantry" icon="fas fa-box-open" label={t('nav.pantry')} />
+            <NavItem href="/recipes" icon="fas fa-book-open" label={t('nav.recipes')} />
+            <NavItem href="/shopping-list" icon="fas fa-shopping-basket" label={t('nav.shopping')} />
+            <NavItem href="/members" icon="fas fa-users" label={t('nav.members')} />
+            <NavItem href="/kitchens" icon="fas fa-home" label={t('nav.kitchens')} />
+            <NavItem href="/settings" icon="fas fa-cog" label={t('nav.settings')} />
           </nav>
         </div>
       </aside>
