@@ -112,6 +112,16 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
         onSubmit(finalData);
     };
 
+    const getUnitLabel = (unit: string) => {
+        // Strip off "units." prefix if it somehow got saved in the DB
+        const cleanUnit = unit.replace(/^units\./, '');
+        const key = `units.${cleanUnit}`;
+        const translated = t(key);
+        // If translation returns the key itself, it means missing translation.
+        // Fallback to the clean unit name.
+        return translated === key ? cleanUnit : translated;
+    };
+
     return (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8">
             <h2 className="text-2xl font-black text-slate-900 mb-6">{title}</h2>
@@ -171,18 +181,18 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                     {/* Ingredients */}
                     <div className="space-y-4">
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">{t('recipeForm.ingredients')}</label>
-                        <div className="grid grid-cols-12 gap-2">
+                        <div className="grid grid-cols-12 gap-3">
                             <input
                                 type="text"
                                 placeholder={t('recipeForm.qty')}
                                 value={newIngredient.quantity}
                                 onChange={e => setNewIngredient(prev => ({ ...prev, quantity: e.target.value }))}
-                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-center"
                             />
                             <select
                                 value={newIngredient.unit}
                                 onChange={e => setNewIngredient(prev => ({ ...prev, unit: e.target.value }))}
-                                className="col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-slate-700"
+                                className="col-span-4 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-slate-700"
                                 aria-label="Unit"
                             >
                                 {availableUnits.map(u => (
@@ -195,7 +205,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                 value={newIngredient.name}
                                 onChange={e => setNewIngredient(prev => ({ ...prev, name: e.target.value }))}
                                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
-                                className="col-span-6 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className="col-span-5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                             />
                             <button type="button" onClick={addIngredient} className="col-span-1 bg-emerald-100 text-emerald-600 rounded-xl font-bold hover:bg-emerald-200 flex items-center justify-center aspect-square" title={t('recipeForm.add')}>
                                 <i className="fas fa-plus"></i>
@@ -205,7 +215,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                             {formData.ingredients_from_pantry.map((ing: any, i) => (
                                 <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
                                     <span className="font-medium text-slate-700">
-                                        {typeof ing === 'string' ? ing : `${ing.quantity} ${t(`units.${ing.unit}`) || ing.unit} ${ing.name}`}
+                                        {typeof ing === 'string' ? ing : `${ing.quantity} ${getUnitLabel(ing.unit)} ${ing.name}`}
                                     </span>
                                     <button type="button" onClick={() => removeIngredient(i)} className="text-red-400 hover:text-red-600">
                                         <i className="fas fa-times"></i>
@@ -218,18 +228,18 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                     {/* Shopping List */}
                     <div className="space-y-4">
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">{t('recipeForm.shoppingList')}</label>
-                        <div className="grid grid-cols-12 gap-2">
+                        <div className="grid grid-cols-12 gap-3">
                             <input
                                 type="text"
                                 placeholder={t('recipeForm.qty')}
                                 value={newShoppingItem.quantity}
                                 onChange={e => setNewShoppingItem(prev => ({ ...prev, quantity: e.target.value }))}
-                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className="col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-center"
                             />
                             <select
                                 value={newShoppingItem.unit}
                                 onChange={e => setNewShoppingItem(prev => ({ ...prev, unit: e.target.value }))}
-                                className="col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-slate-700"
+                                className="col-span-4 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-slate-700"
                                 aria-label="Unit"
                             >
                                 {availableUnits.map(u => (
@@ -242,7 +252,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                 value={newShoppingItem.name}
                                 onChange={e => setNewShoppingItem(prev => ({ ...prev, name: e.target.value }))}
                                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addShoppingItem())}
-                                className="col-span-6 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                                className="col-span-5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                             />
                             <button type="button" onClick={addShoppingItem} className="col-span-1 bg-orange-100 text-orange-600 rounded-xl font-bold hover:bg-orange-200 flex items-center justify-center aspect-square" title={t('recipeForm.add')}>
                                 <i className="fas fa-plus"></i>
@@ -252,7 +262,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                             {formData.shopping_list.map((item: any, i) => (
                                 <li key={i} className="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
                                     <span className="font-medium text-slate-700">
-                                        {typeof item === 'string' ? item : `${item.quantity} ${t(`units.${item.unit}`) || item.unit} ${item.name}`}
+                                        {typeof item === 'string' ? item : `${item.quantity} ${getUnitLabel(item.unit)} ${item.name}`}
                                     </span>
                                     <button type="button" onClick={() => removeShoppingItem(i)} className="text-red-400 hover:text-red-600">
                                         <i className="fas fa-times"></i>
@@ -279,7 +289,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                         value={step.text}
                                         onChange={e => handleStepChange(i, e.target.value)}
                                         placeholder={t('recipeForm.stepPlaceholder').replace('{n}', (i + 1).toString())}
-                                        className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none h-20"
+                                        className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-y min-h-[5rem]"
                                     />
                                     <button type="button" onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`} className="self-center text-red-400 hover:text-red-600 px-2">
                                         <i className="fas fa-trash"></i>
