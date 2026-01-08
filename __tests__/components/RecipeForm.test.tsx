@@ -64,7 +64,7 @@ describe('RecipeForm', () => {
         const addButtons = screen.getAllByTitle('Add');
         fireEvent.click(addButtons[0]);
 
-        expect(screen.getByText(/2 units.kg New Ingredient/)).toBeInTheDocument();
+        expect(screen.getByText(/2 kg New Ingredient/)).toBeInTheDocument();
     });
 
     it('adds a step', () => {
@@ -86,13 +86,13 @@ describe('RecipeForm', () => {
         fireEvent.change(screen.getAllByLabelText('Unit')[0], { target: { value: 'cup' } });
         fireEvent.click(screen.getAllByTitle('Add')[0]);
 
-        expect(screen.getByText(/1 units.cup To Remove/)).toBeInTheDocument();
+        expect(screen.getByText(/1 cup To Remove/)).toBeInTheDocument();
 
         // Find remove button (red X)
         const removeBtn = screen.getByText(/To Remove/).closest('li')?.querySelector('button');
         if (removeBtn) {
             fireEvent.click(removeBtn);
-            expect(screen.queryByText(/1 units.cup To Remove/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/1 cup To Remove/)).not.toBeInTheDocument();
         } else {
             throw new Error('Remove button not found');
         }
@@ -133,13 +133,13 @@ describe('RecipeForm', () => {
         const addBtns = screen.getAllByTitle('Add');
         fireEvent.click(addBtns[1]); // Second Add button
 
-        expect(screen.getByText(/1 units.package Pasta/)).toBeInTheDocument();
+        expect(screen.getByText(/1 package Pasta/)).toBeInTheDocument();
 
         // Remove it
-        const removeBtn = screen.getByText(/1 units.package Pasta/).closest('li')?.querySelector('button');
+        const removeBtn = screen.getByText(/1 package Pasta/).closest('li')?.querySelector('button');
         if (removeBtn) {
             fireEvent.click(removeBtn);
-            expect(screen.queryByText(/1 units.package Pasta/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/1 package Pasta/)).not.toBeInTheDocument();
         }
     });
 

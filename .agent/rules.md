@@ -1,5 +1,8 @@
 # Agent Rules
 
+> [!IMPORTANT]
+> **Always read and follow the instructions in @AGENTS.md in addition to these rules.**
+
 ## Code Quality & Testing
 - **Test Coverage**: Maintain a minimum of **85% code coverage** for the project.
 - **Unit Tests**: All new components and services must be accompanied by unit tests.

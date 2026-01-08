@@ -1,5 +1,8 @@
 # Dinner Chef AI - Agent & Developer Guide
 
+> [!IMPORTANT]
+> **Always consider and follow the rules defined in @[.agent/rules.md] in addition to this guide.**
+
 ## 1. Project Overview
 "Dinner?" is an AI-powered culinary assistant designed to solve decision fatigue and minimize food waste. It generates recipes based on available pantry items, dietary restrictions of household members, and the user's creative desires.
 
@@ -7,7 +10,7 @@
 - **Framework**: Next.js 15+ (App Router)
 - **Database**: MySQL (via Prisma ORM)
 - **Styling**: Tailwind CSS
-- **AI Integration**: Google Gemini 1.5 Pro via `@google/genai`
+- **AI Integration**: Google Gemini 2.5 Pro via `@google/genai`
 - **Testing**: Jest, React Testing Library, `user-event`
 - **Containerization**: Docker (Multi-stage, distroless+shell for production)
 
