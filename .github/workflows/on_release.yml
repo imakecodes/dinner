@@ -71,6 +71,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=prod
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -85,7 +88,7 @@ jobs:
         if: success()
         run: |
           curl --location --silent --show-error --fail \
-            --request POST 'https://n8n.ops.makecodes.dev/webhook/qa-dinner' \
+            --request POST 'https://n8n.ops.makecodes.dev/webhook/dinner-prod' \
             --header 'Content-Type: application/json' \
             --user "${{ secrets.DEPLOY_WEBHOOK_USER }}:${{ secrets.DEPLOY_WEBHOOK_PASS }}" \
             --data-raw '{
