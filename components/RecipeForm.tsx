@@ -183,6 +183,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                 value={newIngredient.unit}
                                 onChange={e => setNewIngredient(prev => ({ ...prev, unit: e.target.value }))}
                                 className="col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-slate-700"
+                                aria-label="Unit"
                             >
                                 {availableUnits.map(u => (
                                     <option key={u} value={u}>{t(`units.${u}`)}</option>
@@ -229,6 +230,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                                 value={newShoppingItem.unit}
                                 onChange={e => setNewShoppingItem(prev => ({ ...prev, unit: e.target.value }))}
                                 className="col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-slate-700"
+                                aria-label="Unit"
                             >
                                 {availableUnits.map(u => (
                                     <option key={u} value={u}>{t(`units.${u}`)}</option>

@@ -140,10 +140,7 @@ export const en = {
         view: "View Recipe",
         delete: "Delete",
         deleteTitle: "Delete Recipe?",
-        empty: "You haven't saved any recipes yet. Generate one to get started!",
-        view: "View Recipe",
-        delete: "Delete",
-        deleteTitle: "Delete Recipe?",
+
         deleteDesc: "This action cannot be undone. Are you sure you want to delete this recipe?",
         createCustom: "Create Custom Recipe"
     },

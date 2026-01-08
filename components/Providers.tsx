@@ -101,7 +101,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             mealType, setMealType,
             difficulty, setDifficulty,
             prepTime, setPrepTime,
-            prepTime, setPrepTime,
+
             language, setLanguage,
             measurementSystem, setMeasurementSystem
         }}>

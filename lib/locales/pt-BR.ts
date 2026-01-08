@@ -140,10 +140,7 @@ export const ptBR = {
         view: "Ver Receita",
         delete: "Excluir",
         deleteTitle: "Excluir Receita?",
-        empty: "Você ainda não salvou nenhuma receita. Crie uma para começar!",
-        view: "Ver Receita",
-        delete: "Excluir",
-        deleteTitle: "Excluir Receita?",
+
         deleteDesc: "Esta ação não pode ser desfeita. Tem certeza de que deseja excluir esta receita?",
         createCustom: "Criar Receita Manual"
     },
