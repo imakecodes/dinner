@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
+import { PasswordFields } from '@/components/PasswordFields';
 
 function RegisterForm() {
     const searchParams = useSearchParams();
@@ -13,9 +14,10 @@ function RegisterForm() {
         name: '',
         surname: '',
         email: '',
-        password: '',
-        confirmPassword: '',
     });
+
+    const [password, setPassword] = useState('');
+    const [isPasswordValid, setIsPasswordValid] = useState(false);
 
     // Populate email from URL if present
     useEffect(() => {
@@ -32,14 +34,11 @@ function RegisterForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isPasswordValid) return;
+
         setLoading(true);
         setError('');
-
-        if (formData.password !== formData.confirmPassword) {
-            setError(t('settings.passwordsMismatch'));
-            setLoading(false);
-            return;
-        }
 
         try {
             const res = await fetch('/api/auth/register', {
@@ -49,7 +48,7 @@ function RegisterForm() {
                     name: formData.name,
                     surname: formData.surname,
                     email: formData.email,
-                    password: formData.password
+                    password: password
                 }),
             });
 
@@ -62,7 +61,8 @@ function RegisterForm() {
             // Show success message
             setRegisteredEmail(formData.email);
             setSuccess(true);
-            setFormData({ name: '', surname: '', email: '', password: '', confirmPassword: '' });
+            setFormData({ name: '', surname: '', email: '' });
+            setPassword('');
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -150,30 +150,15 @@ function RegisterForm() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.password')}</label>
-                            <input
-                                type="password"
-                                required
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-0 outline-none transition-colors font-medium text-slate-700 bg-slate-50/50"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.confirmPassword')}</label>
-                            <input
-                                type="password"
-                                required
-                                value={formData.confirmPassword}
-                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-0 outline-none transition-colors font-medium text-slate-700 bg-slate-50/50"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                    </div>
+                    <PasswordFields
+                        disabled={loading}
+                        passwordLabel={t('auth.password')}
+                        confirmPasswordLabel={t('auth.confirmPassword')}
+                        onChange={(isValid, val) => {
+                            setIsPasswordValid(isValid);
+                            setPassword(val);
+                        }}
+                    />
 
                     <button
                         type="submit"
