@@ -21,8 +21,9 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
         .slice(0, 5); // Limit to top 5
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' || e.key === ',') {
+        if (e.key === 'Enter' || e.code === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
+            e.stopPropagation(); // Stop form submission
             addTag(input);
         } else if (e.key === 'Backspace' && input === '' && tags.length > 0) {
             removeTag(tags.length - 1);
@@ -31,7 +32,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
 
     const addTag = (val: string) => {
         const trimmed = val.trim();
-        if (trimmed.length > 50) return; // Silent fail or could add alert
+        if (trimmed.length > 50) return;
         if (trimmed && !tags.includes(trimmed)) {
             setTags([...tags, trimmed]);
             setInput('');
@@ -53,6 +54,17 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [wrapperRef]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        if (val.endsWith(',') || val.endsWith(';')) {
+            // Mobile support: Comma detected in value
+            addTag(val.slice(0, -1));
+        } else {
+            setInput(val);
+            setShowSuggestions(true);
+        }
+    };
 
     return (
         <div className="relative" ref={wrapperRef}>
@@ -86,10 +98,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
                     className="flex-1 bg-transparent outline-none text-slate-900 font-medium placeholder:text-slate-400 min-w-[120px]"
                     placeholder={tags.length === 0 ? placeholder : ''}
                     value={input}
-                    onChange={(e) => {
-                        setInput(e.target.value);
-                        setShowSuggestions(true);
-                    }}
+                    onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setShowSuggestions(true)}
                     maxLength={50}

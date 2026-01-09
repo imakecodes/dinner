@@ -243,7 +243,7 @@ export default function MembersPage() {
 
 
 
-            <main className="max-w-7xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
+            <main className="max-w-5xl mx-auto px-4 pt-24 pb-32 space-y-4 animate-in fade-in duration-500">
                 {kitchen?.inviteCode && currentUserMember && !currentUserMember.isGuest && (
                     <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 text-center space-y-2 mb-6">
                         <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">{t('kitchens.inviteCode')}</h3>
@@ -369,6 +369,10 @@ export default function MembersPage() {
                                                 icon="fa-ban"
                                                 chipColorClass="bg-rose-100 text-rose-700 border border-rose-200"
                                             />
+                                            <p className="text-[10px] text-slate-400 font-medium pl-1 mt-1">
+                                                <i className="fas fa-info-circle mr-1"></i>
+                                                {t('members.tagHelp')}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -422,10 +426,10 @@ export default function MembersPage() {
                         )}
 
                         {/* Member List */}
-                        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <section className="space-y-4">
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">{t('members.whoIs')}</h2>
-                            <div className="grid gap-4">
-                                {members.length === 0 && <div className="text-slate-500 font-medium text-center py-4 bg-white rounded-3xl border border-slate-100 italic">{t('members.noMembers')}</div>}
+                            <div className="grid gap-6 md:grid-cols-2">
+                                {members.length === 0 && <div className="text-slate-500 font-medium text-center py-4 bg-white rounded-3xl border border-slate-100 italic col-span-full">{t('members.noMembers')}</div>}
 
                                 {members.map((m) => (
                                     <div
@@ -481,14 +485,14 @@ export default function MembersPage() {
                                             )}
                                         </div>
 
-                                        {/* 3-Column Preferences Grid */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-100/50 pt-4 mt-2">
+                                        {/* 3-Column Preferences Grid - Converted to Stack */}
+                                        <div className="flex flex-col gap-3 border-t border-slate-100/50 pt-4 mt-2">
                                             {/* Likes */}
                                             <div className="bg-slate-50/50 rounded-xl p-3">
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-2 flex items-center gap-1">
                                                     <i className="fas fa-heart"></i> {t('members.likes')}
                                                 </h4>
-                                                <div className="flex flex-col gap-1.5">
+                                                <div className="flex flex-wrap gap-1.5">
                                                     {m.likes?.length ? m.likes.map((l, i) => (
                                                         <span key={i} className="text-xs font-bold text-emerald-800 bg-emerald-100/50 px-2 py-1 rounded-md inline-block w-fit">
                                                             {l}
@@ -502,7 +506,7 @@ export default function MembersPage() {
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-1">
                                                     <i className="fas fa-thumbs-down"></i> {t('members.dislikes')}
                                                 </h4>
-                                                <div className="flex flex-col gap-1.5">
+                                                <div className="flex flex-wrap gap-1.5">
                                                     {m.dislikes?.length ? m.dislikes.map((d, i) => (
                                                         <span key={i} className="text-xs font-bold text-slate-600 bg-slate-200/50 px-2 py-1 rounded-md inline-block w-fit">
                                                             {d}
@@ -516,7 +520,7 @@ export default function MembersPage() {
                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-2 flex items-center gap-1">
                                                     <i className="fas fa-ban"></i> {t('members.restrictions')}
                                                 </h4>
-                                                <div className="flex flex-col gap-1.5">
+                                                <div className="flex flex-wrap gap-1.5">
                                                     {m.restrictions?.length ? m.restrictions.map((r, i) => (
                                                         <span key={i} className="text-xs font-bold text-rose-700 bg-rose-100/50 px-2 py-1 rounded-md inline-block w-fit">
                                                             {r}

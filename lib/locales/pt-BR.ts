@@ -76,7 +76,8 @@ export const ptBR = {
         copied: "Código copiado!",
         removeConfirmTitle: "Remover Membro",
         removeConfirmMsg: "Tem certeza de que deseja remover este membro? Esta ação não pode ser desfeita.",
-        guestEditError: "Usuários convidados só podem editar seu próprio perfil. Para editar outros membros ou adicionar novos membros, peça a um administrador da cozinha para atualizar suas permissões"
+        guestEditError: "Usuários convidados só podem editar seu próprio perfil. Para editar outros membros ou adicionar novos membros, peça a um administrador da cozinha para atualizar suas permissões",
+        tagHelp: "Pressione Enter ou vírgula para adicionar"
     },
     pantry: {
         title: "Despensa & Geladeira",
