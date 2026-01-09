@@ -25,6 +25,10 @@ export default function MembersPage() {
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [currentUserMember, setCurrentUserMember] = useState<KitchenMember | null>(null);
 
+    // Leave Kitchen State
+    const [leaveTargetId, setLeaveTargetId] = useState<string | null>(null);
+    const [isLeaving, setIsLeaving] = useState(false);
+
     // Controlled state for Tags
     const [likesTags, setLikesTags] = useState<string[]>([]);
     const [dislikesTags, setDislikesTags] = useState<string[]>([]);
@@ -166,6 +170,44 @@ export default function MembersPage() {
         switch (platform) {
             case 'whatsapp': window.open(`https://wa.me/?text=${encodedText}`, '_blank'); break;
             case 'telegram': window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.origin)}&text=${encodedText}`, '_blank'); break;
+        }
+    };
+
+    const confirmLeave = async () => {
+        if (!leaveTargetId) return;
+        setIsLeaving(true);
+        try {
+            await storageService.leaveKitchen(leaveTargetId);
+
+            // Auto-switch logic (Fetch fresh user data to get full membership list)
+            const userProfile = await storageService.getCurrentUser();
+            const allMemberships = userProfile?.user?.kitchenMemberships || [];
+
+            // We just left one, so filter it out if API hasn't cleared it yet (unlikely if we just fetched)
+            // Actually, `getCurrentUser` might be slightly stale or current token issues. 
+            // Better to fetch fresh? `getCurrentUser` fetches `/auth/me`.
+            const remaining = allMemberships.filter((m: any) => m.id !== leaveTargetId);
+
+            if (remaining.length > 0) {
+                // Sort: ADMIN first
+                const nextKitchen = remaining.sort((a: any, b: any) => {
+                    if (a.role === 'ADMIN' && b.role !== 'ADMIN') return -1;
+                    if (a.role !== 'ADMIN' && b.role === 'ADMIN') return 1;
+                    return 0;
+                })[0];
+
+                await storageService.switchKitchen(nextKitchen.kitchenId);
+                window.location.href = '/';
+            } else {
+                setMembers(prev => prev.filter(m => m.id !== leaveTargetId));
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error("Failed to leave kitchen", err);
+            alert(t('common.error'));
+        } finally {
+            setLeaveTargetId(null);
+            setIsLeaving(false);
         }
     };
 
@@ -423,6 +465,20 @@ export default function MembersPage() {
                                                     <i className="fas fa-trash-alt"></i>
                                                 </button>
                                             )}
+
+                                            {/* Leave Button for Current User (Non-Admin) */}
+                                            {currentUserMember?.id === m.id && m.role !== 'ADMIN' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setLeaveTargetId(m.id);
+                                                    }}
+                                                    className="w-10 h-10 rounded-xl hover:bg-amber-100 text-slate-300 hover:text-amber-600 flex items-center justify-center transition-colors"
+                                                    title={t('kitchens.leave') || "Leave"}
+                                                >
+                                                    <i className="fas fa-sign-out-alt"></i>
+                                                </button>
+                                            )}
                                         </div>
 
                                         {/* 3-Column Preferences Grid */}
@@ -484,6 +540,37 @@ export default function MembersPage() {
                 title={t('members.removeConfirmTitle')}
                 message={t('members.removeConfirmMsg')}
             />
+
+            {/* Leave Confirmation Modal */}
+            {leaveTargetId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xl mx-auto">
+                            <i className="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-bold text-slate-900">{t('kitchens.leaveTitle') || 'Leave Kitchen?'}</h3>
+                            <p className="text-sm text-slate-500">{t('kitchens.leaveConfirm') || 'Are you sure you want to leave?'}</p>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => setLeaveTargetId(null)}
+                                className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                onClick={confirmLeave}
+                                disabled={isLeaving}
+                                className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isLeaving && <i className="fas fa-spinner fa-spin"></i>}
+                                {t('kitchens.leave') || 'Leave'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

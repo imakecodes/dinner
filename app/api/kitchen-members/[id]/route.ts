@@ -14,6 +14,40 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    const memberToDelete = await prisma.kitchenMember.findUnique({
+      where: { id }
+    });
+
+    if (!memberToDelete) {
+      return NextResponse.json({ message: 'Member not found' }, { status: 404 });
+    }
+
+    // Check permissions
+    // 1. requester is the member being deleted (Leaving)
+    // 2. requester is ADMIN of the kitchen
+    let isAuthorized = false;
+
+    if (memberToDelete.userId === payload.userId) {
+      isAuthorized = true;
+    } else {
+      const requesterMember = await prisma.kitchenMember.findUnique({
+        where: {
+          userId_kitchenId: {
+            userId: payload.userId as string,
+            kitchenId: memberToDelete.kitchenId
+          }
+        }
+      });
+      if (requesterMember && requesterMember.role === 'ADMIN') {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
     await prisma.kitchenMember.delete({
       where: { id }
     });

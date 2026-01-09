@@ -126,7 +126,10 @@ export const ptBR = {
         create: "Criar",
         regenerateConfirm: "Regenerar código de convite? O código antigo deixará de funcionar.",
         deleteConfirm: "Tem certeza de que deseja excluir esta cozinha? TODAS AS RECEITAS serão perdidas permanentemente!",
-        deleteTitle: "Excluir Cozinha?"
+        deleteTitle: "Excluir Cozinha?",
+        leave: "Sair",
+        leaveTitle: "Sair da Cozinha?",
+        leaveConfirm: "Tem certeza de que deseja sair desta cozinha? Você precisará de um código de convite para entrar novamente."
     },
     recipeDetails: {
         notFound: "Receita não encontrada!",

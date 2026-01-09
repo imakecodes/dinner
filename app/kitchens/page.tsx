@@ -55,6 +55,11 @@ export default function KitchensPage() {
 
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Leave Kitchen State
+    const [leaveTargetId, setLeaveTargetId] = useState<string | null>(null);
+    const [isLeaving, setIsLeaving] = useState(false);
+
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const [editingKitchenId, setEditingKitchenId] = useState<string | null>(null);
@@ -99,6 +104,42 @@ export default function KitchensPage() {
             setTimeout(() => setErrorMessage(null), 3000);
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    const confirmLeave = async () => {
+        if (!leaveTargetId) return;
+        setIsLeaving(true);
+        try {
+            await storageService.leaveKitchen(leaveTargetId);
+
+            // Auto-switch logic
+            // We need updated memberships. Since query is stale, we filter locally from `user.kitchenMemberships`
+            const remaining = user?.kitchenMemberships?.filter((m: any) => m.id !== leaveTargetId) || [];
+
+            if (remaining.length > 0) {
+                // Sort: ADMIN first, then others. Assuming existing order is chronological or ID based.
+                const nextKitchen = remaining.sort((a: any, b: any) => {
+                    if (a.role === 'ADMIN' && b.role !== 'ADMIN') return -1;
+                    if (a.role !== 'ADMIN' && b.role === 'ADMIN') return 1;
+                    return 0;
+                })[0];
+
+                await storageService.switchKitchen(nextKitchen.kitchenId);
+                window.location.href = '/';
+            } else {
+                // No kitchens left
+                await loadData();
+                window.location.reload();
+            }
+
+            setLeaveTargetId(null);
+        } catch (err) {
+            console.error("Failed to leave kitchen", err);
+            setErrorMessage(t('common.error') || "Failed to leave kitchen");
+            setTimeout(() => setErrorMessage(null), 3000);
+        } finally {
+            setIsLeaving(false);
         }
     };
 
@@ -147,6 +188,37 @@ export default function KitchensPage() {
                             >
                                 {isDeleting && <i className="fas fa-spinner fa-spin"></i>}
                                 {t('common.delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Leave Confirmation Modal */}
+            {leaveTargetId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-4 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xl mx-auto">
+                            <i className="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-bold text-slate-900">{t('kitchens.leaveTitle')}</h3>
+                            <p className="text-sm text-slate-500">{t('kitchens.leaveConfirm')}</p>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => setLeaveTargetId(null)}
+                                className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                onClick={confirmLeave}
+                                disabled={isLeaving}
+                                className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isLeaving && <i className="fas fa-spinner fa-spin"></i>}
+                                {t('kitchens.leave')}
                             </button>
                         </div>
                     </div>
@@ -273,6 +345,15 @@ export default function KitchensPage() {
                                                     </button>
                                                 )}
                                             </div>
+                                            {m.role !== 'ADMIN' && !editingKitchenId && (
+                                                <button
+                                                    onClick={() => setLeaveTargetId(m.id)}
+                                                    className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-red-50 border border-slate-200 rounded-xl text-slate-400 hover:text-red-600 hover:border-red-200 transition-colors"
+                                                    title={t('kitchens.leave') || "Leave Kitchen"}
+                                                >
+                                                    <i className="fas fa-sign-out-alt"></i>
+                                                </button>
+                                            )}
                                         </div>
 
                                         {/* Row 2: Invite Code (Full Width or block) */}

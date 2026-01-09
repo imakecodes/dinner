@@ -208,5 +208,9 @@ export const storageService = {
     });
     if (!res.ok) throw new Error('Failed to delete kitchen');
     return await res.json();
+  },
+
+  async leaveKitchen(membershipId: string) {
+    return this.deleteMember(membershipId);
   }
 };

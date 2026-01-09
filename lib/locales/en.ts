@@ -126,7 +126,10 @@ export const en = {
         create: "Create",
         regenerateConfirm: "Regenerate invite code? Old code will stop working.",
         deleteConfirm: "Are you sure you want to delete this kitchen? ALL RECIPES will be lost permanently!",
-        deleteTitle: "Delete Kitchen?"
+        deleteTitle: "Delete Kitchen?",
+        leave: "Leave",
+        leaveTitle: "Leave Kitchen?",
+        leaveConfirm: "Are you sure you want to leave this kitchen? You will need an invite code to rejoin."
     },
     recipeDetails: {
         notFound: "Recipe not found!",
