@@ -15,20 +15,20 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
   const { t } = useTranslation();
 
   const handleLogout = async () => {
-      try {
-          await fetch('/api/auth/logout', { method: 'POST' });
-          router.push('/login');
-          router.refresh();
-      } catch (error) {
-          console.error("Logout failed:", error);
-      }
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const handleLinkClick = () => {
     // Only close if we are on mobile (where isOpen drives visibility)
     // Actually, onClose logic is handled by parent usually for overlay.
     // But here we want to ensure sidebar closes on mobile selection.
-    if (window.innerWidth < 1024) { // lg breakpoint
+    if (window.innerWidth < 1280) { // xl breakpoint
       onClose();
     }
   };
@@ -51,12 +51,12 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 xl:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <aside className={`fixed top-0 left-0 bottom-0 w-80 bg-white shadow-2xl z-[70] transition-transform duration-500 transform lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed top-0 left-0 bottom-0 w-80 bg-white shadow-2xl z-[70] transition-transform duration-500 transform xl:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 flex flex-col h-full">
           <div className="flex justify-between items-center mb-12">
             <div className="flex items-center gap-3">
@@ -65,7 +65,7 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
               </div>
               <span className="font-black text-xl tracking-tighter">Dinner?</span>
             </div>
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 lg:hidden">
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 xl:hidden">
               <i className="fas fa-times"></i>
             </button>
           </div>
@@ -82,11 +82,11 @@ const Sidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
 
           <div className="border-t border-slate-100 pt-4 mt-2">
             <button
-               onClick={handleLogout}
-               className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-rose-600 font-bold hover:bg-rose-50 transition-all group"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-rose-600 font-bold hover:bg-rose-50 transition-all group"
             >
-               <i className="fas fa-sign-out-alt w-6 group-hover:scale-110 transition-transform"></i>
-               {t('nav.logout')}
+              <i className="fas fa-sign-out-alt w-6 group-hover:scale-110 transition-transform"></i>
+              {t('nav.logout')}
             </button>
           </div>
         </div>

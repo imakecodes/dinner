@@ -31,7 +31,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             )}
 
             {/* Main Content Wrapper (Pushed by Sidebar on Desktop) */}
-            <div className={`transition-all duration-300 ${!isAuthPage ? 'lg:pl-80' : ''}`}>
+            <div className={`transition-all duration-300 ${!isAuthPage ? 'xl:pl-80' : ''}`}>
                 {!isAuthPage && (
                     <Header
                         onMenuClick={() => setIsSidebarOpen(true)}
