@@ -8,9 +8,17 @@ interface PasswordFieldsProps {
     onChange: (isValid: boolean, passwordValue: string) => void;
     showLabels?: boolean;
     disabled?: boolean;
+    passwordLabel?: string;
+    confirmPasswordLabel?: string;
 }
 
-export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLabels = true, disabled = false }) => {
+export const PasswordFields: React.FC<PasswordFieldsProps> = ({
+    onChange,
+    showLabels = true,
+    disabled = false,
+    passwordLabel,
+    confirmPasswordLabel
+}) => {
     const { t } = useTranslation();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,7 +45,11 @@ export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLa
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                {showLabels && <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.newPassword') || 'New Password'}</label>}
+                {showLabels && (
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                        {passwordLabel || t('auth.newPassword') || 'New Password'}
+                    </label>
+                )}
                 <PasswordInput
                     required
                     value={password}
@@ -49,7 +61,11 @@ export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLa
             </div>
 
             <div className="space-y-2">
-                {showLabels && <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.confirmPassword') || 'Confirm Password'}</label>}
+                {showLabels && (
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                        {confirmPasswordLabel || t('auth.confirmPassword') || 'Confirm Password'}
+                    </label>
+                )}
                 <PasswordInput
                     required
                     value={confirmPassword}
