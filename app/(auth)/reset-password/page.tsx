@@ -24,6 +24,12 @@ function ResetPasswordForm() {
             return;
         }
 
+        // If already success or loading, don't re-verify
+        // We only want to verify if we are in 'verifying' or 'idle' (though idle implies done?)
+        // Actually, better: use a ref to track if we verified THIS token? 
+        // Or just check status. 
+        if (status === 'success') return;
+
         // Verify token immediately
         const verifyToken = async () => {
             try {
@@ -47,7 +53,7 @@ function ResetPasswordForm() {
         };
 
         verifyToken();
-    }, [token, t]);
+    }, [token, t, status]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,12 +80,7 @@ function ResetPasswordForm() {
 
             // Password reset successful, now log the user in
             setStatus('success');
-            setMessage(data.message || 'Password reset successfully! Redirecting...');
-
-            // Redirect to login after a short delay
-            setTimeout(() => {
-                router.push('/login');
-            }, 2000);
+            setMessage(t('auth.passwordResetSuccess'));
         } catch (err) {
             setMessage(t('common.error') || 'An error occurred.');
             setStatus('error');
@@ -93,7 +94,7 @@ function ResetPasswordForm() {
                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                         <i className="fas fa-check text-2xl"></i>
                     </div>
-                    <h2 className="text-2xl font-black text-slate-900 mb-4">{t('auth.passwordResetSuccess') || 'Password Reset!'}</h2>
+                    <h2 className="text-2xl font-black text-slate-900 mb-4">{t('auth.passwordResetSuccess')}</h2>
                     <p className="text-slate-600 mb-8">{message}</p>
                     <Link href="/login" className="block w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors">
                         {t('auth.backToLogin') || 'Back to Login'}
@@ -141,6 +142,7 @@ function ResetPasswordForm() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <PasswordFields
+                        disabled={status === 'loading'}
                         onChange={(isValid, val) => {
                             setIsPasswordValid(isValid);
                             setPassword(val);

@@ -7,9 +7,10 @@ import { PasswordInput } from './PasswordInput';
 interface PasswordFieldsProps {
     onChange: (isValid: boolean, passwordValue: string) => void;
     showLabels?: boolean;
+    disabled?: boolean;
 }
 
-export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLabels = true }) => {
+export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLabels = true, disabled = false }) => {
     const { t } = useTranslation();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -43,17 +44,19 @@ export const PasswordFields: React.FC<PasswordFieldsProps> = ({ onChange, showLa
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     minLength={6}
+                    disabled={disabled}
                 />
             </div>
 
             <div className="space-y-2">
                 {showLabels && <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t('auth.confirmPassword') || 'Confirm Password'}</label>}
-                 <PasswordInput
+                <PasswordInput
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                     minLength={6}
+                    disabled={disabled}
                 />
             </div>
 

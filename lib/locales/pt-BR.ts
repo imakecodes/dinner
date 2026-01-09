@@ -345,7 +345,13 @@ export const ptBR = {
         kitchenDeleted: "Esta cozinha foi excluída",
         alreadyMember: "Você já é um membro desta cozinha",
         joinSuccess: "Entrou na cozinha com sucesso",
-        joinError: "Erro ao entrar na cozinha"
+        joinError: "Erro ao entrar na cozinha",
+        tokenRequired: "Token e nova senha são obrigatórios",
+        passwordTooShort: "A senha deve ter pelo menos 6 caracteres",
+        invalidToken: "Token inválido ou expirado",
+        tokenExpired: "O token de redefinição expirou",
+        resetSuccess: "Senha redefinida com sucesso",
+        internalError: "Erro interno do servidor"
     },
     units: {
         unit: "Unidade",

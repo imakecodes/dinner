@@ -342,7 +342,13 @@ export const en = {
         kitchenDeleted: "This kitchen has been deleted",
         alreadyMember: "Already a member",
         joinSuccess: "Joined kitchen successfully",
-        joinError: "Error joining kitchen"
+        joinError: "Error joining kitchen",
+        tokenRequired: "Token and new password are required",
+        passwordTooShort: "Password must be at least 6 characters",
+        invalidToken: "Invalid or expired reset token",
+        tokenExpired: "Reset token has expired",
+        resetSuccess: "Password has been reset successfully",
+        internalError: "Internal server error"
     },
     units: {
         unit: "Unit",

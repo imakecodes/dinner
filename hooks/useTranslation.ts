@@ -1,6 +1,4 @@
-
-"use client";
-
+import { useCallback } from 'react';
 import { useApp } from '@/components/Providers';
 import { translations } from '@/lib/translations';
 
@@ -10,7 +8,7 @@ export function useTranslation() {
     // Default to English if something goes wrong
     const lang = language || 'en';
 
-    const t = (key: string) => {
+    const t = useCallback((key: string) => {
         const keys = key.split('.');
         let value: any = translations[lang as keyof typeof translations] || translations['en'];
 
@@ -23,7 +21,7 @@ export function useTranslation() {
         }
 
         return value || key;
-    };
+    }, [lang]);
 
     return { t, lang };
 }
