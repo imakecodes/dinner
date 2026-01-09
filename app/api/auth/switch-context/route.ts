@@ -53,9 +53,7 @@ export async function POST(request: NextRequest) {
 
         // Generate new token with updated context
         const newToken = await signToken({
-            userId: userId,
-            email: payload.email as string,
-            name: payload.name as string,
+            ...payload, // Keep all existing fields (userId, email, name, etc.)
             kitchenId: targetId,
             houseId: targetId // Backwards compat
         });

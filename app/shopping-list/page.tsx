@@ -269,12 +269,14 @@ export default function ShoppingListPage() {
                                 <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-3 group">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <div
-                                                onClick={() => !isGuest && handleToggleCheck(item)}
-                                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${!isGuest ? 'cursor-pointer' : 'cursor-default'} ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
-                                            >
-                                                {item.checked && <i className="fas fa-check text-xs"></i>}
-                                            </div>
+                                            {!isGuest && (
+                                                <div
+                                                    onClick={() => handleToggleCheck(item)}
+                                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors cursor-pointer ${item.checked ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-200 hover:border-rose-400'}`}
+                                                >
+                                                    {item.checked && <i className="fas fa-check text-xs"></i>}
+                                                </div>
+                                            )}
                                             <div>
                                                 <div className="flex items-baseline gap-2">
                                                     <p className={`font-bold transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{item.name}</p>

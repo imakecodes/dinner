@@ -83,6 +83,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ secrets.PROD_APP_URL }}
 
       - name: Trigger Deployment Webhook
         if: success()

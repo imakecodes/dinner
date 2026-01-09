@@ -47,7 +47,7 @@ export default function KitchensPage() {
     const handleSwitchKitchen = async (kitchenId: string) => {
         try {
             await storageService.switchKitchen(kitchenId);
-            window.location.reload();
+            window.location.href = '/';
         } catch (err) {
             console.error("Failed to switch kitchen", err);
         }
