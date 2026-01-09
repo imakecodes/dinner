@@ -1,33 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
-import { translations } from '@/lib/translations';
-
-type Language = keyof typeof translations;
-
-function getTranslation(lang: string | null | undefined) {
-    const validLang = (lang && ['en', 'pt-BR'].includes(lang)) ? lang as Language : 'en';
-    return translations[validLang];
-}
+import { getServerTranslator } from '@/lib/i18n-server';
 
 export async function POST(req: NextRequest) {
-    // Get language from header for initial errors
-    const acceptLang = req.headers.get('accept-language')?.split(',')[0].split('-')[0] === 'pt' ? 'pt-BR' : 'en'; // Simple detection
-    // Better detection:
-    const rawLang = req.headers.get('accept-language');
-    const headerLang = rawLang?.includes('pt') ? 'pt-BR' : 'en';
+    // Get translator (initially by header, will refine with user language later)
+    let { t } = getServerTranslator(req);
 
     try {
         const { token, newPassword } = await req.json();
 
         if (!token || !newPassword) {
-            const t = getTranslation(headerLang);
-            return NextResponse.json({ error: t.api.tokenRequired }, { status: 400 });
+            return NextResponse.json({ error: t('api.tokenRequired') }, { status: 400 });
         }
 
         if (newPassword.length < 6) {
-            const t = getTranslation(headerLang);
-            return NextResponse.json({ error: t.api.passwordTooShort }, { status: 400 });
+            return NextResponse.json({ error: t('api.passwordTooShort') }, { status: 400 });
         }
 
         // Find user by reset token
@@ -38,16 +26,16 @@ export async function POST(req: NextRequest) {
         });
 
         if (!user) {
-            const t = getTranslation(headerLang);
-            return NextResponse.json({ error: t.api.invalidToken }, { status: 400 });
+            return NextResponse.json({ error: t('api.invalidToken') }, { status: 400 });
         }
 
-        // Now we have user, use their preferred language
-        const t = getTranslation(user.language || headerLang);
+        // Now we have user, translate using their preference
+        const translator = getServerTranslator(req, user.language);
+        t = translator.t; // Update 't' function
 
         // Check if token has expired
         if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
-            return NextResponse.json({ error: t.api.tokenExpired }, { status: 400 });
+            return NextResponse.json({ error: t('api.tokenExpired') }, { status: 400 });
         }
 
         // Hash new password
@@ -68,12 +56,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: t.api.resetSuccess
+            message: t('api.resetSuccess')
         });
     } catch (error) {
         console.error('Password reset error:', error);
-        // Fallback to header lang for catch block
-        const t = getTranslation(headerLang);
-        return NextResponse.json({ error: t.api.internalError }, { status: 500 });
+        // Fallback to header lang for catch block (can reuse current 't' which might be user lang, or standard)
+        // If we failed early, 't' is header-based. If late, it's user-based. Both fine.
+        return NextResponse.json({ error: t('api.internalError') }, { status: 500 });
     }
 }

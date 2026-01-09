@@ -4,7 +4,13 @@ import { translations } from './translations';
 
 export type supportedLangs = keyof typeof translations;
 
-export function getServerTranslator(req?: NextRequest | Headers) {
+export function getServerTranslator(req?: NextRequest | Headers, preferredLang?: string | null) {
+    // 1. Check preferred user language first
+    if (preferredLang && Object.keys(translations).includes(preferredLang)) {
+        const lang = preferredLang as supportedLangs;
+        return createTranslator(lang);
+    }
+
     let acceptLanguage: string | null = null;
 
     if (req) {
@@ -16,22 +22,37 @@ export function getServerTranslator(req?: NextRequest | Headers) {
         }
     }
 
-    // Simple language detection logic
-    // Matches 'pt-BR', 'pt', 'en', etc.
-    let lang: supportedLangs = 'en';
+    // 2. Check Accept-Language header
+    // Dynamic matching against supported languages
+    let lang: supportedLangs = 'en'; // Default
 
     if (acceptLanguage) {
-        if (acceptLanguage.toLowerCase().startsWith('pt')) {
-            lang = 'pt-BR';
+        const requestedLangs = acceptLanguage.split(',').map(l => l.split(';')[0].trim());
+        const supported = Object.keys(translations);
+
+        for (const reqLang of requestedLangs) {
+            // Try exact match
+            if (supported.includes(reqLang)) {
+                lang = reqLang as supportedLangs;
+                break;
+            }
+            // Try prefix match (e.g. 'pt' matching 'pt-BR')
+            // We prioritize exact matches, but if not found, we look for prefix
+            const prefixMatch = supported.find(s => s.startsWith(reqLang.split('-')[0]));
+            if (prefixMatch) {
+                lang = prefixMatch as supportedLangs;
+                break;
+            }
         }
-        // Add other languages here
     }
 
+    return createTranslator(lang);
+}
+
+function createTranslator(lang: supportedLangs) {
     const t = (key: string) => {
         const keys = key.split('.');
         // Check for 'lang' first, falling back to 'en'
-        // Type assertion needed because TS doesn't know exact keys of potentially different translation structures 
-        // (though they should match)
         let value: any = (translations[lang] as any) || translations['en'];
 
         for (const k of keys) {

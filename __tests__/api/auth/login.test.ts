@@ -28,7 +28,10 @@ jest.mock('jose', () => ({
 
 jest.mock('@/lib/i18n-server', () => ({
     getServerTranslator: jest.fn().mockReturnValue({
-        t: (key: string) => key,
+        t: (key: string) => {
+            if (key === 'auth.unverified') return 'Account not verified';
+            return key;
+        },
         lang: 'en'
     })
 }));

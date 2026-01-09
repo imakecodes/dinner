@@ -291,7 +291,11 @@ export const ptBR = {
         unverifiedError: "Conta não verificada. Verifique seu email.",
         resendVerification: "Reenviar Email",
         emailSent: "Email enviado! Verifique sua caixa de entrada.",
-        emailError: "Falha ao enviar email."
+        emailError: "Falha ao enviar email.",
+        missingCredentials: "Email ou senha faltando",
+        invalidCredentials: "Credenciais inválidas",
+        unverified: "Conta não verificada",
+        userNoKitchen: "Usuário não possui cozinha ativa"
     },
     generate: {
         title: "Nova Receita",

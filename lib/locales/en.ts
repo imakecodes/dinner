@@ -288,7 +288,11 @@ export const en = {
         unverifiedError: "Account not verified. Please check your email.",
         resendVerification: "Resend Verification Email",
         verificationResent: "Verification email sent!",
-        resendError: "Failed to resend email."
+        resendError: "Failed to resend email.",
+        missingCredentials: "Missing email or password",
+        invalidCredentials: "Invalid credentials",
+        unverified: "Account not verified",
+        userNoKitchen: "User has no active kitchen"
     },
     generate: {
         title: "New Recipe",
