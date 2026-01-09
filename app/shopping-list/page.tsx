@@ -21,7 +21,6 @@ export default function ShoppingListPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState<'all' | 'manual' | 'recipe'>('all');
     const [selectedRecipeId, setSelectedRecipeId] = useState<string>('all');
-    const [copied, setCopied] = useState(false);
 
     // Get unique recipes from items
     const uniqueRecipes = Array.from(new Map(
@@ -100,16 +99,6 @@ export default function ShoppingListPage() {
         }
     };
 
-    const handleShareList = () => {
-        const text = filteredItems.map(i => {
-            let line = `[${i.checked ? 'x' : ' '}] ${i.name}`;
-            return line;
-        }).join('\n');
-
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
 
     const filteredItems = items.filter(item => {
         // Search
@@ -173,7 +162,7 @@ export default function ShoppingListPage() {
                 ) : (
                     <>
                         <div className="space-y-4 mb-6">
-                            {/* Search and Share */}
+                            {/* Search */}
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
                                     <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -185,13 +174,6 @@ export default function ShoppingListPage() {
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
                                 </div>
-                                <button
-                                    onClick={handleShareList}
-                                    className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 transition-colors flex items-center gap-2"
-                                    title={t('shopping.shareTooltip') || "Copy list to clipboard"}
-                                >
-                                    {copied ? <i className="fas fa-check"></i> : <i className="fas fa-share-alt"></i>}
-                                </button>
                             </div>
 
                             {/* Filters */}
