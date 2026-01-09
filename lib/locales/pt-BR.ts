@@ -145,7 +145,6 @@ export const ptBR = {
         view: "Ver Receita",
         delete: "Excluir",
         deleteTitle: "Excluir Receita?",
-
         deleteDesc: "Esta ação não pode ser desfeita. Tem certeza de que deseja excluir esta receita?",
         createCustom: "Criar Receita Manual"
     },
@@ -320,7 +319,11 @@ export const ptBR = {
         title: "Cozinhando algo especial...",
         step1: "Selecionando os melhores ingredientes...",
         step2: "Consultando nosso Chef IA...",
-        step3: "Empratando seu prato...",
+        step3: "Ideias: Criando seu prato...",
+        step4: "Ajustando sua lista de preferências...",
+        step5: "Lendo o que você não gosta...",
+        step6: "Verificando restrições...",
+        step7: "Ajustando porções...",
         warning: "Por favor, não feche seu navegador. Isso pode levar um momento."
     },
     email: {
