@@ -5,6 +5,8 @@ import Sidebar from '@/components/Sidebar';
 import { storageService } from '@/services/storageService';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ShareButtons } from '@/components/ShareButtons';
+import { CodeInput } from '@/components/ui/CodeInput';
+import { MessageDialog } from '@/components/MessageDialog';
 
 export default function KitchensPage() {
     const { t } = useTranslation();
@@ -13,6 +15,10 @@ export default function KitchensPage() {
     const [newKitchenName, setNewKitchenName] = useState('');
     const [loading, setLoading] = useState(true);
     const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    const [joinCode, setJoinCode] = useState('');
+    const [joining, setJoining] = useState(false);
+    const [errorDialog, setErrorDialog] = useState({ isOpen: false, message: '', title: '' });
 
     useEffect(() => {
         loadData();
@@ -143,6 +149,29 @@ export default function KitchensPage() {
         }
     };
 
+    const handleJoinKitchen = async () => {
+        if (joinCode.length !== 6) return;
+        setJoining(true);
+        try {
+            const res = await storageService.joinKitchen(joinCode);
+            if (!res || !res.kitchenId) {
+                throw new Error(t('actions.failedJoin'));
+            }
+            // Automatically switch context
+            await storageService.switchKitchen(res.kitchenId);
+            // Refresh page to load new context
+            window.location.reload();
+        } catch (err: any) {
+            setErrorDialog({
+                isOpen: true,
+                title: t('common.error'),
+                message: t(err.message) || err.message
+            });
+        } finally {
+            setJoining(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-rose-100">
             <Sidebar
@@ -245,29 +274,54 @@ export default function KitchensPage() {
                     <div className="text-center py-20 text-slate-400 font-bold animate-pulse">{t('kitchens.loading')}</div>
                 ) : (
                     <>
-                        {/* Create New Kitchen */}
-                        <section className="max-w-3xl mx-auto bg-white p-4 rounded-3xl shadow-xl border border-slate-100 mb-8 w-full">
-                            <h2 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                                <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-sm"><i className="fas fa-plus"></i></span>
-                                {t('kitchens.createTitle')}
-                            </h2>
-                            <form onSubmit={handleCreateKitchen} className="flex gap-3">
-                                <input
-                                    type="text"
-                                    placeholder={t('kitchens.createPlaceholder')}
-                                    className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-slate-300 placeholder:font-medium"
-                                    value={newKitchenName}
-                                    onChange={(e) => setNewKitchenName(e.target.value)}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!newKitchenName.trim()}
-                                    className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all"
-                                >
-                                    {t('kitchens.create')}
-                                </button>
-                            </form>
-                        </section>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                            {/* Create New Kitchen */}
+                            <section className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 flex flex-col h-full">
+                                <h2 className="font-bold text-lg text-slate-900 mb-6 flex items-center gap-2">
+                                    <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 text-sm"><i className="fas fa-plus"></i></span>
+                                    {t('kitchens.createTitle')}
+                                </h2>
+                                <form onSubmit={handleCreateKitchen} className="flex flex-col gap-4 mt-auto">
+                                    <input
+                                        type="text"
+                                        placeholder={t('kitchens.createPlaceholder')}
+                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-50 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                                        value={newKitchenName}
+                                        onChange={(e) => setNewKitchenName(e.target.value)}
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={!newKitchenName.trim()}
+                                        className="w-full px-6 py-4 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all font-black uppercase tracking-wide"
+                                    >
+                                        {t('kitchens.create')}
+                                    </button>
+                                </form>
+                            </section>
+
+                            {/* Join Kitchen */}
+                            <section className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 flex flex-col h-full animate-in slide-in-from-bottom-4 duration-500">
+                                <h2 className="font-bold text-lg text-slate-900 mb-6 flex items-center gap-2">
+                                    <span className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 text-sm"><i className="fas fa-ticket-alt"></i></span>
+                                    {t('actions.haveCode')}
+                                </h2>
+                                <div className="flex flex-col gap-4 mt-auto">
+                                    <div className="w-full">
+                                        <CodeInput
+                                            onChange={setJoinCode}
+                                            disabled={joining}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleJoinKitchen}
+                                        disabled={joining || joinCode.length !== 6}
+                                        className="w-full px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black uppercase tracking-wide shadow-lg shadow-amber-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {joining ? <i className="fas fa-spinner fa-spin"></i> : t('actions.joinCode')}
+                                    </button>
+                                </div>
+                            </section>
+                        </div>
 
                         {/* Current Membership List */}
                         <section className="space-y-4">
@@ -425,6 +479,13 @@ export default function KitchensPage() {
                     </>
                 )}
             </main>
+            <MessageDialog
+                isOpen={errorDialog.isOpen}
+                onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
+                title={errorDialog.title}
+                message={errorDialog.message}
+                type="error"
+            />
         </div>
     );
 }
