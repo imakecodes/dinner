@@ -76,7 +76,8 @@ export const en = {
         copied: "Code copied!",
         removeConfirmTitle: "Remove Member",
         removeConfirmMsg: "Are you sure you want to remove this member? This action cannot be undone.",
-        guestEditError: "Guest users can only edit their own profile. To edit other members or add new members, please ask a kitchen administrator to upgrade your permissions"
+        guestEditError: "Guest users can only edit their own profile. To edit other members or add new members, please ask a kitchen administrator to upgrade your permissions",
+        tagHelp: "Press Enter or comma to add"
     },
     pantry: {
         title: "Pantry & Fridge",
