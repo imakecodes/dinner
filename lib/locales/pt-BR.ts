@@ -176,7 +176,12 @@ export const ptBR = {
         confirmPlaceholder: "Confirme a nova senha",
         passwordsMismatch: "As senhas não conferem",
         updateSuccess: "Configurações atualizadas com sucesso",
-        updateError: "Falha ao atualizar configurações"
+        updateError: "Falha ao atualizar configurações",
+        invalidCurrentPassword: "Senha atual inválida",
+        metric: "Métrico (g, ml)",
+        imperial: "Imperial (oz, lbs)",
+        currentPassword: "Senha Atual",
+        currentPasswordNote: "Obrigatório para alterar sua senha"
     },
     recipeCard: {
         todaysSuggestion: "Sugestão do Dia",

@@ -63,10 +63,10 @@ describe('SettingsPage Validation', () => {
         // Index 0: Current
         // Index 1: New
         // Index 2: Confirm
-        
+
         const inputs = screen.getAllByPlaceholderText('••••••••');
         expect(inputs).toHaveLength(3);
-        
+
         const currentInput = inputs[0];
         const newPasswordInput = inputs[1];
         const confirmInput = inputs[2];
@@ -116,7 +116,7 @@ describe('SettingsPage Validation', () => {
         render(<SettingsPage />);
         // Wait for loading to complete
         await waitFor(() => expect(screen.queryByText('settings.title')).toBeInTheDocument());
-        
+
         const inputs = screen.getAllByPlaceholderText('••••••••');
         const newPasswordInput = inputs[1];
         const confirmInput = inputs[2];
@@ -128,9 +128,35 @@ describe('SettingsPage Validation', () => {
         // Current password empty (default)
         const saveButton = screen.getByText('common.save');
         expect(saveButton).toBeDisabled();
-        
+
         // Fill current
         fireEvent.change(inputs[0], { target: { value: 'currentpass' } });
         expect(saveButton).not.toBeDisabled();
+    });
+    it('shows translated error when current password is wrong', async () => {
+        // Mock update failure
+        mockUpdateProfile.mockRejectedValueOnce(new Error('Invalid current password'));
+
+        render(<SettingsPage />);
+        await waitFor(() => expect(screen.queryByText('settings.title')).toBeInTheDocument());
+
+        const inputs = screen.getAllByPlaceholderText('••••••••');
+        const currentInput = inputs[0];
+        const newPasswordInput = inputs[1];
+        const confirmInput = inputs[2];
+
+        fireEvent.change(currentInput, { target: { value: 'wrongpass' } });
+        fireEvent.change(newPasswordInput, { target: { value: 'newpass123' } });
+        fireEvent.change(confirmInput, { target: { value: 'newpass123' } });
+
+        const saveButton = screen.getByText('common.save');
+        fireEvent.click(saveButton);
+
+        await waitFor(() => {
+            // We expect the translated key because our mock returns the key if not handled
+            // But wait, our mock implementation above returns 'Passwords do not match' etc.
+            // Let's rely on the fact that if it's not matched it returns the key.
+            expect(screen.getByText('settings.invalidCurrentPassword')).toBeInTheDocument();
+        });
     });
 });

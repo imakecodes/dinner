@@ -176,7 +176,12 @@ export const en = {
         confirmPlaceholder: "Confirm new password",
         passwordsMismatch: "Passwords do not match",
         updateSuccess: "Settings updated successfully",
-        updateError: "Failed to update settings"
+        updateError: "Failed to update settings",
+        invalidCurrentPassword: "Invalid current password",
+        metric: "Metric (g, ml)",
+        imperial: "Imperial (oz, lbs)",
+        currentPassword: "Current Password",
+        currentPasswordNote: "Required to make changes to your password"
     },
     recipeCard: {
         todaysSuggestion: "Today's Suggestion",

@@ -99,7 +99,11 @@ export default function SettingsPage() {
             // Reload to ensure sync
             loadUser();
         } catch (err: any) {
-            setMessage({ type: 'error', text: err.message || t('settings.updateError') });
+            if (err.message === 'Invalid current password') {
+                setMessage({ type: 'error', text: t('settings.invalidCurrentPassword') });
+            } else {
+                setMessage({ type: 'error', text: err.message || t('settings.updateError') });
+            }
         } finally {
             setSaving(false);
         }
@@ -256,7 +260,7 @@ export default function SettingsPage() {
                                         }`}
                                 >
                                     <span className="text-2xl">⚖️</span>
-                                    Metric (g, ml)
+                                    {t('settings.metric')}
                                 </button>
                                 <button
                                     type="button"
@@ -267,7 +271,7 @@ export default function SettingsPage() {
                                         }`}
                                 >
                                     <span className="text-2xl">lbs</span>
-                                    Imperial (oz, lbs)
+                                    {t('settings.imperial')}
                                 </button>
                             </div>
                         </div>
