@@ -12,7 +12,11 @@ export const LoadingOverlay: React.FC<Props> = ({ isVisible }) => {
   const steps = useMemo(() => [
     t('loading.step1'),
     t('loading.step2'),
-    t('loading.step3')
+    t('loading.step3'),
+    t('loading.step4'),
+    t('loading.step5'),
+    t('loading.step6'),
+    t('loading.step7')
   ], [t]);
 
   useEffect(() => {

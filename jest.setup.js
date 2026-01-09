@@ -226,7 +226,11 @@ const translations = {
       title: 'Cooking up something special...',
       step1: 'Selecting the best ingredients...',
       step2: 'Consulting our AI Chef...',
-      step3: 'Plating your dish...',
+      step3: 'Ideas: Creating your dish...',
+      step4: 'Adjusting preferences...',
+      step5: 'Checking dislikes...',
+      step6: 'Checking restrictions...',
+      step7: 'Adjusting portions...',
       warning: 'Please do not close your browser. This may take a moment.'
     }
   }
