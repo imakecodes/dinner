@@ -235,6 +235,7 @@ export const en = {
         chefMode: "Chef Mode",
         prepTime: "Prep Time",
         prepTimePlaceholder: "Prep Time (e.g. 45 mins)",
+        prepTimeMinutes: "Prep Time (Minutes)",
         ingredients: "Ingredients (Pantry/Kitchen)",
         qty: "Qty",
         unit: "Unit",

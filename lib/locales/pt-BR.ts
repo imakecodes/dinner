@@ -234,6 +234,7 @@ export const ptBR = {
         chefMode: "Modo Chef",
         prepTime: "Tempo de Preparo",
         prepTimePlaceholder: "Tempo de Preparo (ex: 45 min)",
+        prepTimeMinutes: "Tempo de Preparo (Minutos)",
         ingredients: "Ingredientes (Despensa/Cozinha)",
         qty: "Qtd",
         unit: "Un",

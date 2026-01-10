@@ -67,7 +67,8 @@ export async function POST(
             safety_badge: recipe.safety_badge,
             meal_type: recipe.meal_type as any,
             difficulty: recipe.difficulty as any,
-            prep_time: recipe.prep_time
+            prep_time: recipe.prep_time,
+            prep_time_minutes: recipe.prep_time_minutes
         };
 
         // 5. Call AI
@@ -86,7 +87,8 @@ export async function POST(
                     safety_badge: recipe.safety_badge,
                     meal_type: recipe.meal_type,
                     difficulty: recipe.difficulty,
-                    prep_time: recipe.prep_time,
+                    prep_time: translated.prep_time, // Use translated string
+                    prep_time_minutes: translated.prep_time_minutes ?? recipe.prep_time_minutes, // Prefer AI minutes, fallback to original
                     dishImage: recipe.dishImage, // Shared image
                     kitchenId: recipe.kitchenId,
                     originalRecipeId: rootOriginalId // LINK HERE

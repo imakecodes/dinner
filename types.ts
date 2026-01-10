@@ -81,6 +81,7 @@ export interface GeneratedRecipe {
   meal_type: MealType;
   difficulty: Difficulty;
   prep_time: string;
+  prep_time_minutes?: number | null;
 }
 
 // Frontend record extending generated data with DB fields
@@ -97,6 +98,7 @@ export interface RecipeRecord extends GeneratedRecipe {
     language: Language;
     recipe_title: string;
   }[];
+  prep_time_minutes?: number | null;
 }
 
 export type ViewState = 'home' | 'members' | 'pantry' | 'history' | 'shopping_list';

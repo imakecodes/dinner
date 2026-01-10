@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
         meal_type: data.meal_type,
         difficulty: data.difficulty,
         prep_time: data.prep_time,
+        prep_time_minutes: data.prep_time_minutes ? parseInt(String(data.prep_time_minutes)) : null,
         dishImage: data.dishImage,
         language: data.language || 'en',
         kitchenId: kitchenId,
