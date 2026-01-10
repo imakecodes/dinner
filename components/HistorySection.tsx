@@ -82,6 +82,10 @@ const HistorySection: React.FC<Props> = ({ history, onUpdate, onViewRecipe, isGu
                   <i className="far fa-calendar-alt"></i>
                   {new Date(recipe.createdAt).toLocaleDateString()}
                 </span>
+                <span className="text-slate-400 text-xs font-bold flex items-center gap-1">
+                  <i className="far fa-clock"></i>
+                  {recipe.prep_time_minutes ? `${recipe.prep_time_minutes} min` : recipe.prep_time}
+                </span>
                 
                 {/* Available Translations Badges */}
                 {recipe.translations && recipe.translations.length > 0 && (

@@ -20,6 +20,7 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
         meal_type: initialData?.meal_type || 'main' as MealType,
         difficulty: initialData?.difficulty || 'intermediate' as Difficulty,
         prep_time: initialData?.prep_time || '',
+        prep_time_minutes: initialData?.prep_time_minutes || '' as any,
         ingredients_from_pantry: (initialData?.ingredients_from_pantry as any[]) || [],
         shopping_list: (initialData?.shopping_list as any[]) || [],
         step_by_step: initialData?.step_by_step
@@ -234,13 +235,38 @@ export default function RecipeForm({ initialData, onSubmit, isSubmitting, title 
                             </select>
                         </div>
 
-                        <input
-                            type="text"
-                            placeholder={t('recipeForm.prepTimePlaceholder')}
-                            value={formData.prep_time}
-                            onChange={e => handleChange('prep_time', e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-rose-500 outline-none"
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <input
+                                type="text"
+                                placeholder={t('recipeForm.prepTimePlaceholder')}
+                                value={formData.prep_time}
+                                onChange={e => handleChange('prep_time', e.target.value)}
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-rose-500 outline-none"
+                            />
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    onKeyDown={(e) => {
+                                        if (['.', ',', '-', 'e', 'E', '+'].includes(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    placeholder={t('recipeForm.prepTimeMinutes') || "Minutes (e.g. 30)"}
+                                    value={formData.prep_time_minutes}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        // Double check regex to ensure only digits (though onKeyDown helps too)
+                                        if (val === '' || /^\d+$/.test(val)) {
+                                             handleChange('prep_time_minutes', val ? parseInt(val) : '');
+                                        }
+                                    }}
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-rose-500 outline-none"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">min</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Ingredients */}

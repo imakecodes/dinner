@@ -43,9 +43,10 @@ export const generateRecipe = async (
           meal_type: { type: Type.STRING },
           difficulty: { type: Type.STRING },
           prep_time: { type: Type.STRING },
+          prep_time_minutes: { type: Type.NUMBER },
           language: { type: Type.STRING }
         },
-        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time"]
+        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time", "prep_time_minutes"]
       }
     }
   });
@@ -140,9 +141,10 @@ export const translateRecipe = async (
           safety_badge: { type: Type.BOOLEAN },
           meal_type: { type: Type.STRING },
           difficulty: { type: Type.STRING },
-          prep_time: { type: Type.STRING }
+          prep_time: { type: Type.STRING },
+          prep_time_minutes: { type: Type.NUMBER }
         },
-        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time"]
+        required: ["analysis_log", "recipe_title", "match_reasoning", "ingredients_from_pantry", "shopping_list", "step_by_step", "safety_badge", "meal_type", "difficulty", "prep_time", "prep_time_minutes"]
       }
     }
   });

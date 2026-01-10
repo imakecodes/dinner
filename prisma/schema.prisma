@@ -192,6 +192,7 @@ model Recipe {
   meal_type    String
   difficulty   String
   prep_time    String
+  prep_time_minutes Int?
   dishImage    String? @db.Text
   language     String  @default("en")
 

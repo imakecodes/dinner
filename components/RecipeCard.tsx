@@ -187,6 +187,9 @@ const RecipeCard: React.FC<Props> = ({ recipe: initialRecipe, onSaved }) => {
                 }`}>
                 {recipe.difficulty === 'chef' ? <><i className="fas fa-hat-chef mr-1"></i> {t('recipeCard.chef')}</> : recipe.difficulty}
               </div>
+              <div className="inline-flex px-3 py-1 bg-white/10 backdrop-blur-md text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
+                <i className="fas fa-clock mr-1"></i> {recipe.prep_time_minutes ? `${recipe.prep_time_minutes} min` : recipe.prep_time}
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

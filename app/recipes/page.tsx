@@ -62,7 +62,15 @@ export default function HistoryPage() {
                 />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-4">
+                {!isGuest && (
+                    <button
+                        onClick={() => router.push('/generate')}
+                        className="flex items-center gap-2 px-4 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-xl font-bold transition-colors"
+                    >
+                        <i className="fas fa-wand-magic-sparkles"></i> {t('actions.generateTitle')}
+                    </button>
+                )}
                 <button
                     onClick={() => router.push('/recipes/create')}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-xl font-bold transition-colors"

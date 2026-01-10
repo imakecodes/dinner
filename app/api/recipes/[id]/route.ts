@@ -116,6 +116,7 @@ export async function PUT(
       data: {
         recipe_title: data.recipe_title,
         prep_time: data.prep_time,
+        prep_time_minutes: data.prep_time_minutes ? parseInt(String(data.prep_time_minutes)) : null,
         difficulty: data.difficulty,
         meal_type: data.meal_type,
         step_by_step: data.step_by_step,
