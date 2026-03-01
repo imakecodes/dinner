@@ -11,6 +11,14 @@ export type LookupStatus =
   | 'fallback_verified'
   | 'unverified_external'
   | 'not_found'
+  | 'source_unavailable'
+  | 'error';
+
+export type ProviderLookupStatus =
+  | 'verified'
+  | 'unverified_external'
+  | 'not_found'
+  | 'source_unavailable'
   | 'error';
 
 export type FactConfidence = 'high' | 'medium' | 'low';
@@ -29,6 +37,18 @@ export type KnowledgeFact = {
   context?: string;
 };
 
+export type ProviderLookupAttempt = {
+  provider: KnowledgeProvider;
+  status: ProviderLookupStatus;
+  source: KnowledgeSource;
+  error?: string;
+};
+
+export type LookupOptions = {
+  deadlineAtMs?: number;
+  timeoutMs?: number;
+};
+
 export type LookupResult = {
   entityType: KnowledgeEntityType;
   query: string;
@@ -38,4 +58,6 @@ export type LookupResult = {
   sources: KnowledgeSource[];
   rawText?: string;
   error?: string;
+  providerAttempts?: ProviderLookupAttempt[];
+  sourceUnavailable?: boolean;
 };

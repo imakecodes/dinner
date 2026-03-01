@@ -16,6 +16,7 @@ import {
 import { BUILD_GENERATION_SYSTEM_INSTRUCTION } from "@/lib/prompts";
 import { assessBuildDomain, type DomainAssessment } from "@/lib/domain-guardrails";
 import { validateBuildMechanics, type MechanicsValidationResult } from "@/lib/build-mechanics-validator";
+import { autoCorrectBuildFactConflicts } from "@/lib/build-fact-autocorrect";
 import {
   buildModelAttemptChain,
   getConfiguredModels,
@@ -25,6 +26,13 @@ import {
   validateConfiguredModelsWithList,
 } from "@/lib/gemini-model-policy";
 import { annotateItemUncertainty } from "@/lib/build-output-quality";
+import {
+  buildEvidencePackFromGrounding,
+  buildGroundingFailureDetails,
+  buildGroundingInstruction,
+  groundUserTerms,
+  hasGroundingUnverifiedFacts,
+} from "@/lib/poe2-term-grounding";
 
 const parseRetryDelaySeconds = (error: any, payload: GeminiErrorPayload | null): number | null => {
   const details = payload?.error?.details;
@@ -107,10 +115,27 @@ const FACT_CORRECTION_INSTRUCTION_BASE = `
 CRITICAL FACTUAL CORRECTION:
 - Keep claims strictly aligned with Path of Exile 2 verified mechanics.
 - Every critical mechanic claim must be source-verifiable with poe2db.tw or poe2wiki.net.
-- Do not conflate "damage taken as" with "damage dealt conversion".
-- Never claim offensive damage conversion without explicit enabler in gear_gems/build_items.
-- Infernalist does not automatically imply full Frostbolt conversion to fire.
+- Use only entities verified in the official Evidence Pack for factual claims.
+- Do not reinterpret non-confirmed terms as confirmed mechanics.
+- Keep canonical term roles: skill as skill, ascendancy node as ascendancy, unique item as unique item.
+- If evidence is missing, remove or rewrite the claim instead of guessing.
 `;
+
+const DEFAULT_FACT_PIPELINE_BUDGET_MS = 12_000;
+type OfficialSourceConflictStrategy = 'degrade_warn' | 'fail_503';
+
+const getFactPipelineBudgetMs = (): number => {
+  const raw = Number(process.env.POE_FACT_PIPELINE_BUDGET_MS);
+  if (Number.isFinite(raw) && raw >= 2_000) {
+    return Math.floor(raw);
+  }
+  return DEFAULT_FACT_PIPELINE_BUDGET_MS;
+};
+
+const getOfficialSourceConflictStrategy = (): OfficialSourceConflictStrategy => {
+  const raw = String(process.env.POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY || '').trim().toLowerCase();
+  return raw === 'fail_503' ? 'fail_503' : 'degrade_warn';
+};
 
 const buildDomainMismatchError = (assessment: DomainAssessment): Error => {
   const structuredError = new Error("Generated content is outside Path of Exile 2 build domain");
@@ -123,6 +148,7 @@ const buildDomainMismatchError = (assessment: DomainAssessment): Error => {
 
 const buildFactConflictCorrectionInstruction = (
   validation: MechanicsValidationResult,
+  groundingInstruction: string,
 ): string => {
   const conflictLines = validation.criticalConflicts
     .slice(0, 5)
@@ -132,14 +158,38 @@ const buildFactConflictCorrectionInstruction = (
     })
     .join('\n');
 
-  return `${FACT_CORRECTION_INSTRUCTION_BASE}\n\nFACT CONFLICTS TO FIX:\n${conflictLines}\n`;
+  const enablerLines = (validation.enablerDiagnostics || [])
+    .slice(0, 5)
+    .map((diagnostic, index) => {
+      const sources = diagnostic.sources.map((source) => source.url).join(', ');
+      return `${index + 1}. Enabler: ${diagnostic.name}\n   Skill: ${diagnostic.skill}\n   Status: ${diagnostic.status}\n   Reason: ${diagnostic.reason}\n   Sources: ${sources || 'none'}`;
+    })
+    .join('\n');
+
+  const claimLines = (validation.claimResults || [])
+    .filter((result) => result.status !== 'verified')
+    .slice(0, 8)
+    .map((result, index) =>
+      `${index + 1}. ClaimId: ${result.claimId}\n   Status: ${result.status}\n   Reason: ${result.reason}\n   Missing Terms: ${result.missingTerms.join(', ') || 'none'}\n   Evidence: ${result.evidenceUrls.join(', ') || 'none'}`)
+    .join('\n');
+
+  return `${FACT_CORRECTION_INSTRUCTION_BASE}${groundingInstruction}\n\nFACT CONFLICTS TO FIX:\n${conflictLines || 'none'}\n\nCLAIM VERIFICATION FAILURES:\n${claimLines || 'none'}\n\nENABLER DIAGNOSTICS:\n${enablerLines || 'none'}\n`;
 };
 
-const buildFactConflictError = (validation: MechanicsValidationResult): Error => {
+const buildFactUnverifiedError = (validation: MechanicsValidationResult): Error => {
   const structuredError = new Error("Generated build contains unverifiable or conflicting PoE2 mechanics");
   (structuredError as any).status = 422;
-  (structuredError as any).code = 'gemini.fact_conflict';
+  (structuredError as any).code = 'gemini.fact_unverified';
   (structuredError as any).details = validation.criticalConflicts;
+  (structuredError as any).claimResults = validation.claimResults;
+  return structuredError;
+};
+
+const buildOfficialSourcesUnavailableError = (details: unknown): Error => {
+  const structuredError = new Error("Official PoE2 sources were unavailable in factual verification budget");
+  (structuredError as any).status = 503;
+  (structuredError as any).code = 'gemini.official_sources_unavailable';
+  (structuredError as any).details = details;
   return structuredError;
 };
 
@@ -176,12 +226,70 @@ export const craftBuildWithAI = async (
     ? `\n\nPLAYER NOTES (CRITICAL): ${session_context.build_notes}`
     : '';
 
+  const factualDeadlineAtMs = Date.now() + getFactPipelineBudgetMs();
+
   // Language instruction
   const langInstruction = session_context.language ? `\nIMPORTANT: OUTPUT MUST BE IN "${session_context.language}" LANGUAGE.` : '';
+  const groundedTerms = await groundUserTerms(session_context, partyMembersDb, {
+    deadlineAtMs: factualDeadlineAtMs,
+  });
+  const evidencePack = buildEvidencePackFromGrounding(groundedTerms, factualDeadlineAtMs);
+  const groundingInstruction = buildGroundingInstruction(groundedTerms);
+  const groundingFailures = buildGroundingFailureDetails(groundedTerms);
+  const sourceUnavailableGrounding = groundingFailures.filter((failure) => failure.code === 'source_unavailable' || failure.code === 'error');
+  const sourceConflictStrategy = getOfficialSourceConflictStrategy();
+
+  const hasZeroVerifiedGrounding =
+    evidencePack.metadata.termsTotal > 0 &&
+    evidencePack.metadata.termsVerified === 0;
+
+  if (sourceUnavailableGrounding.length > 0 && hasZeroVerifiedGrounding) {
+    if (sourceConflictStrategy === 'fail_503') {
+      throw buildOfficialSourcesUnavailableError(sourceUnavailableGrounding);
+    }
+    console.warn('[Gemini][FactPipeline] Preflight source outage with zero verified terms; degrading due strategy.', {
+      strategy: sourceConflictStrategy,
+      unavailableCount: sourceUnavailableGrounding.length,
+    });
+  }
+
+  if (sourceUnavailableGrounding.length > 0) {
+    console.warn('[Gemini][FactPipeline] Partial grounding source unavailability detected; continuing to claim-level verification.', {
+      unavailableCount: sourceUnavailableGrounding.length,
+      verifiedTerms: evidencePack.metadata.termsVerified,
+      totalTerms: evidencePack.metadata.termsTotal,
+    });
+  }
+
+  const unresolvedGameTerms = hasGroundingUnverifiedFacts(groundedTerms)
+    ? groundingFailures.filter((failure) => failure.code !== 'source_unavailable' && failure.code !== 'error')
+    : [];
+
+  console.info('[Gemini][FactPipeline] Grounding summary', {
+    grounding_terms_total: evidencePack.metadata.termsTotal,
+    grounding_terms_verified: evidencePack.metadata.termsVerified,
+    grounding_terms_unverified: evidencePack.metadata.termsUnverified,
+    source_timeout_rate: sourceUnavailableGrounding.length > 0 ? 1 : 0,
+    deadlineAtMs: factualDeadlineAtMs,
+  });
+
+  const evidenceSummaryInstruction = `
+
+OFFICIAL EVIDENCE PACK:
+- generated_at: ${evidencePack.generatedAt}
+- terms_total: ${evidencePack.metadata.termsTotal}
+- terms_verified: ${evidencePack.metadata.termsVerified}
+- terms_unverified: ${evidencePack.metadata.termsUnverified}
+- unresolved_terms: ${unresolvedGameTerms.map((term) => `${term.term}:${term.code}`).join(', ') || 'none'}
+- You must not output factual claims without explicit support from this Evidence Pack or direct official evidence.
+`;
+
   const localAiContext = await getLocalAiContext();
 
   const systemInstruction = BUILD_GENERATION_SYSTEM_INSTRUCTION(session_context, costTierInstructionEn, notesInstruction)
     + langInstruction
+    + groundingInstruction
+    + evidenceSummaryInstruction
     + buildLocalContextInstruction(localAiContext);
 
   const prompt = JSON.stringify({ party_members: partyMembersDb, build_context: session_context });
@@ -294,6 +402,7 @@ export const craftBuildWithAI = async (
 
   let parsedBuild = normalizeBuildPayload(JSON.parse(response.text)) as unknown as GeneratedBuild;
   let domainAssessment = assessBuildDomain(parsedBuild);
+  let acceptedWithSourceDegradation = false;
 
   if (domainAssessment.isInvalid) {
     console.warn('[Gemini] Domain mismatch detected. Retrying generation with strict PoE2 correction.', {
@@ -326,15 +435,27 @@ export const craftBuildWithAI = async (
     }
   }
 
-  let mechanicsValidation = await validateBuildMechanics(parsedBuild);
-  if (!mechanicsValidation.isValid) {
+  let mechanicsValidation = await validateBuildMechanics(parsedBuild, {
+    mode: 'strict',
+    evidencePack,
+    deadlineAtMs: factualDeadlineAtMs,
+  });
+  console.info('[Gemini][FactPipeline] Verification summary', {
+    claims_total: mechanicsValidation.claimsTotal,
+    claims_verified: mechanicsValidation.claimsVerified,
+    claims_blocked: mechanicsValidation.claimsBlocked,
+    source_timeout_rate: mechanicsValidation.hasSourceUnavailableBlocking ? 1 : 0,
+  });
+  if (!mechanicsValidation.isValid || mechanicsValidation.hasSourceUnavailableBlocking) {
     console.warn('[Gemini] Fact conflict detected. Retrying generation with factual correction.', {
       conflicts: mechanicsValidation.criticalConflicts,
       warnings: mechanicsValidation.warnings,
       evidence: mechanicsValidation.evidence,
+      enablerDiagnostics: mechanicsValidation.enablerDiagnostics,
+      claimResults: mechanicsValidation.claimResults,
     });
 
-    response = await generateWithFallback(buildFactConflictCorrectionInstruction(mechanicsValidation));
+    response = await generateWithFallback(buildFactConflictCorrectionInstruction(mechanicsValidation, groundingInstruction));
     if (!response.text) throw new Error("AI generation failed");
 
     parsedBuild = normalizeBuildPayload(JSON.parse(response.text)) as unknown as GeneratedBuild;
@@ -343,18 +464,69 @@ export const craftBuildWithAI = async (
       throw buildDomainMismatchError(domainAssessment);
     }
 
-    mechanicsValidation = await validateBuildMechanics(parsedBuild);
-    if (!mechanicsValidation.isValid) {
+    mechanicsValidation = await validateBuildMechanics(parsedBuild, {
+      mode: 'strict',
+      evidencePack,
+      deadlineAtMs: factualDeadlineAtMs,
+    });
+    console.info('[Gemini][FactPipeline] Verification summary (retry)', {
+      claims_total: mechanicsValidation.claimsTotal,
+      claims_verified: mechanicsValidation.claimsVerified,
+      claims_blocked: mechanicsValidation.claimsBlocked,
+      retry_success_rate: mechanicsValidation.isValid && !mechanicsValidation.hasSourceUnavailableBlocking ? 1 : 0,
+      source_timeout_rate: mechanicsValidation.hasSourceUnavailableBlocking ? 1 : 0,
+    });
+    if (!mechanicsValidation.isValid || mechanicsValidation.hasSourceUnavailableBlocking) {
       console.warn('[Gemini] Fact conflict persisted after correction.', {
         conflicts: mechanicsValidation.criticalConflicts,
         warnings: mechanicsValidation.warnings,
         evidence: mechanicsValidation.evidence,
+        enablerDiagnostics: mechanicsValidation.enablerDiagnostics,
+        claimResults: mechanicsValidation.claimResults,
       });
-      throw buildFactConflictError(mechanicsValidation);
+
+      if (mechanicsValidation.hasSourceUnavailableBlocking) {
+        if (sourceConflictStrategy === 'fail_503') {
+          throw buildOfficialSourcesUnavailableError({
+            groundingFailures: sourceUnavailableGrounding,
+            verificationConflicts: mechanicsValidation.criticalConflicts,
+            claimResults: mechanicsValidation.claimResults,
+          });
+        }
+
+        console.warn('[Gemini][FactPipeline] Degrading source-unavailable conflicts to warn mode.', {
+          strategy: sourceConflictStrategy,
+          blockedClaims: mechanicsValidation.claimsBlocked,
+        });
+
+        const degraded = autoCorrectBuildFactConflicts(parsedBuild, mechanicsValidation, {
+          language: session_context.language,
+          forceUncertaintyNote: true,
+        });
+
+        parsedBuild = degraded.correctedBuild as GeneratedBuild;
+        mechanicsValidation = await validateBuildMechanics(parsedBuild, {
+          mode: 'warn',
+          evidencePack,
+          deadlineAtMs: factualDeadlineAtMs,
+        });
+        if (!mechanicsValidation.isValid) {
+          throw buildFactUnverifiedError(mechanicsValidation);
+        }
+
+        parsedBuild = annotateItemUncertainty(parsedBuild, session_context.language) as GeneratedBuild;
+        acceptedWithSourceDegradation = true;
+      } else {
+        throw buildFactUnverifiedError(mechanicsValidation);
+      }
     }
   }
 
-  parsedBuild = annotateItemUncertainty(parsedBuild) as GeneratedBuild;
+  if (acceptedWithSourceDegradation) {
+    console.warn('[Gemini][FactPipeline] Returning build with explicit source-unavailability uncertainty note.');
+  }
+
+  parsedBuild = annotateItemUncertainty(parsedBuild, session_context.language) as GeneratedBuild;
 
   // Log usage
   try {

@@ -3,6 +3,13 @@ import { GoogleGenAI } from '@google/genai';
 import { prisma } from '../../lib/prisma';
 import { getLocalAiContext } from '@/lib/ai-context';
 import { validateBuildMechanics } from '@/lib/build-mechanics-validator';
+import {
+  buildEvidencePackFromGrounding,
+  buildGroundingFailureDetails,
+  buildGroundingInstruction,
+  groundUserTerms,
+  hasGroundingUnverifiedFacts,
+} from '@/lib/poe2-term-grounding';
 
 jest.mock('@google/genai', () => {
   return {
@@ -29,6 +36,14 @@ jest.mock('@/lib/ai-context', () => ({
 
 jest.mock('@/lib/build-mechanics-validator', () => ({
   validateBuildMechanics: jest.fn(),
+}));
+
+jest.mock('@/lib/poe2-term-grounding', () => ({
+  groundUserTerms: jest.fn(),
+  buildGroundingInstruction: jest.fn(),
+  buildEvidencePackFromGrounding: jest.fn(),
+  buildGroundingFailureDetails: jest.fn(),
+  hasGroundingUnverifiedFacts: jest.fn(),
 }));
 
 const makeValidBuildPayload = (overrides: Record<string, any> = {}) => JSON.stringify({
@@ -114,17 +129,43 @@ describe('geminiService', () => {
     process.env.GEMINI_MODEL_PRIMARY = 'gemini-3-pro-preview';
     process.env.GEMINI_MODEL_FALLBACK = 'gemini-2.5-flash';
     (getLocalAiContext as jest.Mock).mockResolvedValue('Keep stash-first suggestions only.');
+    (groundUserTerms as jest.Mock).mockResolvedValue([]);
+    (buildGroundingInstruction as jest.Mock).mockReturnValue('\n\nVERIFIED USER TERMS (CANONICAL ANCHORS):\n- none');
+    (buildEvidencePackFromGrounding as jest.Mock).mockReturnValue({
+      generatedAt: new Date().toISOString(),
+      deadlineAtMs: Date.now() + 10_000,
+      terms: [],
+      lookups: [],
+      facts: [],
+      sourceUnavailable: false,
+      metadata: {
+        termsTotal: 0,
+        termsVerified: 0,
+        termsUnverified: 0,
+      },
+    });
+    (buildGroundingFailureDetails as jest.Mock).mockReturnValue([]);
+    (hasGroundingUnverifiedFacts as jest.Mock).mockReturnValue(false);
     (validateBuildMechanics as jest.Mock).mockResolvedValue({
       isValid: true,
       criticalConflicts: [],
       warnings: [],
       evidence: [],
+      enablerDiagnostics: [],
+      claimResults: [],
+      claimsTotal: 0,
+      claimsVerified: 0,
+      claimsBlocked: 0,
+      hadExternalLookupFailure: false,
+      hasSourceUnavailableBlocking: false,
     });
   });
 
   afterEach(() => {
     delete process.env.GEMINI_MODEL_PRIMARY;
     delete process.env.GEMINI_MODEL_FALLBACK;
+    delete process.env.POE_FACT_PIPELINE_BUDGET_MS;
+    delete process.env.POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY;
   });
 
   it('generateRecipe should return parsed recipe on primary model success and include local context', async () => {
@@ -146,6 +187,9 @@ describe('geminiService', () => {
     expect(mockGenerateContent.mock.calls[0][0].model).toBe('gemini-3-pro-preview');
     expect(mockGenerateContent.mock.calls[0][0].config.systemInstruction).toEqual(
       expect.stringContaining('LOCAL APPLICATION CONTEXT (FOLLOW STRICTLY):')
+    );
+    expect(mockGenerateContent.mock.calls[0][0].config.systemInstruction).toEqual(
+      expect.stringContaining('VERIFIED USER TERMS (CANONICAL ANCHORS):')
     );
     expect(prisma.geminiUsage.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
@@ -344,20 +388,24 @@ describe('geminiService', () => {
         criticalConflicts: [
           {
             claim: 'Infernalist Frostbolt 100% to fire',
-            expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
-            found: 'No explicit enabler found for offensive conversion claim.',
+            expected: 'Verified compatible conversion enabler listed in build_items or gear_gems.',
+            found: 'No conversion enabler candidate found in build_items/gear_gems.',
             subject: 'infernalist:frostbolt_conversion',
             sources: [],
           },
         ],
         warnings: [],
         evidence: [],
+        enablerDiagnostics: [],
+        hadExternalLookupFailure: false,
       })
       .mockResolvedValueOnce({
         isValid: true,
         criticalConflicts: [],
         warnings: [],
         evidence: [],
+        enablerDiagnostics: [],
+        hadExternalLookupFailure: false,
       });
 
     (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
@@ -373,7 +421,7 @@ describe('geminiService', () => {
     );
   });
 
-  it('generateRecipe should throw 422 fact_conflict when critical conflicts persist after correction', async () => {
+  it('generateRecipe should throw 422 fact_unverified when conflicts persist after correction', async () => {
     const mockGenerateContent = jest
       .fn()
       .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Still Wrong' }) })
@@ -381,8 +429,74 @@ describe('geminiService', () => {
 
     const persistentConflict = {
       claim: 'Infernalist Frostbolt 100% to fire',
-      expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
-      found: 'No explicit enabler found for offensive conversion claim.',
+      expected: 'Verified compatible conversion enabler listed in build_items or gear_gems.',
+      found: 'Enabler diagnostics: Fire Attunement:incompatible',
+      subject: 'infernalist:frostbolt_conversion',
+      sources: [{ provider: 'poe2db', url: 'https://poe2db.tw/us/Frostbolt', fetchedAt: new Date().toISOString() }],
+    };
+
+    (validateBuildMechanics as jest.Mock)
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [],
+        enablerDiagnostics: [{ name: 'Fire Attunement', status: 'incompatible', reason: 'Attack only support', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: false,
+      })
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [],
+        enablerDiagnostics: [{ name: 'Fire Attunement', status: 'incompatible', reason: 'Attack only support', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: false,
+        claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'missing evidence', evidenceUrls: [], missingTerms: ['Infernalist'] }],
+        claimsTotal: 1,
+        claimsVerified: 0,
+        claimsBlocked: 1,
+        hasSourceUnavailableBlocking: false,
+      })
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [],
+        enablerDiagnostics: [{ name: 'Fire Attunement', status: 'incompatible', reason: 'Attack only support', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: false,
+        claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'missing evidence', evidenceUrls: [], missingTerms: ['Infernalist'] }],
+        claimsTotal: 1,
+        claimsVerified: 0,
+        claimsBlocked: 1,
+        hasSourceUnavailableBlocking: false,
+      });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    await expect(generateRecipe(mockHousehold as any, mockContext)).rejects.toMatchObject({
+      status: 422,
+      code: 'gemini.fact_unverified',
+      details: [persistentConflict],
+    });
+  });
+
+  it('generateRecipe should degrade to warn mode and return build when source unavailability blocks strict validation', async () => {
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Needs External Recovery' }) })
+      .mockResolvedValueOnce({
+        text: makeValidBuildPayload({
+          build_title: 'Recovered With External Failure',
+          analysis_log: 'Strict verification required external sources that were unavailable.',
+        })
+      });
+
+    const persistentConflict = {
+      claim: 'Infernalist Frostbolt 100% to fire',
+      expected: 'Verified compatible conversion enabler listed in build_items or gear_gems.',
+      found: 'Enabler diagnostics: Unknown Conversion Support:unverified_external',
       subject: 'infernalist:frostbolt_conversion',
       sources: [],
     };
@@ -392,13 +506,143 @@ describe('geminiService', () => {
         isValid: false,
         criticalConflicts: [persistentConflict],
         warnings: [],
-        evidence: [],
+        evidence: [{ subject: 'infernalist:frostbolt_conversion', status: 'unverified_external', sources: [] }],
+        enablerDiagnostics: [{ name: 'Unknown Conversion Support', status: 'unverified_external', reason: 'network timeout', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: true,
       })
       .mockResolvedValueOnce({
         isValid: false,
         criticalConflicts: [persistentConflict],
         warnings: [],
-        evidence: [],
+        evidence: [{ subject: 'infernalist:frostbolt_conversion', status: 'unverified_external', sources: [] }],
+        enablerDiagnostics: [{ name: 'Unknown Conversion Support', status: 'source_unavailable', reason: 'network timeout', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: true,
+        claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'official_sources_unavailable', evidenceUrls: [], missingTerms: ['Unknown Conversion Support'] }],
+        claimsTotal: 1,
+        claimsVerified: 0,
+        claimsBlocked: 1,
+        hasSourceUnavailableBlocking: true,
+      })
+      .mockResolvedValueOnce({
+        isValid: true,
+        criticalConflicts: [],
+        warnings: ['official_sources_unavailable'],
+        evidence: [{ subject: 'infernalist:frostbolt_conversion', status: 'source_unavailable', sources: [] }],
+        enablerDiagnostics: [],
+        hadExternalLookupFailure: true,
+        claimResults: [{ claimId: 'build_reasoning:1', status: 'unverified', reason: 'official_sources_unavailable', evidenceUrls: [], missingTerms: ['Unknown Conversion Support'] }],
+        claimsTotal: 1,
+        claimsVerified: 0,
+        claimsBlocked: 0,
+        hasSourceUnavailableBlocking: false,
+      });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    const result = await generateRecipe(mockHousehold as any, mockContext);
+    expect(result.recipe_title).toBe('Recovered With External Failure');
+    expect(result.analysis_log.toLowerCase()).toContain('validation');
+  });
+
+  it('generateRecipe should continue in degrade_warn when official grounding sources are unavailable before generation', async () => {
+    (buildEvidencePackFromGrounding as jest.Mock).mockReturnValue({
+      generatedAt: new Date().toISOString(),
+      deadlineAtMs: Date.now() + 10_000,
+      terms: [],
+      lookups: [],
+      facts: [],
+      sourceUnavailable: true,
+      metadata: { termsTotal: 1, termsVerified: 0, termsUnverified: 1 },
+    });
+    (buildGroundingFailureDetails as jest.Mock).mockReturnValue([{
+      term: 'Frostbolt',
+      lookupStatus: 'source_unavailable',
+      reason: 'timeout',
+      sources: ['https://poe2db.tw/us/Frostbolt'],
+      code: 'source_unavailable',
+    }]);
+
+    const mockGenerateContent = jest.fn().mockResolvedValue({
+      text: makeValidBuildPayload({ build_title: 'Grounding Outage Build' }),
+    });
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    const result = await generateRecipe(mockHousehold as any, mockContext);
+    expect(result.recipe_title).toBe('Grounding Outage Build');
+    expect(mockGenerateContent).toHaveBeenCalled();
+  });
+
+  it('generateRecipe should throw 503 on grounding outage when strategy is fail_503', async () => {
+    process.env.POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY = 'fail_503';
+    (buildEvidencePackFromGrounding as jest.Mock).mockReturnValue({
+      generatedAt: new Date().toISOString(),
+      deadlineAtMs: Date.now() + 10_000,
+      terms: [],
+      lookups: [],
+      facts: [],
+      sourceUnavailable: true,
+      metadata: { termsTotal: 1, termsVerified: 0, termsUnverified: 1 },
+    });
+    (buildGroundingFailureDetails as jest.Mock).mockReturnValue([{
+      term: 'Frostbolt',
+      lookupStatus: 'source_unavailable',
+      reason: 'timeout',
+      sources: ['https://poe2db.tw/us/Frostbolt'],
+      code: 'source_unavailable',
+    }]);
+
+    const mockGenerateContent = jest.fn();
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    await expect(generateRecipe(mockHousehold as any, mockContext)).rejects.toMatchObject({
+      status: 503,
+      code: 'gemini.official_sources_unavailable',
+    });
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  it('generateRecipe should throw 503 in fail_503 strategy when strict validation remains source-blocked', async () => {
+    process.env.POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY = 'fail_503';
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Needs External Recovery' }) })
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Recovered With External Failure' }) });
+
+    const persistentConflict = {
+      claim: 'Infernalist Frostbolt 100% to fire',
+      expected: 'Verified compatible conversion enabler listed in build_items or gear_gems.',
+      found: 'Enabler diagnostics: Unknown Conversion Support:unverified_external',
+      subject: 'infernalist:frostbolt_conversion',
+      sources: [],
+    };
+
+    (validateBuildMechanics as jest.Mock)
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [{ subject: 'infernalist:frostbolt_conversion', status: 'unverified_external', sources: [] }],
+        enablerDiagnostics: [{ name: 'Unknown Conversion Support', status: 'unverified_external', reason: 'network timeout', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: true,
+      })
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [{ subject: 'infernalist:frostbolt_conversion', status: 'source_unavailable', sources: [] }],
+        enablerDiagnostics: [{ name: 'Unknown Conversion Support', status: 'source_unavailable', reason: 'network timeout', skill: 'Frostbolt', sources: [] }],
+        hadExternalLookupFailure: true,
+        claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'official_sources_unavailable', evidenceUrls: [], missingTerms: ['Unknown Conversion Support'] }],
+        claimsTotal: 1,
+        claimsVerified: 0,
+        claimsBlocked: 1,
+        hasSourceUnavailableBlocking: true,
       });
 
     (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
@@ -406,9 +650,8 @@ describe('geminiService', () => {
     }));
 
     await expect(generateRecipe(mockHousehold as any, mockContext)).rejects.toMatchObject({
-      status: 422,
-      code: 'gemini.fact_conflict',
-      details: [persistentConflict],
+      status: 503,
+      code: 'gemini.official_sources_unavailable',
     });
   });
 

@@ -64,20 +64,41 @@ export async function craftBuild(
       );
     }
 
-    const isFactConflict = errorCode === 'gemini.fact_conflict';
-    if (isFactConflict) {
-      const localizedFactConflict = t('api.geminiFactConflict');
+    const isFactUnverified = errorCode === 'gemini.fact_unverified' || errorCode === 'gemini.fact_conflict';
+    if (isFactUnverified) {
+      const localizedFactConflict = t('api.geminiFactUnverified');
+      const fallbackLocalized = localizedFactConflict === 'api.geminiFactUnverified'
+        ? t('api.geminiFactConflict')
+        : localizedFactConflict;
       const fallbackFactConflict = t('generate.generateError');
 
       return NextResponse.json(
         {
-          error: localizedFactConflict === 'api.geminiFactConflict'
+          error: fallbackLocalized === 'api.geminiFactConflict' || fallbackLocalized === 'api.geminiFactUnverified'
             ? fallbackFactConflict
-            : localizedFactConflict,
-          code: 'gemini.fact_conflict',
+            : fallbackLocalized,
+          code: 'gemini.fact_unverified',
           details: Array.isArray(error?.details) ? error.details : [],
+          claimResults: Array.isArray(error?.claimResults) ? error.claimResults : [],
         },
         { status: 422 },
+      );
+    }
+
+    const isOfficialSourcesUnavailable = errorCode === 'gemini.official_sources_unavailable';
+    if (isOfficialSourcesUnavailable) {
+      const localizedUnavailable = t('api.officialSourcesUnavailable');
+      const fallbackUnavailable = t('generate.generateError');
+
+      return NextResponse.json(
+        {
+          error: localizedUnavailable === 'api.officialSourcesUnavailable'
+            ? fallbackUnavailable
+            : localizedUnavailable,
+          code: 'gemini.official_sources_unavailable',
+          details: Array.isArray(error?.details) ? error.details : error?.details || null,
+        },
+        { status: 503 },
       );
     }
 

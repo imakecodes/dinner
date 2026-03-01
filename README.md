@@ -71,7 +71,7 @@ Built with modern web technologies for performance and scale:
     Keep `GEMINI_MODEL_FALLBACK` on a `generateContent`-compatible model (recommended: `gemini-2.5-flash`).
     `AI_CONTEXT_FILE_PATH` is optional. If it is unset or points to a missing file, runtime falls back to `.ai/ai-context.template.md`.
     Create `.ai/ai-context.local.md` only when you need local prompt overrides.
-    Fact-validation defaults to strict PoE2 mechanics checks (`POE_FACT_VALIDATION_MODE=strict`) and can return `422 gemini.fact_conflict` when critical claims remain unverifiable after retry.
+    Fact-validation defaults to strict PoE2 mechanics checks (`POE_FACT_VALIDATION_MODE=strict`) and can return `422 gemini.fact_unverified` when critical claims remain unverifiable after one corrective retry. Source outages use `POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY=degrade_warn` by default (best-effort output with explicit uncertainty), or `fail_503` to return `503 gemini.official_sources_unavailable`.
     Tune lookup behavior with `POE_KNOWLEDGE_CACHE_TTL_MIN` and `POE_KNOWLEDGE_FETCH_TIMEOUT_MS`.
 
 3.  **Start the database**:

@@ -20,9 +20,12 @@ OBJECTIVES:
 14. Never expose internal enum keys or snake_case tokens in user-facing text.
 15. Do not quote build archetype or cost labels unless grammar requires it.
 16. Every critical mechanic claim must be source-verifiable (poe2db.tw / poe2wiki.net) whenever possible.
-17. Do not conflate defensive "damage taken as" effects with offensive damage conversion.
-18. If a conversion claim depends on unique item or support setup, include the enabler explicitly in build_items or gear_gems.
-19. Infernalist does not imply full Frostbolt conversion to fire without an explicit enabler.
+17. Use verified official evidence first. Never create factual mechanics from heuristics or analogy.
+18. Keep each verified term in canonical PoE2 role (skill stays skill, ascendancy node stays ascendancy node, unique item stays unique item).
+19. Every conversion or dependency claim must list a compatible and verified enabler in build_items or gear_gems.
+20. Validate support/skill compatibility (attack-only supports cannot be applied to spell-only skills, and vice versa).
+21. For non-confirmed game terms, state uncertainty explicitly and do not present them as confirmed facts.
+22. Internal product terms (league starter/mapper/cost tier) are preferences, not external game entities.
 ${notesInstruction}
 OUTPUT:
 Respond ONLY with JSON.

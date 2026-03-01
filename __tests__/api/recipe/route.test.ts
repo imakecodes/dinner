@@ -49,6 +49,8 @@ describe('POST /api/recipe', () => {
             'generate.generateError': 'Falha ao craftar build. Tente novamente.',
             'api.geminiDomainMismatch': 'O conteudo gerado esta fora do dominio de build do Path of Exile 2. Tente novamente.',
             'api.geminiFactConflict': 'A build gerada contem afirmacoes mecanicas nao verificadas para Path of Exile 2. Ajuste as restricoes e tente novamente.',
+            'api.geminiFactUnverified': 'A build gerada contem claims factuais sem evidencia oficial suficiente. Ajuste as restricoes e tente novamente.',
+            'api.officialSourcesUnavailable': 'As fontes oficiais do PoE2 estao indisponiveis no momento. Tente novamente em instantes.',
             'api.geminiModelUnavailable': 'Nenhum modelo Gemini compativel esta disponivel no momento. Tente novamente em instantes.',
             'api.internalError': 'Erro interno do servidor'
           }
@@ -56,6 +58,8 @@ describe('POST /api/recipe', () => {
             'generate.generateError': 'Failed to craft build. Please try again.',
             'api.geminiDomainMismatch': 'Generated content is outside Path of Exile 2 build domain. Please try again.',
             'api.geminiFactConflict': 'Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.',
+            'api.geminiFactUnverified': 'Generated build contains factual claims without enough official evidence. Adjust constraints and try again.',
+            'api.officialSourcesUnavailable': 'Official PoE2 sources are temporarily unavailable. Please retry shortly.',
             'api.geminiModelUnavailable': 'No compatible Gemini model is currently available. Please try again shortly.',
             'api.internalError': 'Internal server error'
           };
@@ -169,10 +173,10 @@ describe('POST /api/recipe', () => {
     });
   });
 
-  it('returns 422 localized fact conflict with details', async () => {
+  it('returns 422 localized fact_unverified with details', async () => {
     (craftBuildWithAI as jest.Mock).mockRejectedValue({
       status: 422,
-      code: 'gemini.fact_conflict',
+      code: 'gemini.fact_unverified',
       details: [
         {
           claim: 'Infernalist converts Frostbolt 100% to fire',
@@ -182,6 +186,7 @@ describe('POST /api/recipe', () => {
           sources: [],
         },
       ],
+      claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'missing evidence', evidenceUrls: [], missingTerms: ['Infernalist'] }],
     });
 
     const res = await POST(makeRequest('en'));
@@ -189,8 +194,8 @@ describe('POST /api/recipe', () => {
 
     expect(res.status).toBe(422);
     expect(data).toEqual({
-      error: 'Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.',
-      code: 'gemini.fact_conflict',
+      error: 'Generated build contains factual claims without enough official evidence. Adjust constraints and try again.',
+      code: 'gemini.fact_unverified',
       details: [
         {
           claim: 'Infernalist converts Frostbolt 100% to fire',
@@ -200,6 +205,26 @@ describe('POST /api/recipe', () => {
           sources: [],
         },
       ],
+      claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'missing evidence', evidenceUrls: [], missingTerms: ['Infernalist'] }],
+    });
+  });
+
+  it('returns 503 localized official_sources_unavailable when official lookups fail', async () => {
+    (craftBuildWithAI as jest.Mock).mockRejectedValue({
+      status: 503,
+      code: 'gemini.official_sources_unavailable',
+      details: [{ term: 'Frostbolt', code: 'source_unavailable' }],
+    });
+
+    const res = await POST(makeRequest('en'));
+    const data = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Deprecation')).toBe('true');
+    expect(data).toEqual({
+      error: 'Official PoE2 sources are temporarily unavailable. Please retry shortly.',
+      code: 'gemini.official_sources_unavailable',
+      details: [{ term: 'Frostbolt', code: 'source_unavailable' }],
     });
   });
 

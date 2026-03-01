@@ -3,8 +3,13 @@ import path from 'path';
 import {
   KnowledgeEntityType,
   KnowledgeFact,
+  KnowledgeProvider,
   KnowledgeSource,
+  LookupOptions,
   LookupResult,
+  LookupStatus,
+  ProviderLookupAttempt,
+  ProviderLookupStatus,
 } from '@/lib/poe2-knowledge-types';
 
 type CacheEntry = {
@@ -23,7 +28,8 @@ let uniqueSnapshotCache: Set<string> | null = null;
 
 const DEFAULT_CACHE_TTL_MIN = 360;
 const DEFAULT_FETCH_TIMEOUT_MS = 2500;
-const MAX_PROVIDER_ATTEMPTS = 2;
+const TRANSIENT_ERROR_CACHE_TTL_MS = 5_000;
+const OFFICIAL_PROVIDERS: Array<'poe2db' | 'poe2wiki'> = ['poe2db', 'poe2wiki'];
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -54,7 +60,7 @@ const toSlug = (value: string): string =>
 const makeCacheKey = (entityType: KnowledgeEntityType, query: string): string =>
   `${entityType}:${normalizeToken(query)}`;
 
-const toSource = (provider: 'poe2db' | 'poe2wiki' | 'local_snapshot', url: string): KnowledgeSource => ({
+const toSource = (provider: KnowledgeProvider, url: string): KnowledgeSource => ({
   provider,
   url,
   fetchedAt: nowIso(),
@@ -77,6 +83,7 @@ const isLikelyMissingPage = (text: string): boolean => {
   return (
     normalized.includes('page not found') ||
     normalized.includes('there is currently no text in this page') ||
+    normalized.includes('404') ||
     normalized.includes('not found')
   );
 };
@@ -88,9 +95,24 @@ const ensureAllowedDomain = (url: string): void => {
   }
 };
 
-const fetchWithTimeout = async (url: string, timeoutMs: number): Promise<Response> => {
+const isDeadlineExceeded = (deadlineAtMs?: number): boolean =>
+  Number.isFinite(deadlineAtMs) ? Date.now() >= Number(deadlineAtMs) : false;
+
+const fetchWithTimeout = async (
+  url: string,
+  timeoutMs: number,
+  deadlineAtMs?: number,
+): Promise<Response> => {
+  if (isDeadlineExceeded(deadlineAtMs)) {
+    throw new Error('deadline_exceeded');
+  }
+
+  const remainingMs = Number.isFinite(deadlineAtMs)
+    ? Math.max(1, Number(deadlineAtMs) - Date.now())
+    : timeoutMs;
+  const effectiveTimeoutMs = Math.max(1, Math.min(timeoutMs, remainingMs));
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), effectiveTimeoutMs);
 
   try {
     ensureAllowedDomain(url);
@@ -128,17 +150,26 @@ const extractFacts = (
   }
 
   if (entityType === 'skill') {
-    if (/\bcold damage\b/iu.test(rawText)) {
-      facts.push({ key: 'damage_type', value: 'cold', confidence: 'high', source });
+    if (/\bcold\b/iu.test(rawText)) {
+      facts.push({ key: 'tag.damage_type', value: 'cold', confidence: 'medium', source });
     }
-    if (/\bfire damage\b/iu.test(rawText)) {
-      facts.push({ key: 'damage_type', value: 'fire', confidence: 'medium', source });
+    if (/\bfire\b/iu.test(rawText)) {
+      facts.push({ key: 'tag.damage_type', value: 'fire', confidence: 'medium', source });
+    }
+    if (/\bspell\b/iu.test(rawText)) {
+      facts.push({ key: 'tag.skill_type', value: 'spell', confidence: 'high', source });
+    }
+    if (/\battack\b/iu.test(rawText)) {
+      facts.push({ key: 'tag.skill_type', value: 'attack', confidence: 'high', source });
+    }
+    if (/\bprojectile\b/iu.test(rawText)) {
+      facts.push({ key: 'tag.skill_tag', value: 'projectile', confidence: 'medium', source });
     }
   }
 
   if (/\bdamage taken as\b/iu.test(rawText)) {
     facts.push({
-      key: 'damage_taken_as',
+      key: 'defensive.damage_taken_as',
       value: 'present',
       confidence: 'medium',
       source,
@@ -147,9 +178,27 @@ const extractFacts = (
 
   if (/\b(convert|conversion|converted)\b/iu.test(rawText)) {
     facts.push({
-      key: 'conversion_reference',
+      key: 'offensive.conversion_reference',
       value: 'present',
       confidence: 'medium',
+      source,
+    });
+  }
+
+  if (/\bsupports?\s+attacks?\b/iu.test(rawText)) {
+    facts.push({
+      key: 'support.compatibility',
+      value: 'attacks_only',
+      confidence: 'high',
+      source,
+    });
+  }
+
+  if (/\bsupports?\s+spells?\b/iu.test(rawText)) {
+    facts.push({
+      key: 'support.compatibility',
+      value: 'spells_only',
+      confidence: 'high',
       source,
     });
   }
@@ -182,92 +231,185 @@ const loadUniqueSnapshot = (): Set<string> => {
   }
 };
 
+const buildProviderUrl = (provider: 'poe2db' | 'poe2wiki', query: string): string => {
+  const slug = toSlug(query);
+  return provider === 'poe2db'
+    ? `https://poe2db.tw/us/${slug}`
+    : `https://www.poe2wiki.net/wiki/${slug}`;
+};
+
+const buildProviderAttempt = (
+  provider: 'poe2db' | 'poe2wiki',
+  url: string,
+  status: ProviderLookupStatus,
+  error?: string,
+): ProviderLookupAttempt => ({
+  provider,
+  status,
+  source: toSource(provider, url),
+  error,
+});
+
 const resolveViaProvider = async (
   provider: 'poe2db' | 'poe2wiki',
   entityType: KnowledgeEntityType,
   query: string,
-): Promise<LookupResult | null> => {
-  const slug = toSlug(query);
-  const url = provider === 'poe2db'
-    ? `https://poe2db.tw/us/${slug}`
-    : `https://www.poe2wiki.net/wiki/${slug}`;
+  options: LookupOptions = {},
+): Promise<LookupResult> => {
+  const url = buildProviderUrl(provider, query);
+  const timeoutMs = options.timeoutMs ?? getFetchTimeoutMs();
+  const source = toSource(provider, url);
 
-  const timeoutMs = getFetchTimeoutMs();
-  let lastError: string | undefined;
+  if (isDeadlineExceeded(options.deadlineAtMs)) {
+    return {
+      entityType,
+      query,
+      normalizedQuery: normalizeToken(query),
+      status: 'source_unavailable',
+      facts: [],
+      sources: [source],
+      providerAttempts: [buildProviderAttempt(provider, url, 'source_unavailable', 'deadline_exceeded')],
+      error: 'deadline_exceeded',
+      sourceUnavailable: true,
+    };
+  }
 
-  for (let attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt += 1) {
-    try {
-      const response = await fetchWithTimeout(url, timeoutMs);
-      if (!response.ok) {
-        lastError = `${provider} responded ${response.status}`;
-        continue;
-      }
+  try {
+    const response = await fetchWithTimeout(url, timeoutMs, options.deadlineAtMs);
 
-      const html = await response.text();
-      const text = removeHtmlTags(html);
-      if (!text || isLikelyMissingPage(text)) {
-        return {
-          entityType,
-          query,
-          normalizedQuery: normalizeToken(query),
-          status: 'not_found',
-          facts: [],
-          sources: [toSource(provider, url)],
-          rawText: text,
-          error: 'not_found',
-        };
-      }
-
-      const source = toSource(provider, url);
-      const facts = extractFacts(entityType, query, text, source);
+    if (!response.ok) {
+      const isNotFound = response.status === 404;
+      const status: LookupStatus = isNotFound ? 'not_found' : 'source_unavailable';
       return {
         entityType,
         query,
         normalizedQuery: normalizeToken(query),
-        status: facts.length > 0 ? 'verified' : 'unverified_external',
-        facts,
+        status,
+        facts: [],
+        sources: [source],
+        providerAttempts: [buildProviderAttempt(provider, url, isNotFound ? 'not_found' : 'source_unavailable', `http_${response.status}`)],
+        error: `http_${response.status}`,
+        sourceUnavailable: status === 'source_unavailable',
+      };
+    }
+
+    const html = await response.text();
+    const text = removeHtmlTags(html);
+    if (!text || isLikelyMissingPage(text)) {
+      return {
+        entityType,
+        query,
+        normalizedQuery: normalizeToken(query),
+        status: 'not_found',
+        facts: [],
         sources: [source],
         rawText: text,
+        providerAttempts: [buildProviderAttempt(provider, url, 'not_found', 'not_found')],
+        error: 'not_found',
       };
-    } catch (error: any) {
-      lastError = String(error?.message || error || 'fetch_error');
+    }
+
+    const facts = extractFacts(entityType, query, text, source);
+    const status: LookupStatus = facts.length > 0 ? 'verified' : 'unverified_external';
+
+    return {
+      entityType,
+      query,
+      normalizedQuery: normalizeToken(query),
+      status,
+      facts,
+      sources: [source],
+      rawText: text,
+      providerAttempts: [buildProviderAttempt(provider, url, status === 'verified' ? 'verified' : 'unverified_external')],
+      sourceUnavailable: false,
+    };
+  } catch (error: any) {
+    const message = String(error?.message || error || 'fetch_error');
+    const unavailable = message.includes('deadline_exceeded') || message.includes('abort') || message.includes('fetch');
+    return {
+      entityType,
+      query,
+      normalizedQuery: normalizeToken(query),
+      status: unavailable ? 'source_unavailable' : 'error',
+      facts: [],
+      sources: [source],
+      providerAttempts: [buildProviderAttempt(provider, url, unavailable ? 'source_unavailable' : 'error', message)],
+      error: message,
+      sourceUnavailable: unavailable,
+    };
+  }
+};
+
+const mergeUniqueSources = (sources: KnowledgeSource[]): KnowledgeSource[] => {
+  const unique = new Map<string, KnowledgeSource>();
+
+  for (const source of sources) {
+    const key = `${source.provider}:${source.url}`;
+    if (!unique.has(key)) {
+      unique.set(key, source);
     }
   }
 
-  return {
-    entityType,
-    query,
-    normalizedQuery: normalizeToken(query),
-    status: 'error',
-    facts: [],
-    sources: [toSource(provider, url)],
-    error: lastError || 'provider_failed',
+  return Array.from(unique.values());
+};
+
+const pickBestResult = (results: LookupResult[]): LookupResult => {
+  const score: Record<LookupStatus, number> = {
+    verified: 6,
+    fallback_verified: 5,
+    unverified_external: 4,
+    not_found: 3,
+    source_unavailable: 2,
+    error: 1,
   };
+
+  return results.slice().sort((a, b) => score[b.status] - score[a.status])[0];
 };
 
 const resolveWithProviders = async (
   entityType: KnowledgeEntityType,
   query: string,
+  options: LookupOptions = {},
 ): Promise<LookupResult> => {
   const normalizedQuery = normalizeToken(query);
-  const providerOrder: Array<'poe2db' | 'poe2wiki'> = ['poe2db', 'poe2wiki'];
-  const attempts: LookupResult[] = [];
 
-  for (const provider of providerOrder) {
-    const result = await resolveViaProvider(provider, entityType, query);
-    if (!result) {
-      continue;
-    }
-    attempts.push(result);
-    if (result.status === 'verified') {
-      return result;
-    }
+  const providerResults = await Promise.all(
+    OFFICIAL_PROVIDERS.map((provider) => resolveViaProvider(provider, entityType, query, options)),
+  );
+
+  const mergedSources = mergeUniqueSources(providerResults.flatMap((result) => result.sources));
+  const mergedFacts = providerResults.flatMap((result) => result.facts);
+  const providerAttempts = providerResults.flatMap((result) => result.providerAttempts || []);
+
+  const anyVerified = providerResults.some((result) => result.status === 'verified');
+  if (anyVerified) {
+    const best = pickBestResult(providerResults.filter((result) => result.status === 'verified'));
+    return {
+      ...best,
+      facts: mergedFacts.length > 0 ? mergedFacts : best.facts,
+      sources: mergedSources,
+      providerAttempts,
+      sourceUnavailable: false,
+    };
+  }
+
+  const everyNotFound = providerResults.every((result) => result.status === 'not_found');
+  const anySourceUnavailable = providerResults.some((result) => result.status === 'source_unavailable');
+  const anyUnverified = providerResults.some((result) => result.status === 'unverified_external');
+
+  let status: LookupStatus = 'error';
+  if (everyNotFound) {
+    status = 'not_found';
+  } else if (anySourceUnavailable) {
+    status = 'source_unavailable';
+  } else if (anyUnverified) {
+    status = 'unverified_external';
   }
 
   if (entityType === 'unique_item') {
     const snapshot = loadUniqueSnapshot();
     if (snapshot.has(normalizedQuery)) {
-      const source = toSource('local_snapshot', 'item_examples/_unique_item_examples_manifest.json');
+      const snapshotSource = toSource('local_snapshot', 'item_examples/_unique_item_examples_manifest.json');
       return {
         entityType,
         query,
@@ -277,32 +419,38 @@ const resolveWithProviders = async (
           key: 'snapshot.unique_item_known',
           value: query,
           confidence: 'medium',
-          source,
+          source: snapshotSource,
           context: 'Verified unique snapshot fallback.',
         }],
-        sources: [source],
+        sources: mergeUniqueSources([snapshotSource, ...mergedSources]),
+        providerAttempts,
+        sourceUnavailable: anySourceUnavailable,
+        error: status === 'source_unavailable' ? 'official_sources_unavailable' : undefined,
       };
     }
   }
-
-  const mergedSources = attempts.flatMap((value) => value.sources);
-  const mergedFacts = attempts.flatMap((value) => value.facts);
-  const hasError = attempts.some((value) => value.status === 'error');
 
   return {
     entityType,
     query,
     normalizedQuery,
-    status: hasError ? 'unverified_external' : 'not_found',
+    status,
     facts: mergedFacts,
     sources: mergedSources,
-    error: hasError ? 'external_lookup_failed' : 'not_found',
+    providerAttempts,
+    sourceUnavailable: anySourceUnavailable,
+    error: status === 'not_found'
+      ? 'not_found'
+      : status === 'source_unavailable'
+        ? 'official_sources_unavailable'
+        : 'external_lookup_failed',
   };
 };
 
 const resolveCached = async (
   entityType: KnowledgeEntityType,
   query: string,
+  options: LookupOptions = {},
 ): Promise<LookupResult> => {
   const key = makeCacheKey(entityType, query);
   const cached = CACHE.get(key);
@@ -310,27 +458,42 @@ const resolveCached = async (
     return cached.result;
   }
 
-  const result = await resolveWithProviders(entityType, query);
+  const result = await resolveWithProviders(entityType, query, options);
+  const ttlMs = (result.status === 'source_unavailable' || result.status === 'error')
+    ? TRANSIENT_ERROR_CACHE_TTL_MS
+    : getCacheTtlMs();
   CACHE.set(key, {
     result,
-    expiresAt: Date.now() + getCacheTtlMs(),
+    expiresAt: Date.now() + ttlMs,
   });
   return result;
 };
 
-export const resolveSkill = async (name: string): Promise<LookupResult> =>
-  resolveCached('skill', name);
+export const hasOfficialVerifiedEvidence = (lookup: LookupResult | null | undefined): boolean => {
+  if (!lookup || lookup.status !== 'verified') {
+    return false;
+  }
 
-export const resolveAscendancyNode = async (name: string): Promise<LookupResult> =>
-  resolveCached('ascendancy_node', name);
+  return lookup.sources.some((source) => source.provider === 'poe2db' || source.provider === 'poe2wiki');
+};
 
-export const resolveUniqueItem = async (name: string): Promise<LookupResult> =>
-  resolveCached('unique_item', name);
+export const isSourceUnavailableLookup = (lookup: LookupResult | null | undefined): boolean =>
+  Boolean(lookup && (lookup.status === 'source_unavailable' || lookup.sourceUnavailable));
+
+export const resolveSkill = async (name: string, options: LookupOptions = {}): Promise<LookupResult> =>
+  resolveCached('skill', name, options);
+
+export const resolveAscendancyNode = async (name: string, options: LookupOptions = {}): Promise<LookupResult> =>
+  resolveCached('ascendancy_node', name, options);
+
+export const resolveUniqueItem = async (name: string, options: LookupOptions = {}): Promise<LookupResult> =>
+  resolveCached('unique_item', name, options);
 
 export const resolveMechanicClaim = async (
   claimType: string,
   subject: string,
-): Promise<LookupResult> => resolveCached('mechanic_claim', `${claimType} ${subject}`.trim());
+  options: LookupOptions = {},
+): Promise<LookupResult> => resolveCached('mechanic_claim', `${claimType} ${subject}`.trim(), options);
 
 export const __resetPoe2KnowledgeCache = (): void => {
   CACHE.clear();

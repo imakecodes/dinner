@@ -71,7 +71,7 @@ Construído com tecnologias web modernas para performance e escala:
     Mantenha `GEMINI_MODEL_FALLBACK` em um modelo compatível com `generateContent` (recomendado: `gemini-2.5-flash`).
     `AI_CONTEXT_FILE_PATH` é opcional. Se estiver ausente ou apontar para arquivo inexistente, o runtime usa fallback para `.ai/ai-context.template.md`.
     Crie `.ai/ai-context.local.md` somente quando precisar de overrides locais de prompt.
-    A validação factual por padrão roda em modo estrito (`POE_FACT_VALIDATION_MODE=strict`) e pode retornar `422 gemini.fact_conflict` quando claims críticos continuam sem verificação após retry.
+    A validação factual por padrão roda em modo estrito (`POE_FACT_VALIDATION_MODE=strict`) e pode retornar `422 gemini.fact_unverified` quando claims críticos continuam sem verificação após um retry corretivo. Em indisponibilidade de fonte, o padrão é `POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY=degrade_warn` (output com incerteza explícita); use `fail_503` para bloquear com `503 gemini.official_sources_unavailable`.
     Ajuste o lookup com `POE_KNOWLEDGE_CACHE_TTL_MIN` e `POE_KNOWLEDGE_FETCH_TIMEOUT_MS`.
 
 3.  **Inicie o banco de dados**:

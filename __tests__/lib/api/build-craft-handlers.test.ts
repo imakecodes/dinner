@@ -27,6 +27,8 @@ describe('lib/api/build-craft-handlers', () => {
     tMock.mockImplementation((key: string) => {
       if (key === 'api.geminiDomainMismatch') return 'Domain mismatch';
       if (key === 'api.geminiFactConflict') return 'Fact conflict';
+      if (key === 'api.geminiFactUnverified') return 'Fact unverified';
+      if (key === 'api.officialSourcesUnavailable') return 'Official sources unavailable';
       if (key === 'api.geminiModelUnavailable') return 'Model unavailable';
       if (key === 'generate.generateError') return 'Failed to craft build';
       if (key === 'api.internalError') return 'Internal error';
@@ -172,10 +174,10 @@ describe('lib/api/build-craft-handlers', () => {
     expect(json.details).toEqual([]);
   });
 
-  it('returns localized 422 for fact conflict with structured details', async () => {
+  it('returns localized 422 for fact unverified with structured details', async () => {
     craftBuildWithAIMock.mockRejectedValue({
       status: 422,
-      code: 'gemini.fact_conflict',
+      code: 'gemini.fact_unverified',
       details: [
         {
           claim: 'Convert Frostbolt damage to fire',
@@ -185,6 +187,7 @@ describe('lib/api/build-craft-handlers', () => {
           sources: [],
         },
       ],
+      claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'missing evidence', evidenceUrls: [], missingTerms: ['Frostbolt'] }],
     });
 
     const req = new NextRequest('http://localhost/api/build', {
@@ -196,8 +199,8 @@ describe('lib/api/build-craft-handlers', () => {
 
     expect(res.status).toBe(422);
     expect(json).toEqual({
-      error: 'Fact conflict',
-      code: 'gemini.fact_conflict',
+      error: 'Fact unverified',
+      code: 'gemini.fact_unverified',
       details: [
         {
           claim: 'Convert Frostbolt damage to fire',
@@ -207,6 +210,29 @@ describe('lib/api/build-craft-handlers', () => {
           sources: [],
         },
       ],
+      claimResults: [{ claimId: 'build_reasoning:1', status: 'blocked', reason: 'missing evidence', evidenceUrls: [], missingTerms: ['Frostbolt'] }],
+    });
+  });
+
+  it('returns 503 for official source unavailability with localized message', async () => {
+    craftBuildWithAIMock.mockRejectedValue({
+      status: 503,
+      code: 'gemini.official_sources_unavailable',
+      details: [{ term: 'Frostbolt', code: 'source_unavailable' }],
+    });
+
+    const req = new NextRequest('http://localhost/api/build', {
+      method: 'POST',
+      body: JSON.stringify({ members: [] }),
+    });
+    const res = await craftBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json).toEqual({
+      error: 'Official sources unavailable',
+      code: 'gemini.official_sources_unavailable',
+      details: [{ term: 'Frostbolt', code: 'source_unavailable' }],
     });
   });
 
