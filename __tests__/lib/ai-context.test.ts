@@ -12,7 +12,7 @@ describe('ai-context helper', () => {
     readFileMock = require('fs/promises').readFile as jest.Mock;
   });
 
-  it('returns content when context file exists', async () => {
+  it('returns configured local context content when available', async () => {
     readFileMock.mockResolvedValue('  local context  ');
 
     const { getLocalAiContext } = require('@/lib/ai-context');
@@ -25,24 +25,70 @@ describe('ai-context helper', () => {
     );
   });
 
-  it('returns empty string when file does not exist', async () => {
-    const missingFileError = Object.assign(new Error('Missing file'), { code: 'ENOENT' });
-    readFileMock.mockRejectedValue(missingFileError);
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  it('falls back to template when local file is missing and no explicit path is set', async () => {
+    readFileMock.mockImplementation((filePath: string) => {
+      if (/ai-context\.local\.md$/.test(filePath)) {
+        return Promise.reject(Object.assign(new Error('Missing local context'), { code: 'ENOENT' }));
+      }
+      if (/ai-context\.template\.md$/.test(filePath)) {
+        return Promise.resolve('template context');
+      }
+      return Promise.reject(new Error(`Unexpected path: ${filePath}`));
+    });
 
     const { getLocalAiContext } = require('@/lib/ai-context');
     const result = await getLocalAiContext();
 
-    expect(result).toBe('');
-    expect(warnSpy).not.toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(result).toBe('template context');
   });
 
-  it('returns empty string and warns when read fails for non-ENOENT error', async () => {
-    const readError = Object.assign(new Error('Permission denied'), { code: 'EACCES' });
-    readFileMock.mockRejectedValue(readError);
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  it('falls back to template when AI_CONTEXT_FILE_PATH points to a missing file', async () => {
+    process.env.AI_CONTEXT_FILE_PATH = 'config/custom-context.md';
+    readFileMock.mockImplementation((filePath: string) => {
+      if (/config[\\/]custom-context\.md$/.test(filePath)) {
+        return Promise.reject(Object.assign(new Error('Missing custom context'), { code: 'ENOENT' }));
+      }
+      if (/ai-context\.template\.md$/.test(filePath)) {
+        return Promise.resolve('template fallback');
+      }
+      return Promise.reject(new Error(`Unexpected path: ${filePath}`));
+    });
 
+    const { getLocalAiContext } = require('@/lib/ai-context');
+    const result = await getLocalAiContext();
+
+    expect(result).toBe('template fallback');
+  });
+
+  it('uses AI_CONTEXT_FILE_PATH content when provided and available', async () => {
+    process.env.AI_CONTEXT_FILE_PATH = 'config/custom-context.md';
+    readFileMock.mockImplementation((filePath: string) => {
+      if (/config[\\/]custom-context\.md$/.test(filePath)) {
+        return Promise.resolve('custom context');
+      }
+      return Promise.reject(new Error(`Unexpected path: ${filePath}`));
+    });
+
+    const { getLocalAiContext } = require('@/lib/ai-context');
+    const result = await getLocalAiContext();
+
+    expect(result).toBe('custom context');
+  });
+
+  it('returns empty string and warns when configured context read fails with non-ENOENT error', async () => {
+    process.env.AI_CONTEXT_FILE_PATH = 'config/custom-context.md';
+    const readError = Object.assign(new Error('Permission denied'), { code: 'EACCES' });
+    readFileMock.mockImplementation((filePath: string) => {
+      if (/config[\\/]custom-context\.md$/.test(filePath)) {
+        return Promise.reject(readError);
+      }
+      if (/ai-context\.template\.md$/.test(filePath)) {
+        return Promise.reject(Object.assign(new Error('Template missing'), { code: 'ENOENT' }));
+      }
+      return Promise.reject(new Error(`Unexpected path: ${filePath}`));
+    });
+
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const { getLocalAiContext } = require('@/lib/ai-context');
     const result = await getLocalAiContext();
 
@@ -52,18 +98,5 @@ describe('ai-context helper', () => {
       readError
     );
     warnSpy.mockRestore();
-  });
-
-  it('uses AI_CONTEXT_FILE_PATH when provided', async () => {
-    process.env.AI_CONTEXT_FILE_PATH = 'config/custom-context.md';
-    readFileMock.mockResolvedValue('custom context');
-
-    const { getLocalAiContext } = require('@/lib/ai-context');
-    await getLocalAiContext();
-
-    expect(readFileMock).toHaveBeenCalledWith(
-      expect.stringMatching(/config[\\/]custom-context\.md$/),
-      'utf8'
-    );
   });
 });

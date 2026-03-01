@@ -47,13 +47,15 @@ describe('POST /api/recipe', () => {
       const dict: Record<string, string> = isPt
         ? {
             'generate.generateError': 'Falha ao craftar build. Tente novamente.',
-            'api.geminiDomainMismatch': 'O conteúdo gerado está fora do domínio de build do Path of Exile. Tente novamente.',
-            'api.geminiModelUnavailable': 'Nenhum modelo Gemini compatível está disponível no momento. Tente novamente em instantes.',
+            'api.geminiDomainMismatch': 'O conteudo gerado esta fora do dominio de build do Path of Exile 2. Tente novamente.',
+            'api.geminiFactConflict': 'A build gerada contem afirmacoes mecanicas nao verificadas para Path of Exile 2. Ajuste as restricoes e tente novamente.',
+            'api.geminiModelUnavailable': 'Nenhum modelo Gemini compativel esta disponivel no momento. Tente novamente em instantes.',
             'api.internalError': 'Erro interno do servidor'
           }
         : {
             'generate.generateError': 'Failed to craft build. Please try again.',
-            'api.geminiDomainMismatch': 'Generated content is outside Path of Exile build domain. Please try again.',
+            'api.geminiDomainMismatch': 'Generated content is outside Path of Exile 2 build domain. Please try again.',
+            'api.geminiFactConflict': 'Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.',
             'api.geminiModelUnavailable': 'No compatible Gemini model is currently available. Please try again shortly.',
             'api.internalError': 'Internal server error'
           };
@@ -141,9 +143,63 @@ describe('POST /api/recipe', () => {
     expect(res.status).toBe(422);
     expect(res.headers.get('Deprecation')).toBe('true');
     expect(data).toEqual({
-      error: 'Generated content is outside Path of Exile build domain. Please try again.',
+      error: 'Generated content is outside Path of Exile 2 build domain. Please try again.',
       code: 'gemini.domain_mismatch',
       details: ['recipe', 'chicken'],
+    });
+  });
+
+  it('returns 422 domain mismatch including reason when available', async () => {
+    (craftBuildWithAI as jest.Mock).mockRejectedValue({
+      status: 422,
+      code: 'gemini.domain_mismatch',
+      details: ['watchstone', 'sextant'],
+      reason: 'poe1_drift',
+    });
+
+    const res = await POST(makeRequest('en'));
+    const data = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(data).toEqual({
+      error: 'Generated content is outside Path of Exile 2 build domain. Please try again.',
+      code: 'gemini.domain_mismatch',
+      details: ['watchstone', 'sextant'],
+      reason: 'poe1_drift',
+    });
+  });
+
+  it('returns 422 localized fact conflict with details', async () => {
+    (craftBuildWithAI as jest.Mock).mockRejectedValue({
+      status: 422,
+      code: 'gemini.fact_conflict',
+      details: [
+        {
+          claim: 'Infernalist converts Frostbolt 100% to fire',
+          expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
+          found: 'No explicit enabler found for offensive conversion claim.',
+          subject: 'infernalist:frostbolt_conversion',
+          sources: [],
+        },
+      ],
+    });
+
+    const res = await POST(makeRequest('en'));
+    const data = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(data).toEqual({
+      error: 'Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.',
+      code: 'gemini.fact_conflict',
+      details: [
+        {
+          claim: 'Infernalist converts Frostbolt 100% to fire',
+          expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
+          found: 'No explicit enabler found for offensive conversion claim.',
+          subject: 'infernalist:frostbolt_conversion',
+          sources: [],
+        },
+      ],
     });
   });
 

@@ -4,23 +4,32 @@ type PatternDef = {
   highConfidence?: boolean;
 };
 
+export type DomainMismatchReason = 'none' | 'culinary' | 'poe1_drift';
+
 export type DomainAssessment = {
   isInvalid: boolean;
   culinaryHits: number;
   poeHits: number;
+  poe1ExclusiveHits: number;
   highConfidenceCulinaryHits: number;
   matchedTerms: string[];
   culinaryMatchedTerms: string[];
   poeMatchedTerms: string[];
+  poe1MatchedTerms: string[];
+  reason: DomainMismatchReason;
 };
 
 export type TextDomainAssessment = {
   isCulinaryLikely: boolean;
+  isPoe1DriftLikely: boolean;
   culinaryHits: number;
   poeHits: number;
+  poe1ExclusiveHits: number;
   highConfidenceHits: number;
   matchedCulinaryTerms: string[];
   matchedPoeTerms: string[];
+  matchedPoe1ExclusiveTerms: string[];
+  reason: DomainMismatchReason;
 };
 
 type BuildLikeForGuardrail = {
@@ -133,6 +142,8 @@ const CULINARY_PATTERNS: PatternDef[] = [
 ];
 
 const POE_PATTERNS: PatternDef[] = [
+  { term: 'path of exile 2', pattern: /\bpath of exile\s*2\b/iu },
+  { term: 'poe2', pattern: /\bpoe\s*2\b|\bpoe2\b/iu },
   { term: 'path of exile', pattern: /\bpath of exile\b/iu },
   { term: 'poe', pattern: /\bpoe\b/iu },
   { term: 'exile', pattern: /\bexile(s)?\b/iu },
@@ -172,6 +183,24 @@ const POE_PATTERNS: PatternDef[] = [
   { term: 'armour', pattern: /\barmou?r\b/iu },
 ];
 
+const POE2_STRONG_PATTERNS: PatternDef[] = [
+  { term: 'path of exile 2', pattern: /\bpath of exile\s*2\b/iu },
+  { term: 'poe2', pattern: /\bpoe\s*2\b|\bpoe2\b/iu },
+];
+
+const POE1_EXCLUSIVE_PATTERNS: PatternDef[] = [
+  { term: 'watchstone', pattern: /\bwatchstone(s)?\b/iu, highConfidence: true },
+  { term: 'sextant', pattern: /\bsextant(s)?\b/iu, highConfidence: true },
+  { term: 'pantheon', pattern: /\bpantheon\b/iu, highConfidence: true },
+  { term: 'labyrinth enchant', pattern: /\blabyrinth enchant(s|ment)?\b/iu, highConfidence: true },
+  { term: 'cluster jewel', pattern: /\bcluster jewel(s)?\b/iu, highConfidence: true },
+  { term: 'delirium orb', pattern: /\bdelirium orb(s)?\b/iu, highConfidence: true },
+  { term: 'awakener level', pattern: /\bawakener level\b/iu, highConfidence: true },
+  { term: 'conqueror influence', pattern: /\bconqueror(s)? influence\b/iu, highConfidence: true },
+  { term: 'shaper influence', pattern: /\bshaper influence\b/iu, highConfidence: true },
+  { term: 'elder influence', pattern: /\belder influence\b/iu, highConfidence: true },
+];
+
 function collectMatches(text: string, patterns: PatternDef[]): { all: string[]; highConfidence: string[] } {
   const source = String(text || '');
   const allMatches = new Set<string>();
@@ -195,19 +224,38 @@ function collectMatches(text: string, patterns: PatternDef[]): { all: string[]; 
 export function assessTextDomain(text: string): TextDomainAssessment {
   const culinary = collectMatches(text, CULINARY_PATTERNS);
   const poe = collectMatches(text, POE_PATTERNS);
+  const poe2Strong = collectMatches(text, POE2_STRONG_PATTERNS);
+  const poe1Exclusive = collectMatches(text, POE1_EXCLUSIVE_PATTERNS);
 
   const isCulinaryLikely =
     culinary.highConfidence.length > 0 ||
     (culinary.all.length >= 2 && poe.all.length === 0) ||
     (culinary.all.length >= 3 && poe.all.length <= 1);
 
+  const isPoe1DriftLikely =
+    !isCulinaryLikely &&
+    (
+      (poe1Exclusive.all.length > 0 && poe2Strong.all.length === 0) ||
+      poe1Exclusive.all.length >= 2
+    );
+
+  const reason: DomainMismatchReason = isCulinaryLikely
+    ? 'culinary'
+    : isPoe1DriftLikely
+      ? 'poe1_drift'
+      : 'none';
+
   return {
     isCulinaryLikely,
+    isPoe1DriftLikely,
     culinaryHits: culinary.all.length,
     poeHits: poe.all.length,
+    poe1ExclusiveHits: poe1Exclusive.all.length,
     highConfidenceHits: culinary.highConfidence.length,
     matchedCulinaryTerms: culinary.all,
     matchedPoeTerms: poe.all,
+    matchedPoe1ExclusiveTerms: poe1Exclusive.all,
+    reason,
   };
 }
 
@@ -243,20 +291,40 @@ export function assessBuildDomain(build: BuildLikeForGuardrail): DomainAssessmen
   const culinaryCritical = collectMatches(criticalText, CULINARY_PATTERNS);
   const culinaryAll = collectMatches(fullText, CULINARY_PATTERNS);
   const poeAll = collectMatches(fullText, POE_PATTERNS);
+  const poe2StrongAll = collectMatches(fullText, POE2_STRONG_PATTERNS);
+  const poe1ExclusiveAll = collectMatches(fullText, POE1_EXCLUSIVE_PATTERNS);
 
-  const isInvalid =
+  const culinaryInvalid =
     culinaryAll.highConfidence.length > 0 ||
     (culinaryCritical.all.length > 0 && poeAll.all.length === 0) ||
     (culinaryAll.all.length >= 2 && poeAll.all.length === 0) ||
     (culinaryAll.all.length >= 3 && poeAll.all.length <= 1);
 
+  const poe1DriftInvalid =
+    !culinaryInvalid &&
+    (
+      (poe1ExclusiveAll.all.length > 0 && poe2StrongAll.all.length === 0) ||
+      poe1ExclusiveAll.all.length >= 2
+    );
+
+  const isInvalid = culinaryInvalid || poe1DriftInvalid;
+  const reason: DomainMismatchReason = culinaryInvalid
+    ? 'culinary'
+    : poe1DriftInvalid
+      ? 'poe1_drift'
+      : 'none';
+  const matchedTerms = reason === 'poe1_drift' ? poe1ExclusiveAll.all : culinaryAll.all;
+
   return {
     isInvalid,
     culinaryHits: culinaryAll.all.length,
     poeHits: poeAll.all.length,
+    poe1ExclusiveHits: poe1ExclusiveAll.all.length,
     highConfidenceCulinaryHits: culinaryAll.highConfidence.length,
-    matchedTerms: culinaryAll.all,
+    matchedTerms,
     culinaryMatchedTerms: culinaryAll.all,
     poeMatchedTerms: poeAll.all,
+    poe1MatchedTerms: poe1ExclusiveAll.all,
+    reason,
   };
 }

@@ -87,6 +87,8 @@ function canonicalBuild(input: any = {}) {
   };
 }
 
+const makeLongString = (size: number) => 'x'.repeat(size);
+
 describe('lib/api/builds-handlers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -307,6 +309,92 @@ describe('lib/api/builds-handlers', () => {
     );
   });
 
+  it('saveBuild returns 422 when build_items name exceeds varchar limit', async () => {
+    (prisma.kitchenMember.findFirst as jest.Mock).mockResolvedValue({ id: 'member-1' });
+
+    const req = new NextRequest('http://localhost/api/builds', {
+      method: 'POST',
+      body: JSON.stringify({
+        build_title: 'Build',
+        gear_gems: [],
+        build_items: [{ name: makeLongString(192), quantity: '1', unit: 'x' }],
+        build_steps: ['step'],
+      }),
+    });
+
+    const res = await saveBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.code).toBe('build.field_too_long');
+    expect(json.details).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        field: 'build_items.name',
+        maxLength: 191,
+        itemIndex: 0,
+      }),
+    ]));
+    expect(prisma.recipe.create).not.toHaveBeenCalled();
+  });
+
+  it('saveBuild returns 422 when gear_gems name exceeds varchar limit', async () => {
+    (prisma.kitchenMember.findFirst as jest.Mock).mockResolvedValue({ id: 'member-1' });
+
+    const req = new NextRequest('http://localhost/api/builds', {
+      method: 'POST',
+      body: JSON.stringify({
+        build_title: 'Build',
+        gear_gems: [{ name: makeLongString(192), quantity: '1', unit: 'x' }],
+        build_items: [],
+        build_steps: ['step'],
+      }),
+    });
+
+    const res = await saveBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.code).toBe('build.field_too_long');
+    expect(json.details).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        field: 'gear_gems.name',
+        maxLength: 191,
+        itemIndex: 0,
+      }),
+    ]));
+    expect(prisma.recipe.create).not.toHaveBeenCalled();
+  });
+
+  it('saveBuild maps Prisma P2000 errors to 422 field-too-long payload', async () => {
+    (prisma.kitchenMember.findFirst as jest.Mock).mockResolvedValue({ id: 'member-1' });
+    (prisma.recipe.create as jest.Mock).mockRejectedValue({
+      code: 'P2000',
+      meta: { column_name: 'name' },
+    });
+
+    const req = new NextRequest('http://localhost/api/builds', {
+      method: 'POST',
+      body: JSON.stringify({
+        build_title: 'Build',
+        gear_gems: [{ name: 'Wand', quantity: '1', unit: 'x' }],
+        build_items: [{ name: 'Tabula', quantity: '1', unit: 'x' }],
+        build_steps: ['step'],
+      }),
+    });
+
+    const res = await saveBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.code).toBe('build.field_too_long');
+    expect(json.details).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        field: 'name',
+        maxLength: 191,
+      }),
+    ]));
+  });
+
   it('saveBuild returns 500 on errors', async () => {
     (prisma.kitchenMember.findFirst as jest.Mock).mockRejectedValue(new Error('db'));
     const req = new NextRequest('http://localhost/api/builds', {
@@ -492,7 +580,38 @@ describe('lib/api/builds-handlers', () => {
     );
   });
 
+  it('updateBuildById returns 422 when payload contains oversized fields', async () => {
+    (prisma.recipe.findUnique as jest.Mock).mockResolvedValue({ kitchenId: 'k1' });
+
+    const req = new NextRequest('http://localhost/api/builds/r-long', {
+      method: 'PUT',
+      body: JSON.stringify({
+        build_title: 'Updated',
+        gear_gems: [],
+        build_items: [{ name: makeLongString(192), quantity: '1', unit: 'x' }],
+        build_steps: ['a'],
+      }),
+    });
+
+    const res = await updateBuildById(req, { params: Promise.resolve({ id: 'r-long' }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.code).toBe('build.field_too_long');
+    expect(json.details).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        field: 'build_items.name',
+        maxLength: 191,
+        itemIndex: 0,
+      }),
+    ]));
+    expect(prisma.recipeIngredient.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.recipeShoppingItem.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.recipe.update).not.toHaveBeenCalled();
+  });
+
   it('updateBuildById returns 500 on errors', async () => {
+    (prisma.recipe.findUnique as jest.Mock).mockResolvedValue({ kitchenId: 'k1' });
     (prisma.recipeIngredient.deleteMany as jest.Mock).mockRejectedValue(new Error('db'));
     const req = new NextRequest('http://localhost/api/builds/r-id', {
       method: 'PUT',
@@ -576,6 +695,53 @@ describe('lib/api/builds-handlers', () => {
     });
     const missingBuild = await translateBuildById(missingBuildReq, { params: Promise.resolve({ id: 'r1' }) });
     expect(missingBuild.status).toBe(404);
+  });
+
+  it('translateBuildById returns 422 when translated payload exceeds varchar limits', async () => {
+    (prisma.recipe.findUnique as jest.Mock).mockResolvedValue({
+      id: 'src-long',
+      originalRecipeId: null,
+      kitchenId: 'k1',
+      language: 'en',
+      recipe_title: 'Source',
+      match_reasoning: 'r',
+      analysis_log: 'a',
+      meal_type: 'mapper',
+      difficulty: 'cheap',
+      prep_time: '10m',
+      prep_time_minutes: 10,
+      dishImage: null,
+      step_by_step: ['s'],
+      safety_badge: true,
+      ingredients: [{ inPantry: true, ingredientId: 'ing-1', ingredient: { name: 'Wand' }, quantity: '1', unit: 'x' }],
+      shoppingItems: [],
+    });
+    (prisma.recipe.findFirst as jest.Mock).mockResolvedValue(null);
+    (translateBuild as jest.Mock).mockResolvedValue(
+      canonicalBuild({
+        build_title: 'Traducao',
+        gear_gems: [],
+        build_items: [{ name: makeLongString(192), quantity: '1', unit: 'x' }],
+      }),
+    );
+
+    const req = new NextRequest('http://localhost/api/builds/src-long/translate', {
+      method: 'POST',
+      body: JSON.stringify({ targetLanguage: 'pt-BR' }),
+    });
+    const res = await translateBuildById(req, { params: Promise.resolve({ id: 'src-long' }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.code).toBe('build.field_too_long');
+    expect(json.details).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        field: 'build_items.name',
+        maxLength: 191,
+        itemIndex: 0,
+      }),
+    ]));
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('translateBuildById returns existing translation when already persisted', async () => {

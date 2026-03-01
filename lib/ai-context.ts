@@ -9,16 +9,22 @@ type ContextReadOptions = {
   legacyWarnMessage?: boolean;
 };
 
+type ContextReadResult = {
+  content: string | null;
+  missing: boolean;
+};
+
 async function readContextFile(
   filePath: string,
   options: ContextReadOptions = {},
-): Promise<string | null> {
+): Promise<ContextReadResult> {
   const { warnOnError = false, legacyWarnMessage = false } = options;
   try {
     const rawContent = await readFile(filePath, 'utf8');
     const trimmed = rawContent.trim();
-    return trimmed || null;
+    return { content: trimmed || null, missing: false };
   } catch (error: any) {
+    const missing = error?.code === 'ENOENT';
     if (warnOnError && error?.code !== 'ENOENT') {
       if (legacyWarnMessage) {
         console.warn(`[AI Context] Failed to read local context file at ${filePath}:`, error);
@@ -26,7 +32,7 @@ async function readContextFile(
         console.warn(`[AI Context] Failed to read context file at ${filePath}:`, error);
       }
     }
-    return null;
+    return { content: null, missing };
   }
 }
 
@@ -39,15 +45,20 @@ export async function getLocalAiContext(): Promise<string> {
     warnOnError: true,
     legacyWarnMessage: true,
   });
-  if (configuredContext) {
-    return configuredContext;
+  if (configuredContext.content) {
+    return configuredContext.content;
   }
 
-  // If no explicit file is set and local context is absent, fallback to committed template.
-  if (!process.env.AI_CONTEXT_FILE_PATH?.trim() && resolvedPath !== resolvedTemplatePath) {
+  // Always fallback to committed template when local context is absent
+  // and either no explicit path is provided or the explicit file is missing.
+  const shouldFallbackToTemplate =
+    resolvedPath !== resolvedTemplatePath &&
+    (!process.env.AI_CONTEXT_FILE_PATH?.trim() || configuredContext.missing);
+
+  if (shouldFallbackToTemplate) {
     const templateContext = await readContextFile(resolvedTemplatePath);
-    if (templateContext) {
-      return templateContext;
+    if (templateContext.content) {
+      return templateContext.content;
     }
   }
 

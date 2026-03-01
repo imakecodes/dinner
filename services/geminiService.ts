@@ -15,13 +15,16 @@ import {
 } from "@/lib/build-contract";
 import { BUILD_GENERATION_SYSTEM_INSTRUCTION } from "@/lib/prompts";
 import { assessBuildDomain, type DomainAssessment } from "@/lib/domain-guardrails";
+import { validateBuildMechanics, type MechanicsValidationResult } from "@/lib/build-mechanics-validator";
 import {
   buildModelAttemptChain,
   getConfiguredModels,
+  type GeminiErrorPayload,
   isModelNotFoundError,
   parseGeminiErrorPayload,
   validateConfiguredModelsWithList,
 } from "@/lib/gemini-model-policy";
+import { annotateItemUncertainty } from "@/lib/build-output-quality";
 
 const parseRetryDelaySeconds = (error: any, payload: GeminiErrorPayload | null): number | null => {
   const details = payload?.error?.details;
@@ -94,16 +97,49 @@ const buildLocalContextInstruction = (localAiContext: string): string => {
 
 const DOMAIN_CORRECTION_INSTRUCTION = `
 CRITICAL DOMAIN CORRECTION:
-- Output strictly Path of Exile build domain content.
+- Output strictly Path of Exile 2 build domain content.
 - Do not output culinary semantics (food, recipes, dishes, kitchen tasks, ingredients for cooking).
-- If context appears culinary, reinterpret as PoE build planning only.
+- If context appears culinary, reinterpret as PoE2 build planning only.
+- Remove PoE1-exclusive assumptions/mechanics and keep only PoE2-valid mechanics.
+`;
+
+const FACT_CORRECTION_INSTRUCTION_BASE = `
+CRITICAL FACTUAL CORRECTION:
+- Keep claims strictly aligned with Path of Exile 2 verified mechanics.
+- Every critical mechanic claim must be source-verifiable with poe2db.tw or poe2wiki.net.
+- Do not conflate "damage taken as" with "damage dealt conversion".
+- Never claim offensive damage conversion without explicit enabler in gear_gems/build_items.
+- Infernalist does not automatically imply full Frostbolt conversion to fire.
 `;
 
 const buildDomainMismatchError = (assessment: DomainAssessment): Error => {
-  const structuredError = new Error("Generated content is outside Path of Exile build domain");
+  const structuredError = new Error("Generated content is outside Path of Exile 2 build domain");
   (structuredError as any).status = 422;
   (structuredError as any).code = 'gemini.domain_mismatch';
   (structuredError as any).details = assessment.matchedTerms;
+  (structuredError as any).reason = assessment.reason;
+  return structuredError;
+};
+
+const buildFactConflictCorrectionInstruction = (
+  validation: MechanicsValidationResult,
+): string => {
+  const conflictLines = validation.criticalConflicts
+    .slice(0, 5)
+    .map((conflict, index) => {
+      const sources = conflict.sources.map((source) => source.url).join(', ');
+      return `${index + 1}. Claim: ${conflict.claim}\n   Expected: ${conflict.expected}\n   Found: ${conflict.found}\n   Sources: ${sources || 'none'}`;
+    })
+    .join('\n');
+
+  return `${FACT_CORRECTION_INSTRUCTION_BASE}\n\nFACT CONFLICTS TO FIX:\n${conflictLines}\n`;
+};
+
+const buildFactConflictError = (validation: MechanicsValidationResult): Error => {
+  const structuredError = new Error("Generated build contains unverifiable or conflicting PoE2 mechanics");
+  (structuredError as any).status = 422;
+  (structuredError as any).code = 'gemini.fact_conflict';
+  (structuredError as any).details = validation.criticalConflicts;
   return structuredError;
 };
 
@@ -234,8 +270,8 @@ export const craftBuildWithAI = async (
 
           if (index < modelAttemptChain.length - 1) {
             console.warn(`[Gemini] Model ${model} unavailable for generateContent. Retrying with ${modelAttemptChain[index + 1]}.`);
-            continue;
           }
+          continue;
         }
 
         throw modelError;
@@ -260,10 +296,14 @@ export const craftBuildWithAI = async (
   let domainAssessment = assessBuildDomain(parsedBuild);
 
   if (domainAssessment.isInvalid) {
-    console.warn('[Gemini] Domain mismatch detected. Retrying generation with strict PoE correction.', {
+    console.warn('[Gemini] Domain mismatch detected. Retrying generation with strict PoE2 correction.', {
+      reason: domainAssessment.reason,
       culinaryHits: domainAssessment.culinaryHits,
       poeHits: domainAssessment.poeHits,
+      poe1ExclusiveHits: domainAssessment.poe1ExclusiveHits,
       matchedTerms: domainAssessment.matchedTerms,
+      culinaryMatchedTerms: domainAssessment.culinaryMatchedTerms,
+      poe1MatchedTerms: domainAssessment.poe1MatchedTerms,
     });
 
     response = await generateWithFallback(DOMAIN_CORRECTION_INSTRUCTION);
@@ -273,9 +313,48 @@ export const craftBuildWithAI = async (
     domainAssessment = assessBuildDomain(parsedBuild);
 
     if (domainAssessment.isInvalid) {
+      console.warn('[Gemini] Domain mismatch persisted after correction.', {
+        reason: domainAssessment.reason,
+        culinaryHits: domainAssessment.culinaryHits,
+        poeHits: domainAssessment.poeHits,
+        poe1ExclusiveHits: domainAssessment.poe1ExclusiveHits,
+        matchedTerms: domainAssessment.matchedTerms,
+        culinaryMatchedTerms: domainAssessment.culinaryMatchedTerms,
+        poe1MatchedTerms: domainAssessment.poe1MatchedTerms,
+      });
       throw buildDomainMismatchError(domainAssessment);
     }
   }
+
+  let mechanicsValidation = await validateBuildMechanics(parsedBuild);
+  if (!mechanicsValidation.isValid) {
+    console.warn('[Gemini] Fact conflict detected. Retrying generation with factual correction.', {
+      conflicts: mechanicsValidation.criticalConflicts,
+      warnings: mechanicsValidation.warnings,
+      evidence: mechanicsValidation.evidence,
+    });
+
+    response = await generateWithFallback(buildFactConflictCorrectionInstruction(mechanicsValidation));
+    if (!response.text) throw new Error("AI generation failed");
+
+    parsedBuild = normalizeBuildPayload(JSON.parse(response.text)) as unknown as GeneratedBuild;
+    domainAssessment = assessBuildDomain(parsedBuild);
+    if (domainAssessment.isInvalid) {
+      throw buildDomainMismatchError(domainAssessment);
+    }
+
+    mechanicsValidation = await validateBuildMechanics(parsedBuild);
+    if (!mechanicsValidation.isValid) {
+      console.warn('[Gemini] Fact conflict persisted after correction.', {
+        conflicts: mechanicsValidation.criticalConflicts,
+        warnings: mechanicsValidation.warnings,
+        evidence: mechanicsValidation.evidence,
+      });
+      throw buildFactConflictError(mechanicsValidation);
+    }
+  }
+
+  parsedBuild = annotateItemUncertainty(parsedBuild) as GeneratedBuild;
 
   // Log usage
   try {
@@ -336,7 +415,7 @@ export const translateBuild = async (
   const normalizedBuild = normalizeBuildPayload(build);
 
   const systemInstruction = `
-    You are a professional Path of Exile build translator.
+    You are a professional Path of Exile 2 build translator.
     Translate the given JSON build into "${fullLanguage}".
     Preserve the JSON structure exactly.
     Translate all user-facing strings (title, reasoning, instructions).

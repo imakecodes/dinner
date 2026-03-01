@@ -27,12 +27,26 @@ export async function craftBuild(
       language: body?.language || rawContext?.language,
     });
 
-    const result = await craftBuildWithAI(members, normalizedContext as any);
+    const normalizedPartyMemberIds = (normalizedContext as { party_member_ids?: unknown[] }).party_member_ids;
+    const selectedPartyMemberIds = Array.isArray(normalizedPartyMemberIds)
+      ? normalizedPartyMemberIds
+          .map((value: unknown) => String(value || '').trim())
+          .filter(Boolean)
+      : [];
+
+    const filteredMembers = selectedPartyMemberIds.length > 0
+      ? members.filter((member: { id?: unknown }) => selectedPartyMemberIds.includes(String(member?.id || '').trim()))
+      : members;
+
+    const result = await craftBuildWithAI(filteredMembers, normalizedContext as any);
     return NextResponse.json(serializeBuildPayload(result, shape));
   } catch (error: any) {
     console.error('Error crafting build:', error);
 
-    const isDomainMismatch = Number(error?.status) === 422 || error?.code === 'gemini.domain_mismatch';
+    const errorStatus = Number(error?.status);
+    const errorCode = typeof error?.code === 'string' ? error.code : '';
+
+    const isDomainMismatch = errorCode === 'gemini.domain_mismatch' || (errorStatus === 422 && !errorCode);
     if (isDomainMismatch) {
       const localizedDomainMismatch = t('api.geminiDomainMismatch');
       const fallbackDomainMessage = t('generate.generateError');
@@ -43,6 +57,24 @@ export async function craftBuild(
             ? fallbackDomainMessage
             : localizedDomainMismatch,
           code: 'gemini.domain_mismatch',
+          details: Array.isArray(error?.details) ? error.details : [],
+          ...(typeof error?.reason === 'string' ? { reason: error.reason } : {}),
+        },
+        { status: 422 },
+      );
+    }
+
+    const isFactConflict = errorCode === 'gemini.fact_conflict';
+    if (isFactConflict) {
+      const localizedFactConflict = t('api.geminiFactConflict');
+      const fallbackFactConflict = t('generate.generateError');
+
+      return NextResponse.json(
+        {
+          error: localizedFactConflict === 'api.geminiFactConflict'
+            ? fallbackFactConflict
+            : localizedFactConflict,
+          code: 'gemini.fact_conflict',
           details: Array.isArray(error?.details) ? error.details : [],
         },
         { status: 422 },

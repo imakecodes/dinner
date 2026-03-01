@@ -26,6 +26,7 @@ describe('lib/api/build-craft-handlers', () => {
     serializeBuildPayloadMock.mockImplementation((value: unknown) => value);
     tMock.mockImplementation((key: string) => {
       if (key === 'api.geminiDomainMismatch') return 'Domain mismatch';
+      if (key === 'api.geminiFactConflict') return 'Fact conflict';
       if (key === 'api.geminiModelUnavailable') return 'Model unavailable';
       if (key === 'generate.generateError') return 'Failed to craft build';
       if (key === 'api.internalError') return 'Internal error';
@@ -102,6 +103,55 @@ describe('lib/api/build-craft-handlers', () => {
     });
   });
 
+  it('includes optional mismatch reason when provided by service', async () => {
+    craftBuildWithAIMock.mockRejectedValue({
+      status: 422,
+      code: 'gemini.domain_mismatch',
+      details: ['watchstone', 'sextant'],
+      reason: 'poe1_drift',
+    });
+
+    const req = new NextRequest('http://localhost/api/build', {
+      method: 'POST',
+      body: JSON.stringify({ members: [] }),
+    });
+    const res = await craftBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json).toEqual({
+      error: 'Domain mismatch',
+      code: 'gemini.domain_mismatch',
+      details: ['watchstone', 'sextant'],
+      reason: 'poe1_drift',
+    });
+  });
+
+  it('filters members by normalized party_member_ids before calling AI', async () => {
+    const normalizedContext = {
+      party_member_ids: ['m2'],
+      requested_archetype: 'mapper',
+      language: 'en',
+    };
+    normalizeBuildSessionContextMock.mockReturnValue(normalizedContext);
+    craftBuildWithAIMock.mockResolvedValue({ build_title: 'Filtered Build' });
+
+    const req = new NextRequest('http://localhost/api/build', {
+      method: 'POST',
+      body: JSON.stringify({
+        members: [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }],
+        context: { requested_archetype: 'mapper' },
+      }),
+    });
+
+    await craftBuild(req, 'canonical');
+
+    expect(craftBuildWithAIMock).toHaveBeenCalledWith(
+      [{ id: 'm2' }],
+      normalizedContext,
+    );
+  });
+
   it('falls back to generate error text when domain mismatch translation is missing', async () => {
     tMock.mockImplementation((key: string) => {
       if (key === 'api.geminiDomainMismatch') return 'api.geminiDomainMismatch';
@@ -120,6 +170,44 @@ describe('lib/api/build-craft-handlers', () => {
     expect(res.status).toBe(422);
     expect(json.error).toBe('Fallback message');
     expect(json.details).toEqual([]);
+  });
+
+  it('returns localized 422 for fact conflict with structured details', async () => {
+    craftBuildWithAIMock.mockRejectedValue({
+      status: 422,
+      code: 'gemini.fact_conflict',
+      details: [
+        {
+          claim: 'Convert Frostbolt damage to fire',
+          expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
+          found: 'No explicit enabler found for offensive conversion claim.',
+          subject: 'infernalist:frostbolt_conversion',
+          sources: [],
+        },
+      ],
+    });
+
+    const req = new NextRequest('http://localhost/api/build', {
+      method: 'POST',
+      body: JSON.stringify({ members: [] }),
+    });
+    const res = await craftBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json).toEqual({
+      error: 'Fact conflict',
+      code: 'gemini.fact_conflict',
+      details: [
+        {
+          claim: 'Convert Frostbolt damage to fire',
+          expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
+          found: 'No explicit enabler found for offensive conversion claim.',
+          subject: 'infernalist:frostbolt_conversion',
+          sources: [],
+        },
+      ],
+    });
   });
 
   it('returns 429 with Retry-After when quota exceeded includes retryAfterSeconds', async () => {

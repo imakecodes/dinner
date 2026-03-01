@@ -12,6 +12,7 @@ describe('domain guardrails', () => {
     });
 
     expect(result.isInvalid).toBe(true);
+    expect(result.reason).toBe('culinary');
     expect(result.culinaryHits).toBeGreaterThan(0);
     expect(result.matchedTerms.length).toBeGreaterThan(0);
   });
@@ -41,6 +42,7 @@ describe('domain guardrails', () => {
     });
 
     expect(result.isInvalid).toBe(true);
+    expect(result.reason).toBe('culinary');
     expect(result.highConfidenceCulinaryHits).toBeGreaterThan(0);
     expect(result.poeHits).toBeGreaterThan(0);
   });
@@ -63,6 +65,7 @@ describe('domain guardrails', () => {
     const result = assessTextDomain('Frango, arroz, tomate e alho para receita');
 
     expect(result.isCulinaryLikely).toBe(true);
+    expect(result.reason).toBe('culinary');
     expect(result.highConfidenceHits).toBeGreaterThan(0);
     expect(result.matchedCulinaryTerms.length).toBeGreaterThan(0);
   });
@@ -78,6 +81,23 @@ describe('domain guardrails', () => {
     const result = assessTextDomain('Path of Exile mapper build with atlas and chaos orb');
     expect(result.poeHits).toBeGreaterThan(0);
     expect(result.isCulinaryLikely).toBe(false);
+    expect(result.reason).toBe('none');
+  });
+
+  it('assessTextDomain detects explicit PoE2 signals as non-culinary', () => {
+    const result = assessTextDomain('Path of Exile 2 poe2 mapper with atlas progression and waystones');
+    expect(result.poeHits).toBeGreaterThan(0);
+    expect(result.isCulinaryLikely).toBe(false);
+    expect(result.matchedPoeTerms).toEqual(expect.arrayContaining(['path of exile 2', 'poe2']));
+    expect(result.reason).toBe('none');
+  });
+
+  it('assessTextDomain marks PoE1-exclusive signals as poe1_drift when PoE2 signal is weak', () => {
+    const result = assessTextDomain('Use watchstones and sextants to boost atlas strategy');
+    expect(result.isPoe1DriftLikely).toBe(true);
+    expect(result.reason).toBe('poe1_drift');
+    expect(result.poe1ExclusiveHits).toBeGreaterThan(0);
+    expect(result.matchedPoe1ExclusiveTerms).toEqual(expect.arrayContaining(['watchstone', 'sextant']));
   });
 
   it('assessBuildDomain invalidates by culinary critical text when no PoE terms exist', () => {
@@ -91,6 +111,7 @@ describe('domain guardrails', () => {
     });
 
     expect(result.isInvalid).toBe(true);
+    expect(result.reason).toBe('culinary');
     expect(result.culinaryHits).toBeGreaterThan(0);
     expect(result.poeHits).toBe(0);
   });
@@ -107,6 +128,7 @@ describe('domain guardrails', () => {
 
     expect(result.culinaryHits).toBeGreaterThanOrEqual(3);
     expect(result.isInvalid).toBe(true);
+    expect(result.reason).toBe('culinary');
   });
 
   it('assessBuildDomain keeps valid PoE build when only PoE vocabulary exists', () => {
@@ -125,5 +147,22 @@ describe('domain guardrails', () => {
     expect(result.isInvalid).toBe(false);
     expect(result.poeHits).toBeGreaterThan(0);
     expect(result.culinaryHits).toBe(0);
+    expect(result.reason).toBe('none');
+  });
+
+  it('assessBuildDomain invalidates PoE1-exclusive drift even when generic PoE terms exist', () => {
+    const result = assessBuildDomain({
+      build_title: 'Atlas Mapper',
+      build_reasoning: 'Use watchstones with sextants for map sustain.',
+      analysis_log: 'Path of Exile mapper strategy',
+      gear_gems: [{ name: 'Cluster Jewel', quantity: '1', unit: 'x' }],
+      build_items: [{ name: 'Divine Orb', quantity: '2', unit: 'x' }],
+      build_steps: ['Socket watchstones', 'Roll sextants'],
+    });
+
+    expect(result.isInvalid).toBe(true);
+    expect(result.reason).toBe('poe1_drift');
+    expect(result.poe1ExclusiveHits).toBeGreaterThanOrEqual(2);
+    expect(result.poe1MatchedTerms).toEqual(expect.arrayContaining(['watchstone', 'sextant', 'cluster jewel']));
   });
 });

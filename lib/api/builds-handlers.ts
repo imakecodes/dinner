@@ -6,6 +6,14 @@ import {
   serializeBuildPayload,
   type BuildResponseShape,
 } from '@/lib/build-contract';
+import { getServerTranslator } from '@/lib/i18n-server';
+import {
+  isBuildFieldTooLongError,
+  isPrismaP2000Error,
+  mapPrismaP2000ToFieldTooLongError,
+  validateBuildPersistenceLengths,
+  type BuildFieldLengthViolation,
+} from '@/lib/persistence/build-length-guard';
 
 function parseMaybeJson<T = any>(value: any): T | any {
   if (typeof value !== 'string') {
@@ -86,6 +94,53 @@ function toShapePayload(
   );
 }
 
+function getBuildFieldTooLongMessage(request: NextRequest, preferredLanguage?: string | null): string {
+  const { t } = getServerTranslator(request, preferredLanguage || null);
+  const localizedMessage = t('api.buildFieldTooLong');
+
+  if (localizedMessage === 'api.buildFieldTooLong') {
+    return 'One or more fields exceed storage limits. Shorten the content and try again.';
+  }
+
+  return localizedMessage;
+}
+
+function buildFieldTooLongResponse(
+  request: NextRequest,
+  details: BuildFieldLengthViolation[],
+  preferredLanguage?: string | null,
+) {
+  return NextResponse.json(
+    {
+      error: getBuildFieldTooLongMessage(request, preferredLanguage),
+      code: 'build.field_too_long',
+      details,
+    },
+    { status: 422 },
+  );
+}
+
+function maybeBuildFieldTooLongResponse(
+  request: NextRequest,
+  error: any,
+  preferredLanguage?: string | null,
+) {
+  if (isBuildFieldTooLongError(error)) {
+    return buildFieldTooLongResponse(
+      request,
+      Array.isArray(error?.details) ? error.details : [],
+      preferredLanguage,
+    );
+  }
+
+  if (isPrismaP2000Error(error)) {
+    const mappedError = mapPrismaP2000ToFieldTooLongError(error);
+    return buildFieldTooLongResponse(request, mappedError.details, preferredLanguage);
+  }
+
+  return null;
+}
+
 export async function getBuilds(request: NextRequest, shape: BuildResponseShape = 'canonical') {
   try {
     const token = request.cookies.get('auth_token')?.value;
@@ -152,6 +207,8 @@ export async function getBuilds(request: NextRequest, shape: BuildResponseShape 
 }
 
 export async function saveBuild(request: NextRequest, shape: BuildResponseShape = 'canonical') {
+  let preferredLanguage: string | undefined;
+
   try {
     const data = await request.json();
     const token = request.cookies.get('auth_token')?.value;
@@ -177,6 +234,12 @@ export async function saveBuild(request: NextRequest, shape: BuildResponseShape 
       build_steps: parseMaybeJson(data?.build_steps ?? data?.step_by_step),
       translations: parseMaybeJson(data?.translations),
     });
+    preferredLanguage = normalizedBuild.language;
+
+    const fieldLengthViolations = validateBuildPersistenceLengths(normalizedBuild);
+    if (fieldLengthViolations.length > 0) {
+      return buildFieldTooLongResponse(request, fieldLengthViolations, normalizedBuild.language);
+    }
 
     const createdRecipe = await prisma.recipe.create({
       data: {
@@ -238,6 +301,11 @@ export async function saveBuild(request: NextRequest, shape: BuildResponseShape 
 
     return NextResponse.json(toShapePayload(createdRecipe, shape));
   } catch (error) {
+    const fieldTooLongResponse = maybeBuildFieldTooLongResponse(request, error, preferredLanguage);
+    if (fieldTooLongResponse) {
+      return fieldTooLongResponse;
+    }
+
     console.error('POST builds handler error:', error);
     return NextResponse.json({ message: 'Error saving build', error: String(error) }, { status: 500 });
   }
@@ -284,12 +352,11 @@ export async function updateBuildById(
   { params }: { params: Promise<{ id: string }> },
   shape: BuildResponseShape = 'canonical',
 ) {
+  let preferredLanguage: string | undefined;
+
   try {
     const { id } = await params;
     const data = await request.json();
-
-    await prisma.recipeIngredient.deleteMany({ where: { recipeId: id } });
-    await prisma.recipeShoppingItem.deleteMany({ where: { recipeId: id } });
 
     const existingRecipe = await prisma.recipe.findUnique({
       where: { id },
@@ -309,6 +376,15 @@ export async function updateBuildById(
       build_steps: parseMaybeJson(data?.build_steps ?? data?.step_by_step),
       translations: parseMaybeJson(data?.translations),
     });
+    preferredLanguage = normalizedBuild.language;
+
+    const fieldLengthViolations = validateBuildPersistenceLengths(normalizedBuild);
+    if (fieldLengthViolations.length > 0) {
+      return buildFieldTooLongResponse(request, fieldLengthViolations, normalizedBuild.language);
+    }
+
+    await prisma.recipeIngredient.deleteMany({ where: { recipeId: id } });
+    await prisma.recipeShoppingItem.deleteMany({ where: { recipeId: id } });
 
     const updatedRecipe = await prisma.recipe.update({
       where: { id },
@@ -365,6 +441,11 @@ export async function updateBuildById(
 
     return NextResponse.json(toShapePayload(updatedRecipe, shape, [], updatedRecipe.language));
   } catch (error) {
+    const fieldTooLongResponse = maybeBuildFieldTooLongResponse(request, error, preferredLanguage);
+    if (fieldTooLongResponse) {
+      return fieldTooLongResponse;
+    }
+
     console.error('PUT build by id handler error:', error);
     return NextResponse.json({ message: 'Error updating build', error: String(error) }, { status: 500 });
   }
@@ -445,9 +526,12 @@ export async function translateBuildById(
   context: { params: Promise<{ id: string }> },
   shape: BuildResponseShape = 'canonical',
 ) {
+  let requestedLanguage: string | undefined;
+
   try {
     const { id } = await context.params;
     const { targetLanguage } = await req.json();
+    requestedLanguage = targetLanguage;
 
     if (!targetLanguage) {
       return NextResponse.json({ error: 'Target language is required' }, { status: 400 });
@@ -514,6 +598,11 @@ export async function translateBuildById(
     const translatedBuild = normalizeBuildPayload(
       await translateBuild(canonicalSource as any, targetLanguage, { kitchenId: sourceRecipe.kitchenId }),
     );
+
+    const fieldLengthViolations = validateBuildPersistenceLengths(translatedBuild);
+    if (fieldLengthViolations.length > 0) {
+      return buildFieldTooLongResponse(req, fieldLengthViolations, targetLanguage);
+    }
 
     const createdRecipe = await prisma.$transaction(async (tx) => {
       const newRecipe = await tx.recipe.create({
@@ -652,6 +741,11 @@ export async function translateBuildById(
 
     return NextResponse.json(toShapePayload(createdRecipe, shape, [], targetLanguage));
   } catch (error: any) {
+    const fieldTooLongResponse = maybeBuildFieldTooLongResponse(req, error, requestedLanguage);
+    if (fieldTooLongResponse) {
+      return fieldTooLongResponse;
+    }
+
     console.error('Translation handler error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to translate build' },

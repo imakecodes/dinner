@@ -401,8 +401,10 @@ export const ptBR = {
         resetSuccess: "Senha redefinida com sucesso",
         geminiQuotaExceeded: "Cota da Gemini excedida. Tente novamente em instantes.",
         geminiQuotaRetryAfter: "Cota da Gemini excedida. Tente novamente em {seconds}s.",
-        geminiDomainMismatch: "O conteúdo gerado está fora do domínio de build do Path of Exile. Tente novamente.",
+        geminiDomainMismatch: "O conteúdo gerado está fora do domínio de build do Path of Exile 2. Tente novamente.",
+        geminiFactConflict: "A build gerada contém afirmações mecânicas não verificadas para Path of Exile 2. Ajuste as restrições e tente novamente.",
         geminiModelUnavailable: "Nenhum modelo Gemini compatível está disponível no momento. Tente novamente em instantes.",
+        buildFieldTooLong: "Um ou mais campos excedem o limite de armazenamento. Reduza o texto e tente novamente.",
         internalError: "Erro interno do servidor"
     },
     units: {

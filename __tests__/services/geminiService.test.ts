@@ -2,6 +2,7 @@ import { generateRecipe, translateRecipe } from '../../services/geminiService';
 import { GoogleGenAI } from '@google/genai';
 import { prisma } from '../../lib/prisma';
 import { getLocalAiContext } from '@/lib/ai-context';
+import { validateBuildMechanics } from '@/lib/build-mechanics-validator';
 
 jest.mock('@google/genai', () => {
   return {
@@ -24,6 +25,10 @@ jest.mock('../../lib/prisma', () => ({
 
 jest.mock('@/lib/ai-context', () => ({
   getLocalAiContext: jest.fn()
+}));
+
+jest.mock('@/lib/build-mechanics-validator', () => ({
+  validateBuildMechanics: jest.fn(),
 }));
 
 const makeValidBuildPayload = (overrides: Record<string, any> = {}) => JSON.stringify({
@@ -53,6 +58,20 @@ const makeInvalidCulinaryPayload = () => JSON.stringify({
   build_cost_tier: 'cheap',
   setup_time: '20 minutos',
   setup_time_minutes: 20,
+});
+
+const makeInvalidPoe1Payload = () => JSON.stringify({
+  analysis_log: 'Path of Exile atlas optimization with watchstones and sextants.',
+  build_title: 'Legacy Atlas Mapper',
+  build_reasoning: 'Use cluster jewel setup and pantheon upgrades for survivability.',
+  gear_gems: [{ name: 'Cluster Jewel', quantity: '1', unit: 'x' }],
+  build_items: [{ name: 'Divine Orb', quantity: '5', unit: 'x' }],
+  build_steps: ['Roll sextants on watchstones', 'Optimize conqueror influence'],
+  compliance_badge: true,
+  build_archetype: 'mapper',
+  build_cost_tier: 'medium',
+  setup_time: '40 min',
+  setup_time_minutes: 40,
 });
 
 describe('geminiService', () => {
@@ -95,6 +114,12 @@ describe('geminiService', () => {
     process.env.GEMINI_MODEL_PRIMARY = 'gemini-3-pro-preview';
     process.env.GEMINI_MODEL_FALLBACK = 'gemini-2.5-flash';
     (getLocalAiContext as jest.Mock).mockResolvedValue('Keep stash-first suggestions only.');
+    (validateBuildMechanics as jest.Mock).mockResolvedValue({
+      isValid: true,
+      criticalConflicts: [],
+      warnings: [],
+      evidence: [],
+    });
   });
 
   afterEach(() => {
@@ -246,6 +271,145 @@ describe('geminiService', () => {
     });
 
     expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+  });
+
+  it('generateRecipe should retry once when first response has PoE1-exclusive drift and then succeed', async () => {
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeInvalidPoe1Payload() })
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Recovered PoE2 Build' }) });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    const result = await generateRecipe(mockHousehold as any, mockContext);
+
+    expect(result.recipe_title).toBe('Recovered PoE2 Build');
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    expect(mockGenerateContent.mock.calls[1][0].config.systemInstruction).toEqual(
+      expect.stringContaining('Remove PoE1-exclusive assumptions/mechanics')
+    );
+  });
+
+  it('generateRecipe should throw structured domain mismatch with reason when retry still has PoE1 drift', async () => {
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeInvalidPoe1Payload() })
+      .mockResolvedValueOnce({ text: makeInvalidPoe1Payload() });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    await expect(generateRecipe(mockHousehold as any, mockContext)).rejects.toMatchObject({
+      status: 422,
+      code: 'gemini.domain_mismatch',
+      reason: 'poe1_drift',
+      details: expect.any(Array),
+    });
+
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+  });
+
+  it('generateRecipe should append item uncertainty note when ambiguous item lines are returned', async () => {
+    const payloadWithAmbiguousItem = makeValidBuildPayload({
+      analysis_log: 'PoE2 build plan validated.',
+      build_items: [{ name: 'Wind Dancer / Ghost Dance', quantity: '1', unit: 'x' }],
+    });
+
+    const mockGenerateContent = jest.fn().mockResolvedValue({
+      text: payloadWithAmbiguousItem,
+      usageMetadata: { promptTokenCount: 7, candidatesTokenCount: 9 }
+    });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    const result = await generateRecipe(mockHousehold as any, mockContext);
+
+    expect(result.analysis_log).toContain('Item line conflict not fully verifiable as PoE2; using best-effort interpretation with budget fallback.');
+  });
+
+  it('generateRecipe should retry with factual correction when mechanics validator reports critical conflicts', async () => {
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Needs Fact Fix' }) })
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Fact Corrected Build' }) });
+
+    (validateBuildMechanics as jest.Mock)
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [
+          {
+            claim: 'Infernalist Frostbolt 100% to fire',
+            expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
+            found: 'No explicit enabler found for offensive conversion claim.',
+            subject: 'infernalist:frostbolt_conversion',
+            sources: [],
+          },
+        ],
+        warnings: [],
+        evidence: [],
+      })
+      .mockResolvedValueOnce({
+        isValid: true,
+        criticalConflicts: [],
+        warnings: [],
+        evidence: [],
+      });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    const result = await generateRecipe(mockHousehold as any, mockContext);
+
+    expect(result.recipe_title).toBe('Fact Corrected Build');
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    expect(mockGenerateContent.mock.calls[1][0].config.systemInstruction).toEqual(
+      expect.stringContaining('CRITICAL FACTUAL CORRECTION')
+    );
+  });
+
+  it('generateRecipe should throw 422 fact_conflict when critical conflicts persist after correction', async () => {
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Still Wrong' }) })
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Still Wrong After Retry' }) });
+
+    const persistentConflict = {
+      claim: 'Infernalist Frostbolt 100% to fire',
+      expected: 'Explicit conversion enabler listed in build_items or gear_gems.',
+      found: 'No explicit enabler found for offensive conversion claim.',
+      subject: 'infernalist:frostbolt_conversion',
+      sources: [],
+    };
+
+    (validateBuildMechanics as jest.Mock)
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [],
+      })
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [persistentConflict],
+        warnings: [],
+        evidence: [],
+      });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    await expect(generateRecipe(mockHousehold as any, mockContext)).rejects.toMatchObject({
+      status: 422,
+      code: 'gemini.fact_conflict',
+      details: [persistentConflict],
+    });
   });
 
   it('generateRecipe should throw structured quota error when all attempted models hit 429', async () => {

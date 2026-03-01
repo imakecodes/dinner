@@ -66,6 +66,8 @@ export default function CraftBuildPage() {
         setError(null);
 
         try {
+            const selectedMembers = members.filter((member) => activeDiners.includes(member.id));
+
             const context: BuildSessionContext = {
                 party_member_ids: activeDiners,
                 stash_gear_gems: pantry.filter(i => i.inStock).map(i => i.name),
@@ -78,7 +80,7 @@ export default function CraftBuildPage() {
             const response = await fetch('/api/build', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ members, context, language: language || 'en' }),
+                body: JSON.stringify({ members: selectedMembers, context, language: language || 'en' }),
             });
 
             if (!response.ok) {

@@ -6,7 +6,7 @@
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-blueviolet)
 ![Gemini AI](https://img.shields.io/badge/AI-Gemini%20API-orange)
 
-**POE2 Genie** is an intelligent, AI-powered Path of Exile companion for building stronger characters. It combines Hideout Party profiles, Stash tracking, Checklist management, and an AI build strategist to turn your available resources into practical, personalized builds.
+**POE2 Genie** is an intelligent, AI-powered Path of Exile 2 companion for building stronger characters. It combines Hideout Party profiles, Stash tracking, Checklist management, and an AI build strategist to turn your available resources into practical, personalized builds.
 
 ---
 
@@ -30,7 +30,7 @@
 
 ### 📦 Stash Tracking
 *   **Track Inventory**: Keep your Stash visibility up to date.
-*   **Paste Import**: Import Path of Exile item clipboard content directly into Stash.
+*   **Paste Import**: Import Path of Exile 2 item clipboard content directly into Stash.
 *   **Smarter Suggestions**: AI prioritizes what you already have before suggesting new items.
 
 ---
@@ -69,6 +69,10 @@ Built with modern web technologies for performance and scale:
     # Edit .env with your GEMINI_API_KEY and database credentials
     ```
     Keep `GEMINI_MODEL_FALLBACK` on a `generateContent`-compatible model (recommended: `gemini-2.5-flash`).
+    `AI_CONTEXT_FILE_PATH` is optional. If it is unset or points to a missing file, runtime falls back to `.ai/ai-context.template.md`.
+    Create `.ai/ai-context.local.md` only when you need local prompt overrides.
+    Fact-validation defaults to strict PoE2 mechanics checks (`POE_FACT_VALIDATION_MODE=strict`) and can return `422 gemini.fact_conflict` when critical claims remain unverifiable after retry.
+    Tune lookup behavior with `POE_KNOWLEDGE_CACHE_TTL_MIN` and `POE_KNOWLEDGE_FETCH_TIMEOUT_MS`.
 
 3.  **Start the database**:
     ```bash

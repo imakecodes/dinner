@@ -402,8 +402,10 @@ export const en = {
         resetSuccess: "Password has been reset successfully",
         geminiQuotaExceeded: "Gemini quota exceeded. Please try again shortly.",
         geminiQuotaRetryAfter: "Gemini quota exceeded. Please try again in {seconds}s.",
-        geminiDomainMismatch: "Generated content is outside Path of Exile build domain. Please try again.",
+        geminiDomainMismatch: "Generated content is outside Path of Exile 2 build domain. Please try again.",
+        geminiFactConflict: "Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.",
         geminiModelUnavailable: "No compatible Gemini model is currently available. Please try again shortly.",
+        buildFieldTooLong: "One or more fields exceed storage limits. Shorten the content and try again.",
         internalError: "Internal server error"
     },
     units: {

@@ -15,6 +15,11 @@ describe('lib/prompts', () => {
     expect(text).toContain('Quick setup (under 30 minutes).');
     expect(text).toContain('Use cheap uniques only.');
     expect(text).toContain('Notes block');
+    expect(text).toContain('Path of Exile 2 players');
+    expect(text).toContain('best build possible under the selected constraints');
+    expect(text).toContain('3-5 prioritized improvement opportunities');
+    expect(text).toContain('Every critical mechanic claim must be source-verifiable');
+    expect(text).toContain('Do not conflate defensive "damage taken as" effects with offensive damage conversion');
     expect(text).toContain('Never expose internal enum keys or snake_case tokens');
   });
 
