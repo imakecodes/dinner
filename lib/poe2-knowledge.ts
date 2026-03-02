@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
+import { prisma } from '@/lib/prisma';
 import {
   KnowledgeEntityType,
   KnowledgeFact,
+  KnowledgeLookupMode,
   KnowledgeProvider,
   KnowledgeSource,
   LookupOptions,
@@ -30,6 +32,7 @@ const DEFAULT_CACHE_TTL_MIN = 360;
 const DEFAULT_FETCH_TIMEOUT_MS = 2500;
 const TRANSIENT_ERROR_CACHE_TTL_MS = 5_000;
 const OFFICIAL_PROVIDERS: Array<'poe2db' | 'poe2wiki'> = ['poe2db', 'poe2wiki'];
+const DEFAULT_LOOKUP_MODE: KnowledgeLookupMode = 'snapshot_first';
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -59,6 +62,12 @@ const toSlug = (value: string): string =>
 
 const makeCacheKey = (entityType: KnowledgeEntityType, query: string): string =>
   `${entityType}:${normalizeToken(query)}`;
+
+const makeCacheKeyWithMode = (
+  entityType: KnowledgeEntityType,
+  query: string,
+  lookupMode: KnowledgeLookupMode,
+): string => `${makeCacheKey(entityType, query)}:${lookupMode}`;
 
 const toSource = (provider: KnowledgeProvider, url: string): KnowledgeSource => ({
   provider,
@@ -231,6 +240,84 @@ const loadUniqueSnapshot = (): Set<string> => {
   }
 };
 
+const inferLookupMode = (options: LookupOptions = {}): KnowledgeLookupMode => {
+  if (options.lookupMode) {
+    return options.lookupMode;
+  }
+  const envMode = String(process.env.POE_KNOWLEDGE_LOOKUP_MODE || '').trim().toLowerCase();
+  if (envMode === 'snapshot_only' || envMode === 'online_first' || envMode === 'snapshot_first') {
+    return envMode;
+  }
+  return DEFAULT_LOOKUP_MODE;
+};
+
+const normalizeSnapshotEntityType = (entityType: KnowledgeEntityType): 'SKILL' | 'ASCENDANCY_NODE' | 'UNIQUE_ITEM' | 'MECHANIC_CLAIM' => {
+  if (entityType === 'skill') return 'SKILL';
+  if (entityType === 'ascendancy_node') return 'ASCENDANCY_NODE';
+  if (entityType === 'unique_item') return 'UNIQUE_ITEM';
+  return 'MECHANIC_CLAIM';
+};
+
+const resolveFromSnapshotDb = async (
+  entityType: KnowledgeEntityType,
+  query: string,
+): Promise<LookupResult | null> => {
+  const normalizedQuery = normalizeToken(query);
+  if (!normalizedQuery) {
+    return null;
+  }
+
+  try {
+    const enumEntityType = normalizeSnapshotEntityType(entityType);
+
+    const alias = await prisma.poeAliasSnapshot.findFirst({
+      where: {
+        aliasNormalized: normalizedQuery,
+        entityType: enumEntityType,
+      },
+      orderBy: { snapshotAt: 'desc' },
+      include: { entity: true },
+    });
+
+    const entity = alias?.entity || await prisma.poeEntitySnapshot.findFirst({
+      where: {
+        normalizedTerm: normalizedQuery,
+        entityType: enumEntityType,
+      },
+      orderBy: { snapshotAt: 'desc' },
+    });
+
+    if (!entity) {
+      return null;
+    }
+
+    const snapshotAt = new Date(entity.snapshotAt);
+    const ageDays = Math.max(0, Math.floor((Date.now() - snapshotAt.getTime()) / (24 * 60 * 60 * 1000)));
+    const source = toSource('local_snapshot_db', entity.sourceUrl);
+
+    const facts = Array.isArray(entity.facts) ? entity.facts as KnowledgeFact[] : [];
+
+    return {
+      entityType,
+      query: alias?.canonicalTerm || entity.canonicalTerm || query,
+      normalizedQuery,
+      status: 'fallback_verified',
+      facts,
+      sources: [source],
+      rawText: entity.rawText,
+      sourceUnavailable: false,
+      snapshotVersion: snapshotAt.toISOString(),
+      snapshotAgeDays: ageDays,
+    };
+  } catch (error: any) {
+    const message = String(error?.message || '').toLowerCase();
+    if (!message.includes('unknown') && !message.includes('does not exist') && !message.includes('table')) {
+      console.warn('[poe2-knowledge] snapshot DB lookup failed', { entityType, query, error: message || 'unknown' });
+    }
+    return null;
+  }
+};
+
 const buildProviderUrl = (provider: 'poe2db' | 'poe2wiki', query: string): string => {
   const slug = toSlug(query);
   return provider === 'poe2db'
@@ -325,7 +412,10 @@ const resolveViaProvider = async (
     };
   } catch (error: any) {
     const message = String(error?.message || error || 'fetch_error');
-    const unavailable = message.includes('deadline_exceeded') || message.includes('abort') || message.includes('fetch');
+    const unavailable = message.includes('deadline_exceeded')
+      || message.includes('abort')
+      || message.includes('fetch')
+      || message.includes('timeout');
     return {
       entityType,
       query,
@@ -366,7 +456,7 @@ const pickBestResult = (results: LookupResult[]): LookupResult => {
   return results.slice().sort((a, b) => score[b.status] - score[a.status])[0];
 };
 
-const resolveWithProviders = async (
+const resolveOnlineProviders = async (
   entityType: KnowledgeEntityType,
   query: string,
   options: LookupOptions = {},
@@ -447,18 +537,84 @@ const resolveWithProviders = async (
   };
 };
 
+const resolveWithLookupMode = async (
+  entityType: KnowledgeEntityType,
+  query: string,
+  options: LookupOptions = {},
+): Promise<LookupResult> => {
+  const mode = inferLookupMode(options);
+  const normalizedQuery = normalizeToken(query);
+
+  if (mode === 'snapshot_first' || mode === 'snapshot_only') {
+    const snapshotLookup = await resolveFromSnapshotDb(entityType, query);
+    if (snapshotLookup) {
+      return snapshotLookup;
+    }
+  }
+
+  if (mode === 'snapshot_only') {
+    if (entityType === 'unique_item') {
+      const snapshot = loadUniqueSnapshot();
+      if (snapshot.has(normalizedQuery)) {
+        const snapshotSource = toSource('local_snapshot', 'item_examples/_unique_item_examples_manifest.json');
+        return {
+          entityType,
+          query,
+          normalizedQuery,
+          status: 'fallback_verified',
+          facts: [{
+            key: 'snapshot.unique_item_known',
+            value: query,
+            confidence: 'medium',
+            source: snapshotSource,
+            context: 'Verified unique snapshot fallback.',
+          }],
+          sources: [snapshotSource],
+          sourceUnavailable: false,
+        };
+      }
+    }
+
+    return {
+      entityType,
+      query,
+      normalizedQuery,
+      status: 'not_found',
+      facts: [],
+      sources: [],
+      sourceUnavailable: false,
+      error: 'snapshot_not_found',
+    };
+  }
+
+  const onlineLookup = await resolveOnlineProviders(entityType, query, options);
+  if (onlineLookup.status === 'verified') {
+    return onlineLookup;
+  }
+
+  if (mode === 'online_first') {
+    const snapshotLookup = await resolveFromSnapshotDb(entityType, query);
+    if (snapshotLookup) {
+      return snapshotLookup;
+    }
+  }
+
+  return onlineLookup;
+};
+
 const resolveCached = async (
   entityType: KnowledgeEntityType,
   query: string,
   options: LookupOptions = {},
 ): Promise<LookupResult> => {
-  const key = makeCacheKey(entityType, query);
+  const lookupMode = inferLookupMode(options);
+  const key = makeCacheKeyWithMode(entityType, query, lookupMode);
   const cached = CACHE.get(key);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.result;
   }
 
-  const result = await resolveWithProviders(entityType, query, options);
+  const result = await resolveWithLookupMode(entityType, query, options);
   const ttlMs = (result.status === 'source_unavailable' || result.status === 'error')
     ? TRANSIENT_ERROR_CACHE_TTL_MS
     : getCacheTtlMs();

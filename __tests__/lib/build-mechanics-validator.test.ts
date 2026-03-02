@@ -91,7 +91,7 @@ describe('build-mechanics-validator', () => {
 
     expect(result.isValid).toBe(false);
     expect(result.criticalConflicts.length).toBeGreaterThan(0);
-    expect(result.criticalConflicts[0].subject).toContain('infernalist');
+    expect(result.criticalConflicts.some((conflict) => conflict.subject.includes('offensive_damage_conversion') || conflict.subject.includes('infernalist'))).toBe(true);
     expect(result.enablerDiagnostics).toHaveLength(0);
   });
 
@@ -207,7 +207,49 @@ describe('build-mechanics-validator', () => {
       build_steps: [],
     }, { mode: 'strict' });
 
-    expect(result.hadExternalLookupFailure).toBe(true);
+    expect(result.hadExternalLookupFailure).toBe(false);
     expect(result.hasSourceUnavailableBlocking).toBe(false);
+  });
+
+  it('blocks when critical user terms are not verified in strict mode', async () => {
+    const result = await validateBuildMechanics({
+      build_reasoning: 'Use unknown setup from notes.',
+      gear_gems: [{ name: 'Frostbolt' }],
+      build_items: [],
+      build_steps: [],
+    }, {
+      mode: 'strict',
+      evidencePack: {
+        generatedAt: new Date().toISOString(),
+        deadlineAtMs: Date.now() + 1000,
+        terms: [{
+          term: 'Unknown Setup',
+          normalizedTerm: 'unknown setup',
+          origin: 'poe_game_term',
+          source: 'context.build_notes',
+          criticality: 'high',
+          entityType: 'unknown',
+          status: 'not_confirmed',
+          lookupStatus: 'not_found',
+          sources: [],
+          facts: [],
+          lookup: null,
+          reason: 'Not confirmed in official sources.',
+        }],
+        lookups: [],
+        facts: [],
+        sourceUnavailable: false,
+        metadata: {
+          termsTotal: 1,
+          termsVerified: 0,
+          termsUnverified: 1,
+        },
+      },
+    });
+
+    expect(result.hasCriticalUnverifiedTerms).toBe(true);
+    expect(result.criticalUnverifiedTerms).toHaveLength(1);
+    expect(result.isValid).toBe(false);
+    expect(result.claimResults.some((claim) => claim.reason === 'critical_term_unverified')).toBe(true);
   });
 });

@@ -30,6 +30,7 @@ type GroundingCandidate = {
 };
 
 type GroundingOptions = LookupOptions;
+type RankedLookupResult = { lookup: LookupResult; queryIndex: number };
 
 const MAX_TERM_LENGTH = 96;
 
@@ -99,15 +100,44 @@ const splitTermsFromText = (value: unknown): string[] => {
     .filter(Boolean)
     .filter((chunk) => chunk.length <= MAX_TERM_LENGTH);
 
-  if (fragments.length > 0) {
+  if (fragments.length > 1) {
     return fragments;
   }
 
-  if (raw.length <= MAX_TERM_LENGTH) {
+  if (fragments.length === 1) {
+    const single = fragments[0];
+    const wordCount = single.split(/\s+/g).filter(Boolean).length;
+    if (wordCount <= 3) {
+      return [single];
+    }
+  }
+
+  const tokens = raw
+    .split(/\s+/g)
+    .map((token) => token.trim().replace(/[^\p{L}\p{N}'_-]/gu, ''))
+    .filter(Boolean);
+
+  if (tokens.length <= 3 && raw.length <= MAX_TERM_LENGTH) {
     return [raw];
   }
 
-  return [];
+  // For long free text, avoid treating the whole sentence as a single game term.
+  const grams = new Set<string>();
+  const maxGramSize = Math.min(3, tokens.length);
+  for (let size = maxGramSize; size >= 1; size -= 1) {
+    for (let index = 0; index + size <= tokens.length; index += 1) {
+      const gram = tokens.slice(index, index + size).join(' ').trim();
+      if (!gram || gram.length > MAX_TERM_LENGTH) {
+        continue;
+      }
+      grams.add(gram);
+      if (grams.size >= 24) {
+        return Array.from(grams);
+      }
+    }
+  }
+
+  return Array.from(grams);
 };
 
 const uniqueSources = (sources: KnowledgeSource[]): KnowledgeSource[] => {
@@ -123,10 +153,19 @@ const uniqueSources = (sources: KnowledgeSource[]): KnowledgeSource[] => {
   return Array.from(unique.values());
 };
 
-const selectBestLookup = (results: LookupResult[]): LookupResult =>
-  results
+const selectBestRankedLookup = (results: RankedLookupResult[]): LookupResult => {
+  const sorted = results
     .slice()
-    .sort((a, b) => LOOKUP_SCORE[b.status] - LOOKUP_SCORE[a.status])[0];
+    .sort((a, b) => {
+      const statusDelta = LOOKUP_SCORE[b.lookup.status] - LOOKUP_SCORE[a.lookup.status];
+      if (statusDelta !== 0) {
+        return statusDelta;
+      }
+      // Prefer the earliest query variant (original term first).
+      return a.queryIndex - b.queryIndex;
+    });
+  return sorted[0].lookup;
+};
 
 const toGroundingStatus = (lookupStatus: LookupStatus): GroundedUserTerm['status'] => {
   if (lookupStatus === 'verified') {
@@ -162,6 +201,26 @@ const buildGroundingReason = (bestResult: LookupResult, allResults: LookupResult
   }
 
   return 'Not confirmed in official sources.';
+};
+
+const buildLookupQueries = (term: string): string[] => {
+  const canonical = toCanonicalTerm(term);
+  if (!canonical) {
+    return [];
+  }
+
+  const tokens = canonical.split(/\s+/g).filter(Boolean);
+  const variants: string[] = [canonical];
+
+  // Prefix fallback for composite item names:
+  // "Sacrosanctum Corvus Mantle" -> "Sacrosanctum Corvus" -> "Sacrosanctum".
+  if (tokens.length > 1) {
+    for (let length = tokens.length - 1; length >= 1; length -= 1) {
+      variants.push(tokens.slice(0, length).join(' '));
+    }
+  }
+
+  return Array.from(new Set(variants.map((value) => toCanonicalTerm(value)).filter(Boolean)));
 };
 
 const mergeCandidate = (
@@ -211,11 +270,20 @@ const collectCandidates = (
   partyMembers: KitchenMember[],
 ): GroundingCandidate[] => {
   const map = new Map<string, GroundingCandidate>();
+  const requestedType = 'requested_type' in context
+    ? (context as SessionContext).requested_type
+    : undefined;
+  const observation = 'observation' in context
+    ? (context as SessionContext).observation
+    : undefined;
+  const pantryIngredients = 'pantry_ingredients' in context
+    ? (context as SessionContext).pantry_ingredients
+    : undefined;
 
   collectFromValue(map, context.requested_archetype, 'context.requested_archetype', 'low');
-  collectFromValue(map, context.requested_type, 'context.requested_type', 'low');
+  collectFromValue(map, requestedType, 'context.requested_type', 'low');
   collectFromValue(map, context.build_notes, 'context.build_notes', 'high');
-  collectFromValue(map, context.observation, 'context.observation', 'medium');
+  collectFromValue(map, observation, 'context.observation', 'medium');
 
   if (Array.isArray(context.stash_gear_gems)) {
     for (const term of context.stash_gear_gems) {
@@ -223,8 +291,8 @@ const collectCandidates = (
     }
   }
 
-  if (Array.isArray(context.pantry_ingredients)) {
-    for (const term of context.pantry_ingredients) {
+  if (Array.isArray(pantryIngredients)) {
+    for (const term of pantryIngredients) {
       collectFromValue(map, term, 'context.pantry_ingredients', 'high');
     }
   }
@@ -263,13 +331,26 @@ const resolveGameCandidate = async (
   candidate: GroundingCandidate,
   options: GroundingOptions,
 ): Promise<GroundedUserTerm> => {
-  const lookups = await Promise.all([
-    resolveSkill(candidate.term, options),
-    resolveAscendancyNode(candidate.term, options),
-    resolveUniqueItem(candidate.term, options),
-  ]);
+  const queries = buildLookupQueries(candidate.term);
+  const rankedLookups: RankedLookupResult[] = [];
 
-  const bestResult = selectBestLookup(lookups);
+  for (let index = 0; index < queries.length; index += 1) {
+    const query = queries[index];
+    const [skillLookup, ascendancyLookup, uniqueLookup] = await Promise.all([
+      resolveSkill(query, options),
+      resolveAscendancyNode(query, options),
+      resolveUniqueItem(query, options),
+    ]);
+
+    rankedLookups.push(
+      { lookup: skillLookup, queryIndex: index },
+      { lookup: ascendancyLookup, queryIndex: index },
+      { lookup: uniqueLookup, queryIndex: index },
+    );
+  }
+
+  const lookups = rankedLookups.map((entry) => entry.lookup);
+  const bestResult = selectBestRankedLookup(rankedLookups);
   const lookupStatus = bestResult.status;
 
   return {

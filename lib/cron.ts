@@ -1,5 +1,10 @@
 import cron from 'node-cron';
 import { prisma } from '@/lib/prisma';
+import {
+    getPoeSnapshotCronSchedule,
+    isPoeSnapshotCronEnabled,
+    runWeeklyPoeSnapshot,
+} from '@/lib/poe-snapshot-service';
 
 export function startReplenishmentJob() {
     // Run every minute: */5 * * * *
@@ -67,6 +72,24 @@ export function startReplenishmentJob() {
             }
         } catch (error) {
             console.error('[Cron] Error running replenishment job:', error);
+        }
+    });
+}
+
+export function startPoeSnapshotJob() {
+    if (!isPoeSnapshotCronEnabled()) {
+        console.log('[Cron] PoE snapshot job disabled by ENABLE_POE_SNAPSHOT_CRON=false');
+        return;
+    }
+
+    const schedule = getPoeSnapshotCronSchedule();
+    cron.schedule(schedule, async () => {
+        console.log('[Cron] Running PoE weekly snapshot...');
+        try {
+            await runWeeklyPoeSnapshot();
+            console.log('[Cron] PoE weekly snapshot completed.');
+        } catch (error) {
+            console.error('[Cron] Error running PoE weekly snapshot job:', error);
         }
     });
 }

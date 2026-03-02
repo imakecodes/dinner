@@ -1,4 +1,6 @@
-export type KnowledgeProvider = 'poe2db' | 'poe2wiki' | 'local_snapshot';
+export type KnowledgeProvider = 'poe2db' | 'poe2wiki' | 'local_snapshot' | 'local_snapshot_db';
+
+export type KnowledgeLookupMode = 'snapshot_first' | 'snapshot_only' | 'online_first';
 
 export type KnowledgeEntityType =
   | 'skill'
@@ -47,6 +49,7 @@ export type ProviderLookupAttempt = {
 export type LookupOptions = {
   deadlineAtMs?: number;
   timeoutMs?: number;
+  lookupMode?: KnowledgeLookupMode;
 };
 
 export type LookupResult = {
@@ -60,4 +63,6 @@ export type LookupResult = {
   error?: string;
   providerAttempts?: ProviderLookupAttempt[];
   sourceUnavailable?: boolean;
+  snapshotVersion?: string;
+  snapshotAgeDays?: number;
 };

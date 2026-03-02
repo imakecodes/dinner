@@ -17,6 +17,7 @@
 *   **Foco na Party**: Respeita restrições da Party, archetypes preferidos e tempo de setup.
 *   **Planejamento por Custo**: Suporta tiers de custo, de setups baratos até planejamento mirror-level.
 *   **Tradução Global**: Traduza instantaneamente qualquer build para seu idioma (Português/Inglês).
+*   **Validação Factual Determinística**: Faz grounding dos termos do usuário em entidades canônicas de PoE2 antes de interpretar mecânicas.
 
 ### 🏠 Hideouts Conectados
 *   **Sincronia da Party**: Convide amigos para o Hideout e compartilhe o contexto.
@@ -72,7 +73,9 @@ Construído com tecnologias web modernas para performance e escala:
     `AI_CONTEXT_FILE_PATH` é opcional. Se estiver ausente ou apontar para arquivo inexistente, o runtime usa fallback para `.ai/ai-context.template.md`.
     Crie `.ai/ai-context.local.md` somente quando precisar de overrides locais de prompt.
     A validação factual por padrão roda em modo estrito (`POE_FACT_VALIDATION_MODE=strict`) e pode retornar `422 gemini.fact_unverified` quando claims críticos continuam sem verificação após um retry corretivo. Em indisponibilidade de fonte, o padrão é `POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY=degrade_warn` (output com incerteza explícita); use `fail_503` para bloquear com `503 gemini.official_sources_unavailable`.
-    Ajuste o lookup com `POE_KNOWLEDGE_CACHE_TTL_MIN` e `POE_KNOWLEDGE_FETCH_TIMEOUT_MS`.
+    Termos críticos sem confirmação agora retornam `422 gemini.term_unverified` no modo estrito.
+    Ajuste o lookup com `POE_KNOWLEDGE_CACHE_TTL_MIN`, `POE_KNOWLEDGE_FETCH_TIMEOUT_MS` e `POE_KNOWLEDGE_LOOKUP_MODE` (`snapshot_first`, `snapshot_only`, `online_first`).
+    Controles do snapshot semanal: `ENABLE_POE_SNAPSHOT_CRON`, `POE_SNAPSHOT_CRON_SCHEDULE`, `POE_SNAPSHOT_MAX_PAGES_PER_RUN`.
 
 3.  **Inicie o banco de dados**:
     ```bash
@@ -84,6 +87,7 @@ Construído com tecnologias web modernas para performance e escala:
     pnpm install
     pnpm db:push
     ```
+    Para mudanças de produção, gere/aplique migrations Prisma em vez de depender apenas de `db:push`.
 
 5.  **Rode a aplicação**:
     ```bash
@@ -91,6 +95,17 @@ Construído com tecnologias web modernas para performance e escala:
     ```
 
 Acesse `http://localhost:3000` e comece a craftar builds.
+
+---
+
+## 🧾 Snapshot de Evidência PoE
+
+O resolvedor de conhecimento suporta snapshots locais semanais para reduzir dependência de disponibilidade online.
+
+*   **Dados do Snapshot**: Salvos nas tabelas Prisma `PoeSnapshotRun`, `PoeEntitySnapshot` e `PoeAliasSnapshot`.
+*   **Modo Padrão de Lookup**: `snapshot_first` (snapshot local primeiro, depois providers oficiais).
+*   **Agendamento do Cron**: Semanal na segunda-feira às 03:00 por padrão (`0 3 * * 1`).
+*   **Providers**: `poe2db.tw` e `poe2wiki.net`.
 
 ---
 

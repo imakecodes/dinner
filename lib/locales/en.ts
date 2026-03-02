@@ -405,6 +405,7 @@ export const en = {
         geminiDomainMismatch: "Generated content is outside Path of Exile 2 build domain. Please try again.",
         geminiFactConflict: "Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.",
         geminiFactUnverified: "Generated build contains factual claims without enough official evidence. Adjust constraints and try again.",
+        geminiTermUnverified: "One or more critical terms could not be verified in canonical PoE2 sources. Refine the terms and try again.",
         officialSourcesUnavailable: "Official PoE2 sources are temporarily unavailable. Please retry shortly.",
         geminiModelUnavailable: "No compatible Gemini model is currently available. Please try again shortly.",
         buildFieldTooLong: "One or more fields exceed storage limits. Shorten the content and try again.",

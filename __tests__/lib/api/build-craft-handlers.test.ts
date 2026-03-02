@@ -28,6 +28,7 @@ describe('lib/api/build-craft-handlers', () => {
       if (key === 'api.geminiDomainMismatch') return 'Domain mismatch';
       if (key === 'api.geminiFactConflict') return 'Fact conflict';
       if (key === 'api.geminiFactUnverified') return 'Fact unverified';
+      if (key === 'api.geminiTermUnverified') return 'Critical term unverified';
       if (key === 'api.officialSourcesUnavailable') return 'Official sources unavailable';
       if (key === 'api.geminiModelUnavailable') return 'Model unavailable';
       if (key === 'generate.generateError') return 'Failed to craft build';
@@ -233,6 +234,30 @@ describe('lib/api/build-craft-handlers', () => {
       error: 'Official sources unavailable',
       code: 'gemini.official_sources_unavailable',
       details: [{ term: 'Frostbolt', code: 'source_unavailable' }],
+    });
+  });
+
+  it('returns localized 422 for critical term unverified with details', async () => {
+    craftBuildWithAIMock.mockRejectedValue({
+      status: 422,
+      code: 'gemini.term_unverified',
+      details: [{ term: 'Infernalist', source: 'context.build_notes', criticality: 'high', reason: 'Not confirmed in official sources.' }],
+      claimResults: [{ claimId: 'grounding:context.build_notes:infernalist', status: 'blocked', reason: 'critical_term_unverified', evidenceUrls: [], missingTerms: ['Infernalist'] }],
+    });
+
+    const req = new NextRequest('http://localhost/api/build', {
+      method: 'POST',
+      body: JSON.stringify({ members: [] }),
+    });
+    const res = await craftBuild(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json).toEqual({
+      error: 'Critical term unverified',
+      code: 'gemini.term_unverified',
+      details: [{ term: 'Infernalist', source: 'context.build_notes', criticality: 'high', reason: 'Not confirmed in official sources.' }],
+      claimResults: [{ claimId: 'grounding:context.build_notes:infernalist', status: 'blocked', reason: 'critical_term_unverified', evidenceUrls: [], missingTerms: ['Infernalist'] }],
     });
   });
 

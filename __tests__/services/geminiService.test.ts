@@ -482,6 +482,62 @@ describe('geminiService', () => {
     });
   });
 
+  it('generateRecipe should throw 422 term_unverified when critical grounding terms remain unverified', async () => {
+    const mockGenerateContent = jest
+      .fn()
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Needs Term Fix' }) })
+      .mockResolvedValueOnce({ text: makeValidBuildPayload({ build_title: 'Still Needs Term Fix' }) });
+
+    (validateBuildMechanics as jest.Mock)
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [{
+          claim: 'Infernalist',
+          expected: 'Critical user terms must be verified against canonical PoE2 sources before interpretation.',
+          found: 'Unverified term from context.build_notes (high): Not confirmed in official sources.',
+          subject: 'grounding:context.build_notes:infernalist',
+          sources: [],
+        }],
+        warnings: [],
+        evidence: [],
+        enablerDiagnostics: [],
+        hadExternalLookupFailure: false,
+        hasSourceUnavailableBlocking: false,
+        hasCriticalUnverifiedTerms: true,
+        criticalUnverifiedTerms: [{ term: 'Infernalist', source: 'context.build_notes', criticality: 'high', reason: 'Not confirmed in official sources.' }],
+      })
+      .mockResolvedValueOnce({
+        isValid: false,
+        criticalConflicts: [{
+          claim: 'Infernalist',
+          expected: 'Critical user terms must be verified against canonical PoE2 sources before interpretation.',
+          found: 'Unverified term from context.build_notes (high): Not confirmed in official sources.',
+          subject: 'grounding:context.build_notes:infernalist',
+          sources: [],
+        }],
+        warnings: [],
+        evidence: [],
+        enablerDiagnostics: [],
+        hadExternalLookupFailure: false,
+        hasSourceUnavailableBlocking: false,
+        claimResults: [{ claimId: 'grounding:context.build_notes:infernalist', status: 'blocked', reason: 'critical_term_unverified', evidenceUrls: [], missingTerms: ['Infernalist'] }],
+        claimsTotal: 1,
+        claimsVerified: 0,
+        claimsBlocked: 1,
+        hasCriticalUnverifiedTerms: true,
+        criticalUnverifiedTerms: [{ term: 'Infernalist', source: 'context.build_notes', criticality: 'high', reason: 'Not confirmed in official sources.' }],
+      });
+
+    (GoogleGenAI as unknown as jest.Mock).mockImplementation(() => ({
+      models: { generateContent: mockGenerateContent }
+    }));
+
+    await expect(generateRecipe(mockHousehold as any, mockContext)).rejects.toMatchObject({
+      status: 422,
+      code: 'gemini.term_unverified',
+    });
+  });
+
   it('generateRecipe should degrade to warn mode and return build when source unavailability blocks strict validation', async () => {
     const mockGenerateContent = jest
       .fn()

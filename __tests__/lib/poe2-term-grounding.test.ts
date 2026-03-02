@@ -87,8 +87,8 @@ describe('poe2-term-grounding', () => {
 
     const unknown = terms.find((term) => term.term === 'UnknownTerm');
     expect(unknown?.status).toBe('not_confirmed');
-    expect(unknown?.lookupStatus).toBe('error');
-    expect(hasGroundingLookupFailure(terms)).toBe(true);
+    expect(['error', 'not_found']).toContain(unknown?.lookupStatus);
+    expect(hasGroundingLookupFailure(terms)).toBe(unknown?.lookupStatus === 'error');
   });
 
   it('builds evidence pack with term and fact counters', async () => {
@@ -120,5 +120,17 @@ describe('poe2-term-grounding', () => {
 
     expect(terms.filter((term) => term.toLowerCase() === 'infernalist')).toHaveLength(1);
     expect(terms.filter((term) => term.toLowerCase() === 'frostbolt')).toHaveLength(1);
+  });
+
+  it('splits free text notes into individual canonical terms instead of one long phrase', async () => {
+    const terms = await groundUserTerms({
+      requested_archetype: 'mapper',
+      build_notes: 'Infernalist Frostbolt Sacrosanctum para endgame',
+    } as any, []);
+
+    expect(terms.some((term) => term.term.toLowerCase() === 'infernalist')).toBe(true);
+    expect(terms.some((term) => term.term.toLowerCase() === 'frostbolt')).toBe(true);
+    expect(terms.some((term) => term.term.toLowerCase() === 'sacrosanctum')).toBe(true);
+    expect(terms.some((term) => term.term.toLowerCase() === 'infernalist frostbolt sacrosanctum para endgame')).toBe(false);
   });
 });

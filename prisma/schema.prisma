@@ -30,6 +30,25 @@ enum MembershipStatus {
   REJECTED
 }
 
+enum PoeSnapshotRunStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum PoeSnapshotEntityType {
+  SKILL
+  ASCENDANCY_NODE
+  UNIQUE_ITEM
+  MECHANIC_CLAIM
+}
+
+enum PoeSnapshotProvider {
+  POE2DB
+  POE2WIKI
+}
+
 // Models
 model Kitchen {
   id         String    @id @default(cuid())
@@ -271,4 +290,64 @@ model GeminiUsage {
 
   kitchenId String?
   kitchen   Kitchen? @relation(fields: [kitchenId], references: [id])
+}
+
+model PoeSnapshotRun {
+  id              String               @id @default(cuid())
+  startedAt       DateTime             @default(now())
+  completedAt     DateTime?
+  snapshotAt      DateTime
+  status          PoeSnapshotRunStatus @default(RUNNING)
+  maxPages        Int                  @default(0)
+  attemptedTerms  Int                  @default(0)
+  persistedTerms  Int                  @default(0)
+  failedTerms     Int                  @default(0)
+  errorMessage    String?              @db.Text
+
+  entities PoeEntitySnapshot[]
+  aliases  PoeAliasSnapshot[]
+
+  @@index([snapshotAt])
+}
+
+model PoeEntitySnapshot {
+  id             String                @id @default(cuid())
+  snapshotAt     DateTime
+  entityType     PoeSnapshotEntityType
+  provider       PoeSnapshotProvider
+  canonicalTerm  String
+  normalizedTerm String
+  sourceUrl      String
+  rawText        String                @db.Text
+  contentHash    String
+  facts          Json
+  createdAt      DateTime              @default(now())
+
+  runId String?
+  run   PoeSnapshotRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  aliases PoeAliasSnapshot[]
+
+  @@index([normalizedTerm, entityType, snapshotAt])
+  @@index([snapshotAt])
+  @@unique([provider, sourceUrl, snapshotAt])
+}
+
+model PoeAliasSnapshot {
+  id              String                @id @default(cuid())
+  snapshotAt      DateTime
+  entityType      PoeSnapshotEntityType
+  aliasTerm       String
+  aliasNormalized String
+  canonicalTerm   String
+  createdAt       DateTime              @default(now())
+
+  runId String?
+  run   PoeSnapshotRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  entityId String?
+  entity   PoeEntitySnapshot? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
+  @@index([aliasNormalized, entityType, snapshotAt])
+  @@index([snapshotAt])
 }

@@ -71,6 +71,13 @@ export type MechanicsValidationResult = {
   claimsBlocked: number;
   hadExternalLookupFailure: boolean;
   hasSourceUnavailableBlocking: boolean;
+  hasCriticalUnverifiedTerms: boolean;
+  criticalUnverifiedTerms: Array<{
+    term: string;
+    source: string;
+    criticality: string;
+    reason: string;
+  }>;
 };
 
 type ValidateOptions = {
@@ -103,9 +110,9 @@ const getEntryNames = (entries: BuildEntryLike[] | null | undefined): string[] =
 const LOOKUP_SCORE: Record<LookupStatus, number> = {
   verified: 6,
   fallback_verified: 5,
-  unverified_external: 4,
-  not_found: 3,
-  source_unavailable: 2,
+  source_unavailable: 4,
+  unverified_external: 3,
+  not_found: 2,
   error: 1,
 };
 
@@ -313,6 +320,8 @@ const hasExternalLookupFailureForDiagnostics = (diagnostics: EnablerDiagnostic[]
   diagnostics.some((diag) => diag.status === 'source_unavailable' || diag.status === 'unverified_external');
 
 const normalizeKey = (value: string): string => normalize(value).toLowerCase();
+const normalizeText = (value: unknown): string => normalize(value).toLowerCase();
+const ASCENDANCY_ROLE_PATTERN = /\bascendanc\w*\b|\bsubclass\b|\bclass\b/;
 
 const toCanonicalRole = (entityType: GroundedUserTerm['entityType']): string => {
   if (entityType === 'unique_item') return 'unique_item';
@@ -325,7 +334,7 @@ const hasCanonicalRoleMismatch = (claim: ClaimRecord, groundedTerm: GroundedUser
   const text = claim.text.toLowerCase();
   const canonicalRole = toCanonicalRole(groundedTerm.entityType);
 
-  if (canonicalRole === 'unique_item' && /\b(ascendanc|subclass|class)\b/.test(text)) {
+  if (canonicalRole === 'unique_item' && ASCENDANCY_ROLE_PATTERN.test(text)) {
     return `${groundedTerm.term} is a unique item, not an ascendancy/class mechanic.`;
   }
 
@@ -333,7 +342,7 @@ const hasCanonicalRoleMismatch = (claim: ClaimRecord, groundedTerm: GroundedUser
     return `${groundedTerm.term} is an ascendancy node, not an item.`;
   }
 
-  if (canonicalRole === 'skill' && /\b(ascendanc|subclass|class)\b/.test(text)) {
+  if (canonicalRole === 'skill' && ASCENDANCY_ROLE_PATTERN.test(text)) {
     return `${groundedTerm.term} is a skill, not an ascendancy/class.`;
   }
 
@@ -387,6 +396,8 @@ export async function validateBuildMechanics(
       claimsBlocked: 0,
       hadExternalLookupFailure: false,
       hasSourceUnavailableBlocking: false,
+      hasCriticalUnverifiedTerms: false,
+      criticalUnverifiedTerms: [],
     };
   }
 
@@ -397,10 +408,16 @@ export async function validateBuildMechanics(
   const claimResults: ClaimVerificationResult[] = [];
   let hadExternalLookupFailure = false;
   let hasSourceUnavailableBlocking = false;
+  const criticalUnverifiedTerms: MechanicsValidationResult['criticalUnverifiedTerms'] = [];
 
   const lookupOptions = toLookupOptions(options);
   const termLookupCache = new Map<string, Promise<LookupResult>>();
   const groundedTermMap = new Map<string, GroundedUserTerm>();
+  const narrativeText = [
+    normalizeText(build.analysis_log),
+    normalizeText(build.build_reasoning),
+    ...((Array.isArray(build.build_steps) ? build.build_steps : []).map((step) => normalizeText(step))),
+  ].join('\n');
 
   for (const groundedTerm of options.evidencePack?.terms || []) {
     if (groundedTerm.status === 'verified') {
@@ -413,6 +430,96 @@ export async function validateBuildMechanics(
       hadExternalLookupFailure = true;
       hasSourceUnavailableBlocking = true;
     }
+    if (
+      groundedTerm.origin === 'poe_game_term' &&
+      groundedTerm.status !== 'verified' &&
+      (groundedTerm.source === 'context.build_notes' ||
+        groundedTerm.source === 'context.stash_gear_gems' ||
+        groundedTerm.source === 'member.restrictions')
+    ) {
+      criticalUnverifiedTerms.push({
+        term: groundedTerm.term,
+        source: groundedTerm.source,
+        criticality: groundedTerm.criticality,
+        reason: groundedTerm.reason,
+      });
+    }
+  }
+
+  if (mode === 'strict' && criticalUnverifiedTerms.length > 0) {
+    for (const unresolved of criticalUnverifiedTerms) {
+      criticalConflicts.push({
+        claim: unresolved.term,
+        expected: 'Critical user terms must be verified against canonical PoE2 sources before interpretation.',
+        found: `Unverified term from ${unresolved.source} (${unresolved.criticality}): ${unresolved.reason}`,
+        subject: `grounding:${unresolved.source}:${unresolved.term.toLowerCase()}`,
+        sources: [],
+      });
+      claimResults.push({
+        claimId: `grounding:${unresolved.source}:${unresolved.term.toLowerCase()}`,
+        status: 'blocked',
+        reason: 'critical_term_unverified',
+        evidenceUrls: [],
+        missingTerms: [unresolved.term],
+      });
+    }
+  }
+
+  for (const groundedTerm of groundedTermMap.values()) {
+    const termNeedle = normalizeText(groundedTerm.term);
+    if (!termNeedle || !narrativeText.includes(termNeedle)) {
+      continue;
+    }
+
+    if (groundedTerm.entityType === 'unique_item' && ASCENDANCY_ROLE_PATTERN.test(narrativeText)) {
+      criticalConflicts.push({
+        claim: groundedTerm.term,
+        expected: 'Claim must keep verified term in its canonical PoE2 role.',
+        found: `${groundedTerm.term} is a unique item, not an ascendancy/class mechanic.`,
+        subject: `canonical_role:${groundedTerm.term.toLowerCase()}`,
+        sources: groundedTerm.sources,
+      });
+      claimResults.push({
+        claimId: `canonical_role:${groundedTerm.term.toLowerCase()}`,
+        status: 'blocked',
+        reason: 'canonical_role_mismatch',
+        evidenceUrls: groundedTerm.sources.map((source) => source.url),
+        missingTerms: [],
+      });
+    }
+  }
+
+  for (const term of options.evidencePack?.terms || []) {
+    if (term.status !== 'verified' || term.entityType !== 'unique_item') {
+      continue;
+    }
+    const termNeedle = normalizeText(term.term);
+    if (!termNeedle || !narrativeText.includes(termNeedle)) {
+      continue;
+    }
+    if (!ASCENDANCY_ROLE_PATTERN.test(narrativeText)) {
+      continue;
+    }
+
+    const subject = `canonical_role:${term.term.toLowerCase()}`;
+    if (criticalConflicts.some((conflict) => conflict.subject === subject)) {
+      continue;
+    }
+
+    criticalConflicts.push({
+      claim: term.term,
+      expected: 'Claim must keep verified term in its canonical PoE2 role.',
+      found: `${term.term} is a unique item, not an ascendancy/class mechanic.`,
+      subject,
+      sources: term.sources,
+    });
+    claimResults.push({
+      claimId: subject,
+      status: 'blocked',
+      reason: 'canonical_role_mismatch',
+      evidenceUrls: term.sources.map((source) => source.url),
+      missingTerms: [],
+    });
   }
 
   const resolveTermLookup = async (term: string): Promise<LookupResult> => {
@@ -682,5 +789,7 @@ export async function validateBuildMechanics(
     claimsBlocked,
     hadExternalLookupFailure,
     hasSourceUnavailableBlocking,
+    hasCriticalUnverifiedTerms: criticalUnverifiedTerms.length > 0,
+    criticalUnverifiedTerms,
   };
 }

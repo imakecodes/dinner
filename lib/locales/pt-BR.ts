@@ -404,6 +404,7 @@ export const ptBR = {
         geminiDomainMismatch: "O conteúdo gerado está fora do domínio de build do Path of Exile 2. Tente novamente.",
         geminiFactConflict: "A build gerada contém afirmações mecânicas não verificadas para Path of Exile 2. Ajuste as restrições e tente novamente.",
         geminiFactUnverified: "A build gerada contém claims factuais sem evidência oficial suficiente. Ajuste as restrições e tente novamente.",
+        geminiTermUnverified: "Um ou mais termos críticos não puderam ser verificados em fontes canônicas do PoE2. Refine os termos e tente novamente.",
         officialSourcesUnavailable: "As fontes oficiais do PoE2 estão indisponíveis no momento. Tente novamente em instantes.",
         geminiModelUnavailable: "Nenhum modelo Gemini compatível está disponível no momento. Tente novamente em instantes.",
         buildFieldTooLong: "Um ou mais campos excedem o limite de armazenamento. Reduza o texto e tente novamente.",

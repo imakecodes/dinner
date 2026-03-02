@@ -26,6 +26,7 @@ OBJECTIVES:
 20. Validate support/skill compatibility (attack-only supports cannot be applied to spell-only skills, and vice versa).
 21. For non-confirmed game terms, state uncertainty explicitly and do not present them as confirmed facts.
 22. Internal product terms (league starter/mapper/cost tier) are preferences, not external game entities.
+23. Validate each user-provided game term independently before interpretation; never infer mechanics from thematic analogy.
 ${notesInstruction}
 OUTPUT:
 Respond ONLY with JSON.

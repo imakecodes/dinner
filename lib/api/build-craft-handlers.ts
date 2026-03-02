@@ -85,6 +85,24 @@ export async function craftBuild(
       );
     }
 
+    const isTermUnverified = errorCode === 'gemini.term_unverified';
+    if (isTermUnverified) {
+      const localizedTermUnverified = t('api.geminiTermUnverified');
+      const fallbackTermUnverified = t('generate.generateError');
+
+      return NextResponse.json(
+        {
+          error: localizedTermUnverified === 'api.geminiTermUnverified'
+            ? fallbackTermUnverified
+            : localizedTermUnverified,
+          code: 'gemini.term_unverified',
+          details: Array.isArray(error?.details) ? error.details : [],
+          claimResults: Array.isArray(error?.claimResults) ? error.claimResults : [],
+        },
+        { status: 422 },
+      );
+    }
+
     const isOfficialSourcesUnavailable = errorCode === 'gemini.official_sources_unavailable';
     if (isOfficialSourcesUnavailable) {
       const localizedUnavailable = t('api.officialSourcesUnavailable');

@@ -119,6 +119,7 @@ CRITICAL FACTUAL CORRECTION:
 - Do not reinterpret non-confirmed terms as confirmed mechanics.
 - Keep canonical term roles: skill as skill, ascendancy node as ascendancy, unique item as unique item.
 - If evidence is missing, remove or rewrite the claim instead of guessing.
+- Validate each user-provided game term independently before interpretation. Never infer mechanics by thematic analogy.
 `;
 
 const DEFAULT_FACT_PIPELINE_BUDGET_MS = 12_000;
@@ -181,6 +182,15 @@ const buildFactUnverifiedError = (validation: MechanicsValidationResult): Error 
   (structuredError as any).status = 422;
   (structuredError as any).code = 'gemini.fact_unverified';
   (structuredError as any).details = validation.criticalConflicts;
+  (structuredError as any).claimResults = validation.claimResults;
+  return structuredError;
+};
+
+const buildTermUnverifiedError = (validation: MechanicsValidationResult): Error => {
+  const structuredError = new Error("Generated build relies on critical user terms that are not verified in canonical PoE2 sources");
+  (structuredError as any).status = 422;
+  (structuredError as any).code = 'gemini.term_unverified';
+  (structuredError as any).details = validation.criticalUnverifiedTerms;
   (structuredError as any).claimResults = validation.claimResults;
   return structuredError;
 };
@@ -446,7 +456,7 @@ OFFICIAL EVIDENCE PACK:
     claims_blocked: mechanicsValidation.claimsBlocked,
     source_timeout_rate: mechanicsValidation.hasSourceUnavailableBlocking ? 1 : 0,
   });
-  if (!mechanicsValidation.isValid || mechanicsValidation.hasSourceUnavailableBlocking) {
+  if (mechanicsValidation.isValid === false || mechanicsValidation.hasSourceUnavailableBlocking) {
     console.warn('[Gemini] Fact conflict detected. Retrying generation with factual correction.', {
       conflicts: mechanicsValidation.criticalConflicts,
       warnings: mechanicsValidation.warnings,
@@ -476,7 +486,7 @@ OFFICIAL EVIDENCE PACK:
       retry_success_rate: mechanicsValidation.isValid && !mechanicsValidation.hasSourceUnavailableBlocking ? 1 : 0,
       source_timeout_rate: mechanicsValidation.hasSourceUnavailableBlocking ? 1 : 0,
     });
-    if (!mechanicsValidation.isValid || mechanicsValidation.hasSourceUnavailableBlocking) {
+    if (mechanicsValidation.isValid === false || mechanicsValidation.hasSourceUnavailableBlocking) {
       console.warn('[Gemini] Fact conflict persisted after correction.', {
         conflicts: mechanicsValidation.criticalConflicts,
         warnings: mechanicsValidation.warnings,
@@ -485,7 +495,14 @@ OFFICIAL EVIDENCE PACK:
         claimResults: mechanicsValidation.claimResults,
       });
 
-      if (mechanicsValidation.hasSourceUnavailableBlocking) {
+      if (mechanicsValidation.hasCriticalUnverifiedTerms) {
+        throw buildTermUnverifiedError(mechanicsValidation);
+      }
+
+      const shouldDegradeForSourceOutage =
+        mechanicsValidation.hasSourceUnavailableBlocking || mechanicsValidation.hadExternalLookupFailure;
+
+      if (shouldDegradeForSourceOutage) {
         if (sourceConflictStrategy === 'fail_503') {
           throw buildOfficialSourcesUnavailableError({
             groundingFailures: sourceUnavailableGrounding,
@@ -510,8 +527,11 @@ OFFICIAL EVIDENCE PACK:
           evidencePack,
           deadlineAtMs: factualDeadlineAtMs,
         });
-        if (!mechanicsValidation.isValid) {
-          throw buildFactUnverifiedError(mechanicsValidation);
+        if (mechanicsValidation.isValid === false) {
+          console.warn('[Gemini][FactPipeline] Warn-mode validation still has conflicts after source degradation; returning corrected build with uncertainty note.', {
+            warnings: mechanicsValidation.warnings,
+            conflicts: mechanicsValidation.criticalConflicts,
+          });
         }
 
         parsedBuild = annotateItemUncertainty(parsedBuild, session_context.language) as GeneratedBuild;

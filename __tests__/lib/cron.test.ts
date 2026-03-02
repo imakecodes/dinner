@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from '@/lib/prisma';
-import { startReplenishmentJob } from '@/lib/cron';
+import { startPoeSnapshotJob, startReplenishmentJob } from '@/lib/cron';
+import { getPoeSnapshotCronSchedule, isPoeSnapshotCronEnabled, runWeeklyPoeSnapshot } from '@/lib/poe-snapshot-service';
 
 jest.mock('node-cron', () => ({
   __esModule: true,
@@ -20,6 +21,12 @@ jest.mock('@/lib/prisma', () => ({
     },
     $transaction: jest.fn(),
   },
+}));
+
+jest.mock('@/lib/poe-snapshot-service', () => ({
+  getPoeSnapshotCronSchedule: jest.fn(() => '0 3 * * 1'),
+  isPoeSnapshotCronEnabled: jest.fn(() => true),
+  runWeeklyPoeSnapshot: jest.fn(),
 }));
 
 describe('lib/cron', () => {
@@ -47,6 +54,19 @@ describe('lib/cron', () => {
   it('registers replenishment job with 5-minute cron', () => {
     startReplenishmentJob();
     expect(cron.schedule).toHaveBeenCalledWith('*/5 * * * *', expect.any(Function));
+  });
+
+  it('registers poe snapshot job with weekly cron schedule', () => {
+    startPoeSnapshotJob();
+    expect(isPoeSnapshotCronEnabled).toHaveBeenCalled();
+    expect(getPoeSnapshotCronSchedule).toHaveBeenCalled();
+    expect(cron.schedule).toHaveBeenCalledWith('0 3 * * 1', expect.any(Function));
+  });
+
+  it('runs snapshot job callback without throwing', async () => {
+    startPoeSnapshotJob();
+    await expect(scheduledJob?.()).resolves.toBeUndefined();
+    expect(runWeeklyPoeSnapshot).toHaveBeenCalledTimes(1);
   });
 
   it('runs without creating shopping item when list is empty', async () => {

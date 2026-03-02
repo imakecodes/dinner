@@ -50,6 +50,7 @@ describe('POST /api/recipe', () => {
             'api.geminiDomainMismatch': 'O conteudo gerado esta fora do dominio de build do Path of Exile 2. Tente novamente.',
             'api.geminiFactConflict': 'A build gerada contem afirmacoes mecanicas nao verificadas para Path of Exile 2. Ajuste as restricoes e tente novamente.',
             'api.geminiFactUnverified': 'A build gerada contem claims factuais sem evidencia oficial suficiente. Ajuste as restricoes e tente novamente.',
+            'api.geminiTermUnverified': 'Um ou mais termos criticos nao puderam ser verificados em fontes canonicas do PoE2. Refine os termos e tente novamente.',
             'api.officialSourcesUnavailable': 'As fontes oficiais do PoE2 estao indisponiveis no momento. Tente novamente em instantes.',
             'api.geminiModelUnavailable': 'Nenhum modelo Gemini compativel esta disponivel no momento. Tente novamente em instantes.',
             'api.internalError': 'Erro interno do servidor'
@@ -59,6 +60,7 @@ describe('POST /api/recipe', () => {
             'api.geminiDomainMismatch': 'Generated content is outside Path of Exile 2 build domain. Please try again.',
             'api.geminiFactConflict': 'Generated build contains unverified Path of Exile 2 mechanic claims. Adjust constraints and try again.',
             'api.geminiFactUnverified': 'Generated build contains factual claims without enough official evidence. Adjust constraints and try again.',
+            'api.geminiTermUnverified': 'One or more critical terms could not be verified in canonical PoE2 sources. Refine the terms and try again.',
             'api.officialSourcesUnavailable': 'Official PoE2 sources are temporarily unavailable. Please retry shortly.',
             'api.geminiModelUnavailable': 'No compatible Gemini model is currently available. Please try again shortly.',
             'api.internalError': 'Internal server error'
@@ -225,6 +227,26 @@ describe('POST /api/recipe', () => {
       error: 'Official PoE2 sources are temporarily unavailable. Please retry shortly.',
       code: 'gemini.official_sources_unavailable',
       details: [{ term: 'Frostbolt', code: 'source_unavailable' }],
+    });
+  });
+
+  it('returns 422 localized term_unverified with details', async () => {
+    (craftBuildWithAI as jest.Mock).mockRejectedValue({
+      status: 422,
+      code: 'gemini.term_unverified',
+      details: [{ term: 'Infernalist', source: 'context.build_notes', criticality: 'high', reason: 'Not confirmed in official sources.' }],
+      claimResults: [{ claimId: 'grounding:context.build_notes:infernalist', status: 'blocked', reason: 'critical_term_unverified', evidenceUrls: [], missingTerms: ['Infernalist'] }],
+    });
+
+    const res = await POST(makeRequest('en'));
+    const data = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(data).toEqual({
+      error: 'One or more critical terms could not be verified in canonical PoE2 sources. Refine the terms and try again.',
+      code: 'gemini.term_unverified',
+      details: [{ term: 'Infernalist', source: 'context.build_notes', criticality: 'high', reason: 'Not confirmed in official sources.' }],
+      claimResults: [{ claimId: 'grounding:context.build_notes:infernalist', status: 'blocked', reason: 'critical_term_unverified', evidenceUrls: [], missingTerms: ['Infernalist'] }],
     });
   });
 

@@ -4,10 +4,12 @@ export async function register() {
 
         if (!isCronEnabled) {
             console.log('[Cron] Replenishment job disabled by ENABLE_REPLENISHMENT_CRON=false');
-            return;
+        } else {
+            const { startReplenishmentJob } = await import('./lib/cron');
+            startReplenishmentJob();
         }
 
-        const { startReplenishmentJob } = await import('./lib/cron');
-        startReplenishmentJob();
+        const { startPoeSnapshotJob } = await import('./lib/cron');
+        startPoeSnapshotJob();
     }
 }

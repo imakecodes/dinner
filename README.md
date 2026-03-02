@@ -17,6 +17,7 @@
 *   **Party-Aware**: Respects Party restrictions, preferred archetypes, and setup time preferences.
 *   **Cost-Aware Planning**: Supports budget tiers from cheap setups to mirror-level planning.
 *   **Global Translation**: Instantly translate any build to your preferred language (English/Portuguese).
+*   **Deterministic Fact Validation**: Grounds user terms against canonical PoE2 entities before interpreting mechanics.
 
 ### 🏠 Connected Hideouts
 *   **Party Sync**: Invite friends to your Hideout and manage shared context.
@@ -72,7 +73,9 @@ Built with modern web technologies for performance and scale:
     `AI_CONTEXT_FILE_PATH` is optional. If it is unset or points to a missing file, runtime falls back to `.ai/ai-context.template.md`.
     Create `.ai/ai-context.local.md` only when you need local prompt overrides.
     Fact-validation defaults to strict PoE2 mechanics checks (`POE_FACT_VALIDATION_MODE=strict`) and can return `422 gemini.fact_unverified` when critical claims remain unverifiable after one corrective retry. Source outages use `POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY=degrade_warn` by default (best-effort output with explicit uncertainty), or `fail_503` to return `503 gemini.official_sources_unavailable`.
-    Tune lookup behavior with `POE_KNOWLEDGE_CACHE_TTL_MIN` and `POE_KNOWLEDGE_FETCH_TIMEOUT_MS`.
+    Critical unresolved user terms now return `422 gemini.term_unverified` in strict mode.
+    Tune lookup behavior with `POE_KNOWLEDGE_CACHE_TTL_MIN`, `POE_KNOWLEDGE_FETCH_TIMEOUT_MS`, and `POE_KNOWLEDGE_LOOKUP_MODE` (`snapshot_first`, `snapshot_only`, `online_first`).
+    Weekly snapshot controls: `ENABLE_POE_SNAPSHOT_CRON`, `POE_SNAPSHOT_CRON_SCHEDULE`, `POE_SNAPSHOT_MAX_PAGES_PER_RUN`.
 
 3.  **Start the database**:
     ```bash
@@ -84,6 +87,7 @@ Built with modern web technologies for performance and scale:
     pnpm install
     pnpm db:push
     ```
+    For production changes, generate/apply Prisma migrations instead of relying on push-only workflows.
 
 5.  **Run the app**:
     ```bash
@@ -91,6 +95,17 @@ Built with modern web technologies for performance and scale:
     ```
 
 Visit `http://localhost:3000` to start crafting builds.
+
+---
+
+## 🧾 PoE Evidence Snapshot
+
+The knowledge resolver supports local weekly snapshots to reduce dependence on live source availability.
+
+*   **Snapshot Data**: Stored in Prisma tables `PoeSnapshotRun`, `PoeEntitySnapshot`, and `PoeAliasSnapshot`.
+*   **Default Lookup Mode**: `snapshot_first` (local snapshot first, then official providers).
+*   **Cron Schedule**: Weekly on Monday at 03:00 by default (`0 3 * * 1`).
+*   **Providers**: `poe2db.tw` and `poe2wiki.net`.
 
 ---
 
