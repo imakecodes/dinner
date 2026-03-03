@@ -42,6 +42,8 @@ enum PoeSnapshotEntityType {
   ASCENDANCY_NODE
   UNIQUE_ITEM
   MECHANIC_CLAIM
+  PASSIVE_NODE
+  SUPPORT_GEM
 }
 
 enum PoeSnapshotProvider {

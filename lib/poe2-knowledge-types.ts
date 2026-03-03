@@ -6,7 +6,9 @@ export type KnowledgeEntityType =
   | 'skill'
   | 'ascendancy_node'
   | 'unique_item'
-  | 'mechanic_claim';
+  | 'mechanic_claim'
+  | 'passive_node'
+  | 'support_gem';
 
 export type LookupStatus =
   | 'verified'

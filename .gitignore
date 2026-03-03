@@ -29,3 +29,4 @@ dist-ssr
 *.sln
 *.sw?
 .ai/ai-context.local.md
+.continue/

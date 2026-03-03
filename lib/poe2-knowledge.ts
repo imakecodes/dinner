@@ -251,10 +251,12 @@ const inferLookupMode = (options: LookupOptions = {}): KnowledgeLookupMode => {
   return DEFAULT_LOOKUP_MODE;
 };
 
-const normalizeSnapshotEntityType = (entityType: KnowledgeEntityType): 'SKILL' | 'ASCENDANCY_NODE' | 'UNIQUE_ITEM' | 'MECHANIC_CLAIM' => {
+const normalizeSnapshotEntityType = (entityType: KnowledgeEntityType): 'SKILL' | 'ASCENDANCY_NODE' | 'UNIQUE_ITEM' | 'MECHANIC_CLAIM' | 'PASSIVE_NODE' | 'SUPPORT_GEM' => {
   if (entityType === 'skill') return 'SKILL';
   if (entityType === 'ascendancy_node') return 'ASCENDANCY_NODE';
   if (entityType === 'unique_item') return 'UNIQUE_ITEM';
+  if (entityType === 'passive_node') return 'PASSIVE_NODE';
+  if (entityType === 'support_gem') return 'SUPPORT_GEM';
   return 'MECHANIC_CLAIM';
 };
 
@@ -650,6 +652,12 @@ export const resolveMechanicClaim = async (
   subject: string,
   options: LookupOptions = {},
 ): Promise<LookupResult> => resolveCached('mechanic_claim', `${claimType} ${subject}`.trim(), options);
+
+export const resolvePassiveNode = async (name: string, options: LookupOptions = {}): Promise<LookupResult> =>
+  resolveCached('passive_node', name, options);
+
+export const resolveSupportGem = async (name: string, options: LookupOptions = {}): Promise<LookupResult> =>
+  resolveCached('support_gem', name, options);
 
 export const __resetPoe2KnowledgeCache = (): void => {
   CACHE.clear();
