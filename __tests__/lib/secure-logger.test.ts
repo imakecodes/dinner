@@ -227,4 +227,5 @@ describe('lib/secure-logger', () => {
       expect(logMessage).toContain('[REDACTED_TOKEN:');
       expect(logMessage).toContain('mysql://[REDACTED]@localhost/db');
     });
+});
   });

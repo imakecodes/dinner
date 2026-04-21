@@ -24,7 +24,7 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ alt = '', ...props }: { alt?: string }) => <img alt={alt} {...props} />,
+  default: ({ alt = '', ...props }: { alt?: string }) => <div role="img" aria-label={alt} {...props} />,
 }));
 
 jest.mock('@/hooks/useCurrentMember', () => ({

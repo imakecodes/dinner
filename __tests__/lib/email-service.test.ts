@@ -227,6 +227,14 @@ describe('Email Service - Consolidated Tests', () => {
             await sendVerificationEmail('user@poe.gg', 'token', 'en');
             
             expect(mockSendMail).not.toHaveBeenCalled();
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('SMTP_PASSWORD not set. Skipping verification email.')
+            );
+            
+            // Restore env var for other tests
+            process.env.SMTP_PASSWORD = 'secret';
+        });
+    });
 
     describe('sendInvitationEmail', () => {
         it('should send email to existing user with correct content', async () => {
@@ -277,6 +285,13 @@ describe('Email Service - Consolidated Tests', () => {
             
             expect(mockSendMail).not.toHaveBeenCalled();
             expect(warnSpy).toHaveBeenCalledWith(
+                '[Email Service] SMTP_PASSWORD not set. Skipping invitation email.'
+            );
+            
+            // Restore env var for other tests
+            process.env.SMTP_PASSWORD = 'secret';
+        });
+    });
 
     describe('sendKitchenJoinRequestEmail', () => {
         it('should send notification email with correct content', async () => {
@@ -322,18 +337,3 @@ describe('Email Service - Consolidated Tests', () => {
         });
     });
 });
-                '[Email Service] SMTP_PASSWORD not set. Skipping invitation email.'
-            );
-            
-            // Restore env var for other tests
-            process.env.SMTP_PASSWORD = 'secret';
-        });
-    });
-            expect(warnSpy).toHaveBeenCalledWith(
-                expect.stringContaining('SMTP_PASSWORD not set. Skipping verification email.')
-            );
-            
-            // Restore env var for other tests
-            process.env.SMTP_PASSWORD = 'secret';
-        });
-    });
