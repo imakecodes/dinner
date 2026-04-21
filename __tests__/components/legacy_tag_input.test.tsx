@@ -1,8 +1,8 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { TagInput } from '@/components/TagInput';
+import { TagInput } from '@/components/ui/TagInput';
 
-describe('components/TagInput (legacy)', () => {
+describe('TagInput (unified)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     global.fetch = jest.fn().mockResolvedValue({
