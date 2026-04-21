@@ -33,7 +33,7 @@ services:
     ports:
       - "${APP_PORT:-3000}:${APP_PORT:-3000}"
     command: >
-      sh -lc "echo 'Installing deps (pnpm install) on startup...'; pnpm install; npx prisma generate; pnpm db:push; pnpm run dev"
+      sh -lc "echo 'Installing deps (pnpm install) on startup...'; pnpm install --force; npx prisma generate; pnpm db:push; pnpm run dev"
 
 volumes:
   mysql_data:

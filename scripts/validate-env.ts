@@ -1,11 +1,11 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env ts-node --esm -P tsconfig.json
 
 /**
  * Script para validar environment variables antes do startup
  * Executar: ts-node scripts/validate-env.ts
  */
 
-import { initializeEnvValidation } from '../lib/env-validation'
+import { initializeEnvValidation } from '../lib/env-validation.ts'
 
 console.log('🔍 Validando environment variables...')
 

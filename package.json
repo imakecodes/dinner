@@ -20,11 +20,11 @@
     "test:coverage:strict": "jest --coverage",
     "coverage:report": "ts-node --esm scripts/coverage-report.ts",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
-    "cleanup:legacy-content": "ts-node --esm scripts/cleanup-culinary-legacy.ts",
-    "validate:env": "ts-node scripts/validate-env.ts",
-    "predev": "npm run validate:env",
-    "prebuild": "npm run validate:env",
-    "prestart": "npm run validate:env"
+    "cleanup:culinary-legacy": "ts-node --esm scripts/cleanup-culinary-legacy.ts",
+    "validate:env": "ts-node --esm -P tsconfig.json scripts/validate-env.ts",
+    "predev": "pnpm run validate:env",
+    "prebuild": "pnpm run validate:env",
+    "prestart": "pnpm run validate:env"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
