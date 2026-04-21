@@ -75,6 +75,22 @@ function getClientIdentifier(request: NextRequest): string {
   }
   
   return ip
+}
+
+/**
+ * Limpa registros antigos do store
+ */
+function cleanupOldRecords(): void {
+  const now = Date.now()
+  const oneHourAgo = now - 60 * 60 * 1000
+  
+  for (const [key, record] of rateLimitStore.entries()) {
+    if (record.resetTime < oneHourAgo) {
+      rateLimitStore.delete(key)
+    }
+  }
+}
+
 /**
  * Verifica se uma request está rate limited
  */
@@ -127,6 +143,31 @@ export function checkRateLimit(
       remaining: config.maxRequests - 1,
       resetTime: newRecord.resetTime,
       config
+    }
+  }
+  
+  // Verificar se excedeu o limite
+  if (record.count >= config.maxRequests) {
+    return {
+      limited: true,
+      remaining: 0,
+      resetTime: record.resetTime,
+      config
+    }
+  }
+  
+  // Incrementar contador
+  record.count++
+  rateLimitStore.set(key, record)
+  
+  return {
+    limited: false,
+    remaining: config.maxRequests - record.count,
+    resetTime: record.resetTime,
+    config
+  }
+}
+
 /**
  * Middleware helper para rate limiting
  */
@@ -188,43 +229,4 @@ export function rateLimitMiddleware(customConfig?: RateLimitConfig) {
     
     return descriptor
   }
-}
-    }
-  }
-  
-  // Verificar se excedeu o limite
-  if (record.count >= config.maxRequests) {
-    return {
-      limited: true,
-      remaining: 0,
-      resetTime: record.resetTime,
-      config
-    }
-  }
-  
-  // Incrementar contador
-  record.count++
-  rateLimitStore.set(key, record)
-  
-  return {
-    limited: false,
-    remaining: config.maxRequests - record.count,
-    resetTime: record.resetTime,
-    config
-  }
-}
-
-/**
- * Limpa registros antigos do store
- */
-function cleanupOldRecords(): void {
-  const now = Date.now()
-  const oneHourAgo = now - 60 * 60 * 1000
-  
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (record.resetTime < oneHourAgo) {
-      rateLimitStore.delete(key)
-    }
-  }
-}
 }
