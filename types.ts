@@ -37,7 +37,7 @@ export interface KitchenMember {
   role?: 'ADMIN' | 'MEMBER';
 }
 
-// --- Pantry & Shopping ---
+// --- Stash & Checklist ---
 
 export interface PantryItem {
   id: string;

@@ -20,7 +20,7 @@
     "test:coverage:strict": "jest --coverage",
     "coverage:report": "ts-node --esm scripts/coverage-report.ts",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
-    "cleanup:culinary-legacy": "ts-node --esm scripts/cleanup-culinary-legacy.ts",
+    "cleanup:legacy-content": "ts-node --esm scripts/cleanup-culinary-legacy.ts",
     "validate:env": "ts-node scripts/validate-env.ts",
     "predev": "npm run validate:env",
     "prebuild": "npm run validate:env",

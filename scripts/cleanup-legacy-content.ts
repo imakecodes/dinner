@@ -13,15 +13,15 @@ type CliOptions = {
 type HideoutReport = {
   hideoutId: string;
   hideoutName: string;
-  recipeIdsToDelete: string[];
-  shoppingItemIdsToDelete: string[];
+  buildIdsToDelete: string[];
+  buildItemIdsToDelete: string[];
   ingredientIdsToDelete: string[];
-  pantryItemIdsToDelete: string[];
+  stashItemIdsToDelete: string[];
   samples: {
-    recipes: string[];
-    shoppingItems: string[];
+    builds: string[];
+    buildItems: string[];
     ingredients: string[];
-    pantryItems: string[];
+    stashItems: string[];
   };
 };
 
@@ -31,10 +31,10 @@ type CleanupReport = {
   options: CliOptions;
   summary: {
     hideoutsScanned: number;
-    recipesMarked: number;
-    shoppingItemsMarked: number;
+    buildsMarked: number;
+    buildItemsMarked: number;
     ingredientsMarked: number;
-    pantryItemsMarked: number;
+    stashItemsMarked: number;
   };
   hideouts: HideoutReport[];
 };
@@ -60,7 +60,7 @@ const isLikelyCulinary = (text: string): boolean => {
   return assessment.isCulinaryLikely;
 };
 
-const compactRecipeText = (recipe: {
+const compactBuildText = (build: {
   recipe_title: string;
   analysis_log: string;
   match_reasoning: string;
@@ -68,17 +68,17 @@ const compactRecipeText = (recipe: {
   difficulty: string;
 }) =>
   [
-    recipe.recipe_title,
-    recipe.analysis_log,
-    recipe.match_reasoning,
-    recipe.meal_type,
-    recipe.difficulty,
+    build.recipe_title,
+    build.analysis_log,
+    build.match_reasoning,
+    build.meal_type,
+    build.difficulty,
   ]
     .filter(Boolean)
     .join('\n');
 
 async function collectHideoutReport(hideoutId: string, hideoutName: string): Promise<HideoutReport> {
-  const recipes = await prisma.recipe.findMany({
+  const builds = await prisma.recipe.findMany({
     where: { kitchenId: hideoutId },
     select: {
       id: true,
@@ -90,12 +90,12 @@ async function collectHideoutReport(hideoutId: string, hideoutName: string): Pro
     },
   });
 
-  const recipeIdsToDelete = recipes
-    .filter((recipe) => isLikelyCulinary(compactRecipeText(recipe)))
-    .map((recipe) => recipe.id);
-  const recipeIdSet = new Set(recipeIdsToDelete);
+  const buildIdsToDelete = builds
+    .filter((build) => isLikelyCulinary(compactBuildText(build)))
+    .map((build) => build.id);
+  const buildIdSet = new Set(buildIdsToDelete);
 
-  const shoppingItems = await prisma.shoppingItem.findMany({
+  const buildItems = await prisma.shoppingItem.findMany({
     where: { kitchenId: hideoutId },
     select: {
       id: true,
@@ -106,10 +106,10 @@ async function collectHideoutReport(hideoutId: string, hideoutName: string): Pro
     },
   });
 
-  const shoppingItemIdsToDelete = shoppingItems
+  const buildItemIdsToDelete = buildItems
     .filter((item) => {
       if (!isLikelyCulinary(item.name)) return false;
-      const remainingLinks = item.recipeItems.filter((ref) => !recipeIdSet.has(ref.recipeId)).length;
+      const remainingLinks = item.recipeItems.filter((ref) => !buildIdSet.has(ref.recipeId)).length;
       return remainingLinks === 0;
     })
     .map((item) => item.id);
@@ -128,42 +128,42 @@ async function collectHideoutReport(hideoutId: string, hideoutName: string): Pro
   const ingredientIdsToDelete = ingredients
     .filter((ingredient) => {
       if (!isLikelyCulinary(ingredient.name)) return false;
-      const remainingLinks = ingredient.recipeIngredients.filter((ref) => !recipeIdSet.has(ref.recipeId)).length;
+      const remainingLinks = ingredient.recipeIngredients.filter((ref) => !buildIdSet.has(ref.recipeId)).length;
       return remainingLinks === 0;
     })
     .map((ingredient) => ingredient.id);
 
-  const pantryItems = await prisma.pantryItem.findMany({
+  const stashItems = await prisma.pantryItem.findMany({
     where: { kitchenId: hideoutId },
     select: { id: true, name: true },
   });
 
-  const pantryItemIdsToDelete = pantryItems
+  const stashItemIdsToDelete = stashItems
     .filter((item) => isLikelyCulinary(item.name))
     .map((item) => item.id);
 
   return {
     hideoutId,
     hideoutName,
-    recipeIdsToDelete,
-    shoppingItemIdsToDelete,
+    buildIdsToDelete,
+    buildItemIdsToDelete,
     ingredientIdsToDelete,
-    pantryItemIdsToDelete,
+    stashItemIdsToDelete,
     samples: {
-      recipes: recipes
-        .filter((recipe) => recipeIdsToDelete.includes(recipe.id))
+      builds: builds
+        .filter((build) => buildIdsToDelete.includes(build.id))
         .slice(0, 10)
-        .map((recipe) => recipe.recipe_title),
-      shoppingItems: shoppingItems
-        .filter((item) => shoppingItemIdsToDelete.includes(item.id))
+        .map((build) => build.recipe_title),
+      buildItems: buildItems
+        .filter((item) => buildItemIdsToDelete.includes(item.id))
         .slice(0, 10)
         .map((item) => item.name),
       ingredients: ingredients
         .filter((item) => ingredientIdsToDelete.includes(item.id))
         .slice(0, 10)
         .map((item) => item.name),
-      pantryItems: pantryItems
-        .filter((item) => pantryItemIdsToDelete.includes(item.id))
+      stashItems: stashItems
+        .filter((item) => stashItemIdsToDelete.includes(item.id))
         .slice(0, 10)
         .map((item) => item.name),
     },
@@ -172,16 +172,16 @@ async function collectHideoutReport(hideoutId: string, hideoutName: string): Pro
 
 async function applyHideoutCleanup(report: HideoutReport) {
   await prisma.$transaction(async (tx) => {
-    if (report.recipeIdsToDelete.length > 0) {
-      await tx.recipe.deleteMany({ where: { id: { in: report.recipeIdsToDelete } } });
+    if (report.buildIdsToDelete.length > 0) {
+      await tx.recipe.deleteMany({ where: { id: { in: report.buildIdsToDelete } } });
     }
 
-    if (report.pantryItemIdsToDelete.length > 0) {
-      await tx.pantryItem.deleteMany({ where: { id: { in: report.pantryItemIdsToDelete } } });
+    if (report.stashItemIdsToDelete.length > 0) {
+      await tx.pantryItem.deleteMany({ where: { id: { in: report.stashItemIdsToDelete } } });
     }
 
-    if (report.shoppingItemIdsToDelete.length > 0) {
-      await tx.shoppingItem.deleteMany({ where: { id: { in: report.shoppingItemIdsToDelete } } });
+    if (report.buildItemIdsToDelete.length > 0) {
+      await tx.shoppingItem.deleteMany({ where: { id: { in: report.buildItemIdsToDelete } } });
     }
 
     if (report.ingredientIdsToDelete.length > 0) {
@@ -193,10 +193,10 @@ async function applyHideoutCleanup(report: HideoutReport) {
 function summarize(hideouts: HideoutReport[]) {
   return {
     hideoutsScanned: hideouts.length,
-    recipesMarked: hideouts.reduce((acc, item) => acc + item.recipeIdsToDelete.length, 0),
-    shoppingItemsMarked: hideouts.reduce((acc, item) => acc + item.shoppingItemIdsToDelete.length, 0),
+    buildsMarked: hideouts.reduce((acc, item) => acc + item.buildIdsToDelete.length, 0),
+    buildItemsMarked: hideouts.reduce((acc, item) => acc + item.buildItemIdsToDelete.length, 0),
     ingredientsMarked: hideouts.reduce((acc, item) => acc + item.ingredientIdsToDelete.length, 0),
-    pantryItemsMarked: hideouts.reduce((acc, item) => acc + item.pantryItemIdsToDelete.length, 0),
+    stashItemsMarked: hideouts.reduce((acc, item) => acc + item.stashItemIdsToDelete.length, 0),
   };
 }
 
@@ -209,7 +209,7 @@ async function main() {
       : [];
 
   if (hideouts.length === 0) {
-    console.log('[cleanup-culinary-legacy] No hideouts found for the selected scope.');
+    console.log('[cleanup-legacy-content] No hideouts found for the selected scope.');
     return;
   }
 
@@ -232,17 +232,17 @@ async function main() {
     hideouts: hideoutReports,
   };
 
-  console.log('[cleanup-culinary-legacy] Mode:', report.mode);
-  console.log('[cleanup-culinary-legacy] Hideouts scanned:', report.summary.hideoutsScanned);
-  console.log('[cleanup-culinary-legacy] Recipes marked:', report.summary.recipesMarked);
-  console.log('[cleanup-culinary-legacy] Shopping items marked:', report.summary.shoppingItemsMarked);
-  console.log('[cleanup-culinary-legacy] Ingredients marked:', report.summary.ingredientsMarked);
-  console.log('[cleanup-culinary-legacy] Pantry items marked:', report.summary.pantryItemsMarked);
+  console.log('[cleanup-legacy-content] Mode:', report.mode);
+  console.log('[cleanup-legacy-content] Hideouts scanned:', report.summary.hideoutsScanned);
+  console.log('[cleanup-legacy-content] Builds marked:', report.summary.buildsMarked);
+  console.log('[cleanup-legacy-content] Build items marked:', report.summary.buildItemsMarked);
+  console.log('[cleanup-legacy-content] Ingredients marked:', report.summary.ingredientsMarked);
+  console.log('[cleanup-legacy-content] Stash items marked:', report.summary.stashItemsMarked);
 
   if (options.reportFile) {
     const reportPath = path.resolve(process.cwd(), options.reportFile);
     await writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
-    console.log('[cleanup-culinary-legacy] Report written to:', reportPath);
+    console.log('[cleanup-legacy-content] Report written to:', reportPath);
   } else {
     console.log(JSON.stringify(report, null, 2));
   }
@@ -250,7 +250,7 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error('[cleanup-culinary-legacy] Failed:', error);
+    console.error('[cleanup-legacy-content] Failed:', error);
     process.exitCode = 1;
   })
   .finally(async () => {

@@ -1,6 +1,6 @@
 {
-  "name": "Dinner?",
-  "description": "Your Executive Chef and Food Safety Auditor. Culinary intelligence for safe, creative, and waste-free recipes.",
+  "name": "POE2 Genie",
+  "description": "Your Hideout Build Strategist and Fact Auditor. Path of Exile 2 intelligence for practical, verified, and personalized builds.",
   "requestFramePermissions": [
     "camera"
   ]
