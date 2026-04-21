@@ -22,6 +22,8 @@
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "cleanup:culinary-legacy": "ts-node --esm scripts/cleanup-culinary-legacy.ts",
     "validate:env": "ts-node --esm -P tsconfig.json scripts/validate-env.ts",
+    "validate:preflight": "ts-node --esm -P tsconfig.json scripts/validate-ai-preflight.ts",
+    "test:ai": "pnpm run validate:preflight && pnpm test -- __tests__/services/geminiService.test.ts",
     "predev": "pnpm run validate:env",
     "prebuild": "pnpm run validate:env",
     "prestart": "pnpm run validate:env"

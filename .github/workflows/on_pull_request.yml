@@ -25,6 +25,10 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Validate environment variables
+        run: pnpm run validate:env
+      - name: Auto-fix lint errors
+        run: pnpm run lint:fix
       - name: Run lint
         run: pnpm lint
       - name: Run tests
@@ -45,5 +49,7 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Validate environment variables
+        run: pnpm run validate:env
       - name: Verify if the build is ok
         run: pnpm build

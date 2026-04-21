@@ -215,6 +215,12 @@ export const craftBuildWithAI = async (
   const modelAttemptChain = buildModelAttemptChain(configuredModels);
   const session_context = normalizeBuildSessionContext(rawContext);
 
+  // Development preflight validation reminder
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('[Gemini][Dev] Para validações robustas de IA, execute: pnpm run validate:preflight');
+    console.warn('[Gemini][Dev] Isso valida environment variables, lint, e build antes das validações de IA.');
+  }
+
   const { unavailableConfiguredModels } = await validateConfiguredModelsWithList(ai, configuredModels);
   if (unavailableConfiguredModels.length > 0) {
     console.warn('[Gemini] Configured model is not present in models.list()', {

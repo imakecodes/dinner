@@ -57,6 +57,12 @@ The logic is distributed across specialized "Agents":
 - **Linting**: Run `pnpm run lint` and `pnpm run lint:fix` before committing.
 - **Verification**: ALWAYS run `pnpm lint && pnpm build` before marking a task as done.
 - **Formatting**: Adhere to the existing code style.
+### AI Validation Preflight
+- **Preflight Validation**: Before AI validations, ensure the codebase passes basic checks:
+  - Run `pnpm run validate:preflight` to validate environment variables, lint, and build
+  - Or run `pnpm run test:ai` for AI-specific tests with preflight validation
+- **CI Enforcement**: CI automatically runs `validate:env`, `lint:fix`, `lint`, and `build` on pull requests
+- **Development Reminder**: The AI service logs a warning in non-production environments if preflight hasn't been run
 
 ### Testing Standard (Enforced)
 - **Minimum Coverage**: **85%** Line Coverage.
