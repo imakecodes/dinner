@@ -7,7 +7,7 @@ jest.mock('@/lib/rate-limiter', () => ({
   withRateLimit: mockWithRateLimit,
 }));
 
-describe('security middleware', () => {
+describe('security proxy', () => {
   const originalEnv = process.env.NODE_ENV;
   const originalConsoleLog = console.log;
 
@@ -24,10 +24,10 @@ describe('security middleware', () => {
   });
 
   it('should apply security headers to non-excluded paths', async () => {
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/test');
-    const response = middleware(request);
+    const response = await proxy(request);
     
     // Verificar headers de segurança
     expect(response.headers.get('Content-Security-Policy')).toBeDefined();
@@ -42,10 +42,10 @@ describe('security middleware', () => {
   });
 
   it('should not apply security headers to excluded paths', async () => {
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/healthz');
-    const response = middleware(request);
+    const response = await proxy(request);
     
     // Headers de segurança não devem ser aplicados
     expect(response.headers.get('Content-Security-Policy')).toBeNull();
@@ -57,10 +57,10 @@ describe('security middleware', () => {
     process.env.NODE_ENV = 'production';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/test');
-    const response = middleware(request);
+    const response = await proxy(request);
     
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=31536000; includeSubDomains; preload'
@@ -71,7 +71,7 @@ describe('security middleware', () => {
     process.env.NODE_ENV = 'production';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/auth/login');
     
@@ -79,7 +79,7 @@ describe('security middleware', () => {
     const rateLimitResponse = new Response('Rate limited', { status: 429 });
     mockWithRateLimit.mockReturnValue(rateLimitResponse);
     
-    const response = middleware(request);
+    const response = await proxy(request);
     
     expect(mockWithRateLimit).toHaveBeenCalledWith(request);
     expect(response.status).toBe(429);
@@ -89,7 +89,7 @@ describe('security middleware', () => {
     process.env.NODE_ENV = 'production';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/recipe');
     
@@ -97,7 +97,7 @@ describe('security middleware', () => {
     const rateLimitResponse = new Response('Rate limited', { status: 429 });
     mockWithRateLimit.mockReturnValue(rateLimitResponse);
     
-    const response = middleware(request);
+    const response = await proxy(request);
     
     expect(mockWithRateLimit).toHaveBeenCalledWith(request);
     expect(response.status).toBe(429);
@@ -107,10 +107,10 @@ describe('security middleware', () => {
     process.env.NODE_ENV = 'development';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/auth/login');
-    const response = middleware(request);
+    const response = await proxy(request);
     
     expect(mockWithRateLimit).not.toHaveBeenCalled();
     expect(response.status).not.toBe(429);
@@ -120,73 +120,73 @@ describe('security middleware', () => {
     process.env.NODE_ENV = 'production';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/non-critical');
-    const response = middleware(request);
+    const response = await proxy(request);
     
     expect(mockWithRateLimit).not.toHaveBeenCalled();
   });
 
-  it('should log security middleware activity in development', async () => {
+  it('should log security proxy activity in development', async () => {
     process.env.NODE_ENV = 'development';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/test');
-    middleware(request);
+    await proxy(request);
     
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('[Security Middleware]')
+      expect.stringContaining('[Security Proxy]')
     );
   });
 
-  it('should not log security middleware activity in production', async () => {
+  it('should not log security proxy activity in production', async () => {
     process.env.NODE_ENV = 'production';
     jest.resetModules();
     
-    const { middleware } = await import('@/middleware');
+    const { proxy } = await import('@/proxy');
     
     const request = new NextRequest('http://localhost/api/test');
-    middleware(request);
+    await proxy(request);
     
     expect(console.log).not.toHaveBeenCalled();
   });
 
   describe('excluded paths', () => {
     it('should exclude /api/healthz', async () => {
-      const { middleware } = await import('@/middleware');
+      const { proxy } = await import('@/proxy');
       
       const request = new NextRequest('http://localhost/api/healthz');
-      const response = middleware(request);
+      const response = await proxy(request);
       
       expect(response.headers.get('Content-Security-Policy')).toBeNull();
     });
 
     it('should exclude /_next/static paths', async () => {
-      const { middleware } = await import('@/middleware');
+      const { proxy } = await import('@/proxy');
       
       const request = new NextRequest('http://localhost/_next/static/file.js');
-      const response = middleware(request);
+      const response = await proxy(request);
       
       expect(response.headers.get('Content-Security-Policy')).toBeNull();
     });
 
     it('should exclude /_next/image paths', async () => {
-      const { middleware } = await import('@/middleware');
+      const { proxy } = await import('@/proxy');
       
       const request = new NextRequest('http://localhost/_next/image?url=test.jpg');
-      const response = middleware(request);
+      const response = await proxy(request);
       
       expect(response.headers.get('Content-Security-Policy')).toBeNull();
     });
 
     it('should exclude /favicon.ico', async () => {
-      const { middleware } = await import('@/middleware');
+      const { proxy } = await import('@/proxy');
       
       const request = new NextRequest('http://localhost/favicon.ico');
-      const response = middleware(request);
+      const response = await proxy(request);
       
       expect(response.headers.get('Content-Security-Policy')).toBeNull();
     });
@@ -194,7 +194,7 @@ describe('security middleware', () => {
 
   describe('config matcher', () => {
     it('should have correct matcher configuration', async () => {
-      const { config } = await import('@/middleware');
+      const { config } = await import('@/proxy');
       
       expect(config).toBeDefined();
       expect(config.matcher).toBeDefined();
