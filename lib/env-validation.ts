@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { logger } from './secure-logger'
 
 // Schema de validação para environment variables
 const envSchema = z.object({
@@ -77,6 +78,53 @@ export function getValidatedEnv(): EnvConfig {
       NODE_ENV: process.env.NODE_ENV,
       DATABASE_URL: process.env.DATABASE_URL,
       JWT_SECRET: process.env.JWT_SECRET,
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+      GEMINI_MODEL_PRIMARY: process.env.GEMINI_MODEL_PRIMARY,
+      GEMINI_MODEL_FALLBACK: process.env.GEMINI_MODEL_FALLBACK,
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_USER: process.env.SMTP_USER,
+      SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+      SMTP_EMAIL_FROM: process.env.SMTP_EMAIL_FROM,
+      SMTP_EMAIL_FROM_NAME: process.env.SMTP_EMAIL_FROM_NAME,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      POE_FACT_VALIDATION_MODE: process.env.POE_FACT_VALIDATION_MODE,
+      POE_FACT_PIPELINE_BUDGET_MS: process.env.POE_FACT_PIPELINE_BUDGET_MS,
+      POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY: process.env.POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY,
+      POE_KNOWLEDGE_CACHE_TTL_MIN: process.env.POE_KNOWLEDGE_CACHE_TTL_MIN,
+      POE_KNOWLEDGE_FETCH_TIMEOUT_MS: process.env.POE_KNOWLEDGE_FETCH_TIMEOUT_MS,
+      POE_KNOWLEDGE_LOOKUP_MODE: process.env.POE_KNOWLEDGE_LOOKUP_MODE,
+      ENABLE_POE_SNAPSHOT_CRON: process.env.ENABLE_POE_SNAPSHOT_CRON,
+      POE_SNAPSHOT_CRON_SCHEDULE: process.env.POE_SNAPSHOT_CRON_SCHEDULE,
+      POE_SNAPSHOT_MAX_PAGES_PER_RUN: process.env.POE_SNAPSHOT_MAX_PAGES_PER_RUN,
+      ENABLE_REPLENISHMENT_CRON: process.env.ENABLE_REPLENISHMENT_CRON,
+      ADMIN_API_TOKEN: process.env.ADMIN_API_TOKEN,
+      LEGACY_API_SUNSET: process.env.LEGACY_API_SUNSET,
+      LEGACY_API_MIGRATION_LINK: process.env.LEGACY_API_MIGRATION_LINK,
+      AI_CONTEXT_FILE_PATH: process.env.AI_CONTEXT_FILE_PATH,
+      NEXT_RUNTIME: process.env.NEXT_RUNTIME,
+      APP_PORT: process.env.APP_PORT,
+    }
+    
+    validatedConfig = envSchema.parse(rawEnv)
+    return validatedConfig
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      logger.error('Erro de validação das environment variables:')
+      error.errors.forEach((err) => {
+        logger.error(`  - ${err.path.join('.')}: ${err.message}`)
+      })
+      
+      // Em produção, falhar imediatamente
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`Environment variables inválidas: ${error.errors.map(e => e.message).join(', ')}`)
+      }
+    }
+    
+    throw error
+  }
+}
+
 /**
  * Validação específica para produção
  * @throws Error se configurações críticas estiverem faltando em produção
@@ -124,7 +172,13 @@ export function initializeEnvValidation(): EnvConfig {
       JWT_SECRET: env.JWT_SECRET ? '***' + env.JWT_SECRET.slice(-4) : 'não definido',
       GEMINI_API_KEY: env.GEMINI_API_KEY ? '***' + env.GEMINI_API_KEY.slice(-4) : 'não definido',
       SMTP_CONFIGURED: !!env.SMTP_PASSWORD,
-      DATABASE_URL: env.DATABASE_URL ? '***' + new URL(env.DATABASE_URL).hostname : 'não definido',
+      DATABASE_URL: env.DATABASE_URL ? '***' + (() => {
+        try {
+          return new URL(env.DATABASE_URL).hostname;
+        } catch {
+          return 'invalid-url';
+        }
+      })() : 'não definido',
     })
   }
   
@@ -133,49 +187,3 @@ export function initializeEnvValidation(): EnvConfig {
 
 // Exportar configuração validada
 export const env = getValidatedEnv()
-      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-      GEMINI_MODEL_PRIMARY: process.env.GEMINI_MODEL_PRIMARY,
-      GEMINI_MODEL_FALLBACK: process.env.GEMINI_MODEL_FALLBACK,
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
-      SMTP_USER: process.env.SMTP_USER,
-      SMTP_PASSWORD: process.env.SMTP_PASSWORD,
-      SMTP_EMAIL_FROM: process.env.SMTP_EMAIL_FROM,
-      SMTP_EMAIL_FROM_NAME: process.env.SMTP_EMAIL_FROM_NAME,
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-      POE_FACT_VALIDATION_MODE: process.env.POE_FACT_VALIDATION_MODE,
-      POE_FACT_PIPELINE_BUDGET_MS: process.env.POE_FACT_PIPELINE_BUDGET_MS,
-      POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY: process.env.POE_OFFICIAL_SOURCE_CONFLICT_STRATEGY,
-      POE_KNOWLEDGE_CACHE_TTL_MIN: process.env.POE_KNOWLEDGE_CACHE_TTL_MIN,
-      POE_KNOWLEDGE_FETCH_TIMEOUT_MS: process.env.POE_KNOWLEDGE_FETCH_TIMEOUT_MS,
-      POE_KNOWLEDGE_LOOKUP_MODE: process.env.POE_KNOWLEDGE_LOOKUP_MODE,
-      ENABLE_POE_SNAPSHOT_CRON: process.env.ENABLE_POE_SNAPSHOT_CRON,
-      POE_SNAPSHOT_CRON_SCHEDULE: process.env.POE_SNAPSHOT_CRON_SCHEDULE,
-      POE_SNAPSHOT_MAX_PAGES_PER_RUN: process.env.POE_SNAPSHOT_MAX_PAGES_PER_RUN,
-      ENABLE_REPLENISHMENT_CRON: process.env.ENABLE_REPLENISHMENT_CRON,
-      ADMIN_API_TOKEN: process.env.ADMIN_API_TOKEN,
-      LEGACY_API_SUNSET: process.env.LEGACY_API_SUNSET,
-      LEGACY_API_MIGRATION_LINK: process.env.LEGACY_API_MIGRATION_LINK,
-      AI_CONTEXT_FILE_PATH: process.env.AI_CONTEXT_FILE_PATH,
-      NEXT_RUNTIME: process.env.NEXT_RUNTIME,
-      APP_PORT: process.env.APP_PORT,
-    }
-    
-    validatedConfig = envSchema.parse(rawEnv)
-    return validatedConfig
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      logger.error('Erro de validação das environment variables:')
-      error.errors.forEach((err) => {
-        logger.error(`  - ${err.path.join('.')}: ${err.message}`)
-      })
-      
-      // Em produção, falhar imediatamente
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error(`Environment variables inválidas: ${error.errors.map(e => e.message).join(', ')}`)
-      }
-    }
-    
-    throw error
-  }
-}
