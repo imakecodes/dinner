@@ -20,7 +20,11 @@
     "test:coverage:strict": "jest --coverage",
     "coverage:report": "ts-node --esm scripts/coverage-report.ts",
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
-    "cleanup:culinary-legacy": "ts-node --esm scripts/cleanup-culinary-legacy.ts"
+    "cleanup:culinary-legacy": "ts-node --esm scripts/cleanup-culinary-legacy.ts",
+    "validate:env": "ts-node scripts/validate-env.ts",
+    "predev": "npm run validate:env",
+    "prebuild": "npm run validate:env",
+    "prestart": "npm run validate:env"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
@@ -52,6 +56,7 @@
     "autoprefixer": "^10.4.17",
     "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
+    "zod": "^3.22.4",
     "eslint-config-next": "^15.0.3",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
