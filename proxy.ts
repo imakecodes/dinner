@@ -106,7 +106,8 @@ export async function proxy(request: NextRequest) {
       pathname === '/api/healthz' ||
       pathname === '/verify-email' || // Also needed for the new page!
       pathname === '/reset-password' ||
-      pathname.startsWith('/api/auth'); // Allow auth API routes
+      pathname.startsWith('/api/auth') || // Allow auth API routes
+      pathname.startsWith('/api/snapshot'); // Allow snapshot API route
 
   // Static assets and internal next paths are usually handled automatically by matcher,
   // but explicitly ignoring them in logic if needed is safe.
@@ -115,12 +116,31 @@ export async function proxy(request: NextRequest) {
 
   // Verify token
   const payload = await verifyToken(token);
-  // Strict check: must have payload and kitchenId (multi-tenancy)
-  const isAuthenticated = !!payload && !!payload.kitchenId;
+  
+  // Special handling for auth API routes - they should work regardless of kitchenId
+  if (pathname.startsWith('/api/auth')) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Security Proxy] Auth API route ${pathname} - bypassing kitchen checks`);
+    }
+    return NextResponse.next();
+  }
+
+  // For non-auth routes, check if user has kitchenId
+  const isAuthenticated = !!payload;
+  if (isAuthenticated && !payload?.kitchenId) {
+    console.warn('User authenticated but missing kitchenId for protected route:', pathname);
+    // Allow access to public pages even without kitchenId
+    if (!isPublicPath) {
+      return NextResponse.json({ message: 'No kitchen assigned' }, { status: 403 });
+    }
+  }
+
+  // Strict check for non-auth routes: must have payload and kitchenId (multi-tenancy)
+  const isAuthenticatedWithKitchen = !!payload && !!payload.kitchenId;
 
   // Case 1: User is accessing a public path but is already logged in
   if (isPublicPath && isAuthenticated) {
-    if (!pathname.startsWith('/api/auth')) {
+    if (!pathname.startsWith('/api')) {
       // Redirect to home if they try to access login/register while logged in
       return NextResponse.redirect(new URL('/', request.nextUrl));
     }
@@ -128,7 +148,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Case 2: User is accessing a protected path and is NOT logged in
-  if (!isPublicPath && !isAuthenticated) {
+  if (!isPublicPath && !isAuthenticatedWithKitchen) {
     if (pathname.startsWith('/api')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -158,4 +178,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
-

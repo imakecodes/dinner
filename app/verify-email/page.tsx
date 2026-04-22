@@ -8,7 +8,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 function VerifyEmailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const token = searchParams.get('token');
+    const tokenFromParams = searchParams.get('token');
+    // Fallback to window.location.search for better compatibility
+    const token = tokenFromParams || 
+        (typeof window !== 'undefined' 
+            ? new URLSearchParams(window.location.search).get('token')
+            : null);
     const { t } = useTranslation();
 
     const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
@@ -16,39 +21,80 @@ function VerifyEmailContent() {
     const verificationAttempted = useRef(false);
 
     useEffect(() => {
+        console.log('[VerifyEmail] useEffect triggered, token:', token ? 'present' : 'null/undefined');
+        
         if (!token) {
+            console.log('[VerifyEmail] No token found, showing error');
             setStatus('error');
             setMessage(t('auth.invalidLink'));
             return;
         }
 
-        if (verificationAttempted.current) return;
+        if (verificationAttempted.current) {
+            console.log('[VerifyEmail] Verification already attempted, skipping');
+            return;
+        }
         verificationAttempted.current = true;
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            console.warn('[VerifyEmail] Verification timeout (30s), aborting');
+            controller.abort();
+        }, 30000);
+
         const verify = async () => {
+            console.log('[VerifyEmail] Starting verification with token:', token.substring(0, 8) + '...');
+            
             try {
-                const res = await fetch('/api/auth/verify', {
+                const fetchUrl = '/api/auth/verify';
+                console.log('[VerifyEmail] Fetching:', fetchUrl);
+                
+                const res = await fetch(fetchUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token }),
+                    signal: controller.signal,
                 });
 
+                console.log('[VerifyEmail] Response status:', res.status);
+                // Log a few important headers
+                const headers: Record<string, string> = {};
+                if (res.headers.has('content-type')) headers['content-type'] = res.headers.get('content-type')!;
+                if (res.headers.has('content-length')) headers['content-length'] = res.headers.get('content-length')!;
+                console.log('[VerifyEmail] Response headers:', headers);
+                
                 const data = await res.json();
+                console.log('[VerifyEmail] Response data:', data);
 
                 if (res.ok) {
+                    console.log('[VerifyEmail] Verification successful');
                     setStatus('success');
                 } else {
+                    console.error('[VerifyEmail] Verification failed with error:', data.error);
                     setStatus('error');
                     setMessage(data.error || t('auth.verifyFailed'));
                 }
-            } catch (err) {
-                setStatus('error');
-                setMessage(t('auth.networkError'));
+            } catch (err: any) {
+                console.error('[VerifyEmail] Verification error:', err);
+                if (err.name === 'AbortError') {
+                    setStatus('error');
+                    setMessage(t('auth.networkError') + ' (timeout)');
+                } else {
+                    setStatus('error');
+                    setMessage(t('auth.networkError'));
+                }
+            } finally {
+                clearTimeout(timeoutId);
             }
         };
 
         verify();
-    }, [token, router, t]);
+
+        return () => {
+            clearTimeout(timeoutId);
+            controller.abort();
+        };
+    }, [token, t]); // removed router dependency as it's not used in the effect
 
     return (
         <div className="poe-surface p-8 rounded-xl shadow-lg w-full max-w-md text-center border border-poe-borderStrong">
